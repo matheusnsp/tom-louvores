@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Tom Louvores — INVB</title>
+  <title>Cultos — Tom Louvores INVB</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="icon" type="image/png" href="logo3.png">
@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
 </head>
-<body class="read-only">
+<body class="read-only" data-pagina="cultos">
 
 <!-- HEADER -->
 <header class="header">
@@ -28,10 +28,8 @@
         <span class="dot"></span>
         <span id="statusTxt">Conectando</span>
       </div>
-      <!-- shown when logged out -->
       <button class="btn-add" id="btnLoginShow" onclick="abrirLogin()" style="display:none">🔒 Entrar</button>
-      <!-- shown when logged in (admin) -->
-      <button class="btn-add" id="btnNovaMusica" onclick="abrirModal()" style="display:none">+ Nova Música</button>
+      <button class="btn-add" id="btnNovaMusica" onclick="abrirModal()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
       <button class="btn-logout" id="btnLogout" onclick="logout()" style="display:none">Sair</button>
     </div>
   </div>
@@ -42,42 +40,29 @@
   <div class="hero">
     <div>
       <div class="hero-tag">Botafogo · RJ</div>
-      <h1 class="hero-h1">NOSSO<br><em>REPERTÓRIO</em></h1>
-      <p class="hero-sub">Músicas, tons e ministrantes da INVB em um só lugar.</p>
+      <h1 class="hero-h1">LOUVORES DO<br><em>CULTO</em></h1>
+      <p class="hero-sub">O que a equipe vai cantar nos próximos cultos.</p>
     </div>
-    <div class="hero-right-col">
-      <div class="hero-stats">
-        <div class="stat-row">
-          <span class="stat-n" id="totalMusicas">0</span>
-          <span class="stat-l">Músicas</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-n" id="totalTons">0</span>
-          <span class="stat-l">Tons</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-n">5</span>
-          <span class="stat-l">Ministr.</span>
-        </div>
-      </div>
-    </div>
+    <!-- os números do repertório pertencem à outra página.
+         Estes campos existem só porque o app.js escreve neles. -->
+    <span id="totalMusicas" hidden></span>
+    <span id="totalTons" hidden></span>
   </div>
 </section>
 
 <!-- CULTOS -->
 <section class="cultos-wrap">
-  <div class="cultos-head">
-    <h2 class="cultos-title">Louvores do <em>Culto</em></h2>
-    <p class="cultos-sub">Monte a lista de cada culto. Puxe do repertório ou crie na hora.</p>
-  </div>
+  <!-- sem título aqui: o hero logo acima já diz "Louvores do Culto" -->
   <div class="cultos-grid" id="cultosGrid">
     <!-- preenchido via JS -->
   </div>
 </section>
 
-<!-- TOOLBAR -->
-<!-- REPERTÓRIO (busca + grid: a busca fica fixa durante toda esta seção) -->
-<section class="repertorio">
+<!-- ============================================================
+     O repertório não aparece aqui, mas os campos precisam existir:
+     o app.js conta com eles ao carregar, ao filtrar e ao salvar.
+     ============================================================ -->
+<section class="repertorio" hidden>
   <div class="toolbar">
     <div class="search-row">
       <div class="search-wrap">
@@ -96,21 +81,12 @@
       </select>
     </div>
   </div>
-
-<!-- GRID -->
-<div class="grid-wrap">
-  <div class="grid" id="grid">
-    <div class="state-loading" id="stLoading">
-      <div class="spinner"></div>
-      <p style="font-size:12px;color:#555;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Carregando...</p>
-    </div>
-    <div class="state-empty" id="stEmpty">
-      <div class="empty-sym">NO SONGS</div>
-      <p class="empty-ttl">Nenhuma música</p>
-      <p class="empty-sub">Clique em "+ Nova Música" para começar.</p>
+  <div class="grid-wrap">
+    <div class="grid" id="grid">
+      <div class="state-loading" id="stLoading"><div class="spinner"></div></div>
+      <div class="state-empty" id="stEmpty"></div>
     </div>
   </div>
-</div>
 </section>
 
 <!-- MODAL ADICIONAR LOUVOR AO CULTO -->
@@ -121,13 +97,11 @@
       <button class="modal-close" onclick="fecharCultoModal()">✕</button>
     </div>
     <div class="modal-bd">
-      <!-- Abas: escolher do repertório / criar novo -->
       <div class="culto-tabs">
         <button type="button" class="culto-tab active" id="tabEscolher" onclick="cultoTab('escolher')">Do repertório</button>
         <button type="button" class="culto-tab" id="tabCriar" onclick="cultoTab('criar')">Criar nova</button>
       </div>
 
-      <!-- ABA: escolher do repertório -->
       <div id="cultoPaneEscolher">
         <div>
           <label class="flabel">Música</label>
@@ -142,7 +116,6 @@
         </div>
       </div>
 
-      <!-- ABA: criar nova -->
       <div id="cultoPaneCriar" style="display:none">
         <div>
           <label class="flabel">Nome da música</label>
@@ -177,7 +150,7 @@
   </div>
 </div>
 
-<!-- MODAL LEITURA (visualizar música) -->
+<!-- MODAL LEITURA -->
 <div class="overlay-bg" id="viewOverlay" onclick="viewFecharFora(event)">
   <div class="modal view-modal" id="viewModal">
     <div class="modal-hd">
@@ -265,7 +238,7 @@
   </div>
 </div>
 
-<!-- LOGIN MODAL -->
+<!-- LOGIN -->
 <div id="loginOverlay" onclick="loginFecharFora(event)">
   <div class="login-box">
     <div>
@@ -289,13 +262,14 @@
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script src="lyra.js"></script>
+<script src="vista-lista.js"></script>
 <script src="culto-seletor.js"></script>
 <script src="busca-limpar.js"></script>
+<script src="paginas.js"></script>
 </body>
 </html>
