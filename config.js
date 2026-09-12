@@ -18,3 +18,12 @@ const CONFIG = {
       appId: "1:622766190731:web:548848b2e775180376648e",
     },
   };
+
+  const CULTOS_FIX = [
+    { tipo: "quarta",        titulo: "Quarta",  dia: "Quarta-feira",    diaSemana: 3, h: 19, min: 30 },
+    { tipo: "domingo_manha", titulo: "Domingo", dia: "Domingo · Manhã", diaSemana: 0, h: 10, min: 0  },
+    { tipo: "domingo_noite", titulo: "Domingo", dia: "Domingo · Noite", diaSemana: 0, h: 19, min: 0  },
+   
+    // Culto novo e recorrente? É só acrescentar uma linha aqui.
+    // { tipo: "sabado_jovens", titulo: "Jovens", dia: "Sábado · Jovens", diaSemana: 6, h: 19, min: 30 },
+  ];
