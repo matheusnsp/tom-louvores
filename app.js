@@ -284,11 +284,8 @@ async function salvar() {
   if (!tomMinList.length) { toast("Adicione ao menos um tom e ministrante.", true); return; }
 
   // bloqueia nome duplicado (ignora acentos, caixa e espaços)
-  const norm = s => (s || "")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .trim().toLowerCase().replace(/\s+/g, " ");
   const jaExiste = musicas.some(m =>
-    m.id != editandoId && norm(m.nome) === norm(nome)
+    m.id != editandoId && normTexto(m.nome) === normTexto(nome)
   );
   if (jaExiste) {
     toast(`"${nome}" já está no repertório.`, true);
@@ -517,8 +514,21 @@ function render(lista) {
 //  Filtros
 // ============================================================
 
+// Texto comparável: sem acento, sem caixa, sem espaço sobrando.
+// "coracao" acha "Coração" e "Coração" acha "coracao" — quem está
+// no palco com o celular na mão não quer caçar o til no teclado.
+//
+// Estava definida duas vezes aqui dentro (no salvar e no
+// confirmarLouvorCulto), só para barrar nome duplicado, e a busca
+// não usava. Agora é uma só.
+function normTexto(s) {
+  return (s || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function filtrar() {
-  const b = document.getElementById("busca").value.toLowerCase();
+  const b = normTexto(document.getElementById("busca").value);
   const m = document.getElementById("filtroMin").value;
   const t = document.getElementById("filtroTom").value;
   render(musicas.filter(x => {
@@ -527,7 +537,7 @@ function filtrar() {
     const tons  = pares.map(p => p.tom);
     const mins  = pares.map(p => p.min);
     return (
-      (!b || x.nome.toLowerCase().includes(b)) &&
+      (!b || normTexto(x.nome).includes(b)) &&
       (!m || mins.includes(m) || x.ministrante === m) &&
       (!t || tons.includes(t))
     );
@@ -1295,7 +1305,7 @@ function cultoTab(qual) {
 
 // lista de músicas do repertório (aba "do repertório")
 function filtrarMusicasCulto() {
-  const termo = document.getElementById("cBuscaMusica").value.trim().toLowerCase();
+  const termo = normTexto(document.getElementById("cBuscaMusica").value);
   const list  = document.getElementById("cultoMusicaList");
 
   // sem busca, lista vazia (não despeja o repertório inteiro)
@@ -1305,7 +1315,7 @@ function filtrarMusicasCulto() {
   }
 
   const filtradas = musicas
-    .filter(m => m.nome.toLowerCase().includes(termo))
+    .filter(m => normTexto(m.nome).includes(termo))
     .slice(0, 40);
 
   list.innerHTML = filtradas.length
@@ -1380,10 +1390,7 @@ async function confirmarLouvorCulto() {
   try {
     // se criou nova, salva também no repertório geral — mas evita duplicar
     if (criando) {
-      const norm = s => (s || "")
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .trim().toLowerCase().replace(/\s+/g, " ");
-      const existente = musicas.find(m => norm(m.nome) === norm(nome));
+      const existente = musicas.find(m => normTexto(m.nome) === normTexto(nome));
 
       if (existente) {
         // já existe no repertório → reaproveita, não cria duplicata
