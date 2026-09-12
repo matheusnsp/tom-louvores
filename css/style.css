@@ -127,7 +127,7 @@
       HERO
       ============================================================ */
    .hero-outer{
-     background:url('image.jpg') center 30% / cover no-repeat;
+     background:url('../img/image.jpg') center 30% / cover no-repeat;
      position:relative;
      border-bottom:1px solid var(--black4);
    }

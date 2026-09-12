@@ -10,14 +10,14 @@
 #  verificar.js no console.
 # ============================================================
 
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/.." || exit 1
 falhas=0
 ok()    { printf '  \033[32mok    \033[0m %s\n' "$1"; }
 falha() { printf '  \033[31mFALHOU\033[0m %s\n' "$1"; falhas=$((falhas+1)); }
 
 echo
 echo "── 1. sintaxe do JavaScript ─────────────────────────────"
-for f in *.js; do
+for f in $(find . -name "*.js" -not -path "./.git/*" | sed "s|^./||" | sort); do
   if node --check "$f" 2>/dev/null; then ok "$f"; else
     falha "$f"; node --check "$f" 2>&1 | head -3 | sed 's/^/         /'
   fi
@@ -26,7 +26,7 @@ done
 echo
 echo "── 1b. arquivos vazios ──────────────────────────────────"
 vazio=0
-for f in *.js *.html *.css; do
+for f in $(find . \( -name "*.js" -o -name "*.html" -o -name "*.css" \) -not -path "./.git/*" | sed "s|^./||" | sort); do
   [ -e "$f" ] || continue
   [ -s "$f" ] || { falha "$f tem 0 bytes"; vazio=1; }
 done
@@ -47,7 +47,7 @@ QUEBRADO = ["Ã©","Ã£","Ã§","Ãµ","Ã¡","Ã³","Ãº","Ã­","Ãª","Ã´
             "â€œ","â€\x9d","â€™","â€“","â€”","Â ","Â­","Ã\x87","Ã\x83"]
 
 problemas = 0
-for f in sorted(set(glob.glob("*.js") + glob.glob("*.html") + glob.glob("*.css"))):
+for f in sorted(set(glob.glob("**/*.js", recursive=True) + glob.glob("**/*.html", recursive=True) + glob.glob("**/*.css", recursive=True))):
     b = open(f, "rb").read()
     if not b:
         continue                      # arquivo vazio já foi avisado antes
@@ -77,7 +77,7 @@ fi
 echo
 echo "── 4. BOM no começo do arquivo ──────────────────────────"
 achou=0
-for f in *.js *.html *.css; do
+for f in $(find . \( -name "*.js" -o -name "*.html" -o -name "*.css" \) -not -path "./.git/*" | sed "s|^./||" | sort); do
   [ -e "$f" ] || continue
   if [ "$(head -c 3 "$f" | od -An -tx1 | tr -d ' \n')" = "efbbbf" ]; then
     falha "$f tem BOM"; achou=1

@@ -9,7 +9,7 @@
 #  chamado por um caminho diferente do nome, ou de fora do site.
 # ============================================================
 
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/.." || exit 1
 
 # estes não são citados por ninguém e mesmo assim são necessários
 proteger() {
@@ -19,7 +19,7 @@ proteger() {
     # do GitHub Pages: o CNAME aponta o domínio
     CNAME|README.md|.nojekyll) return 0 ;;
     # ferramentas de desenvolvimento
-    checar.sh|orfaos.sh|verificar.js) return 0 ;;
+    dev/*) return 0 ;;
     .*) return 0 ;;
   esac
   return 1
@@ -27,7 +27,7 @@ proteger() {
 
 semUso=""
 echo
-for f in *; do
+for f in $(find . -type f -not -path "./.git/*" | sed "s|^./||" | sort); do
   [ -f "$f" ] || continue
   if proteger "$f"; then
     printf '  \033[34mmantido \033[0m %s\n' "$f"
@@ -37,7 +37,7 @@ for f in *; do
   #  O sw.js guarda arquivos, não os usa. Contá-lo como uso fazia
   #  um arquivo esquecido no cache parecer necessário — foi assim
   #  que o logo.png passou batido em duas limpezas.
-  citado=$(grep -l -F -- "$f" *.html *.css *.js *.json 2>/dev/null |
+  citado=$(grep -rl -F --include="*.html" --include="*.css" --include="*.js" --include="*.json" --exclude-dir=.git -e "$f" . 2>/dev/null |
            grep -v "^$f$" | grep -v "^sw\.js$" | tr '\n' ' ')
   noCache=$(grep -q "\"\./$f\"" sw.js 2>/dev/null && echo sim || echo nao)
 
