@@ -13,7 +13,7 @@
 //      cache como rede de segurança quando ela falha
 // ============================================================
 
-const CACHE = "tom-louvores-v10";
+const CACHE = "tom-louvores-v11";
 
 const APP = [
   "./",
@@ -30,6 +30,7 @@ const APP = [
   "./vista-lista.js",
   "./culto-seletor.js",
   "./escala-ministrante.js",
+  "./calendario.js",
   "./busca-limpar.js",
   "./paginas.js",
   "./atualizar.js",

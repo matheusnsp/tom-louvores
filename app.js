@@ -702,8 +702,8 @@ function editarDaLeitura() {
 }
 
 // abrir leitura a partir de um louvor do culto
-function abrirViewCulto(tipo, idx) {
-  const l = cultos[tipo]?.louvores?.[idx];
+function abrirViewCulto(chave, idx) {
+  const l = cultos[chave]?.louvores?.[idx];
   if (!l) return;
 
   // tenta achar a música original pra puxar observações completas
@@ -820,15 +820,17 @@ document.addEventListener("keydown", e => {
 
 const CULTOS_TABLE = "cultos";
 
-const CULTO_DEFS = [
-  { tipo: "quarta",         titulo: "Quarta",        dia: "Quarta-feira",    diaSemana: 3 },
-  { tipo: "domingo_manha",  titulo: "Domingo",       dia: "Domingo · Manhã", diaSemana: 0 },
-  { tipo: "domingo_noite",  titulo: "Domingo",       dia: "Domingo · Noite", diaSemana: 0 },
-];
+// a lista mora em config.js agora: ela existia aqui e no
+// culto-seletor.js, e adicionar um culto pedia editar as duas.
+const CULTO_DEFS = CULTOS_FIX;
 
-// estado: { quarta:{id,louvores:[],atualizado_em}, ... }
+// estado indexado por OCORRÊNCIA, não por tipo:
+//   { "domingo_noite@2026-09-20": { id, tipo, data, louvores:[], ... } }
+// Antes era uma entrada por tipo, o que dava um slot único para
+// "o próximo domingo à noite" — e obrigava a apagar a escala da
+// semana passada para caber a nova.
 let cultos = {};
-let cultoTipoAtual = null;     // tipo sendo editado no modal
+let cultoChaveAtual = null;    // chave da ocorrência aberta no modal
 let cultoMusicaSel = null;     // música escolhida da lista (aba "do repertório")
 let cultoSecaoAtual = "principal"; // seção do item sendo adicionado
 
@@ -875,11 +877,32 @@ function isoDia(d) {
   return `${y}-${m}-${dd}`;
 }
 
-// data do culto (YYYY-MM-DD) a que um novo louvor deve pertencer = próxima ocorrência
-function dataAlvoCulto(tipo) {
-  const def = CULTO_DEFS.find(d => d.tipo === tipo);
-  if (!def || def.diaSemana == null) return isoDia(new Date());
-  return isoDia(proximaData(def.diaSemana));
+// a data agora vem da própria chave da ocorrência. Antes era
+// sempre "a próxima vez que cai nesse dia da semana", o que
+// gravava a data errada ao escalar dois domingos à frente.
+function dataDaChave(chave) {
+  return String(chave).split("@")[1] || isoDia(new Date());
+}
+
+// devolve (criando se preciso) o registro local de uma ocorrência.
+// Culto fixo só ganha linha no banco quando alguém escala algo nele.
+function cultoGarantir(chave) {
+  if (cultos[chave]) return cultos[chave];
+  const [tipo, data] = String(chave).split("@");
+  const fixo = CULTO_DEFS.find(d => d.tipo === tipo);
+  cultos[chave] = {
+    id: null,
+    tipo,
+    data: data || isoDia(new Date()),
+    nome: fixo ? null : "Culto",
+    hora: fixo ? null : "19:00",
+    cancelado: false,
+    louvores: [],
+    ministrante: "",
+    ministrante_data: null,
+    atualizado_em: null,
+  };
+  return cultos[chave];
 }
 
 // "há X" legível a partir de um timestamp ISO (atualizado_em)
@@ -900,17 +923,17 @@ function tempoRelativo(iso) {
 }
 
 // monta o texto da lista de um culto, pronto pra colar no WhatsApp
-function textoCultoParaCopiar(def, dados) {
+function textoCultoParaCopiar(oc, dados) {
   const louvores   = dados.louvores || [];
   const principais = louvores.filter(l => secaoDoLouvor(l) === "principal");
   const ofertorios = louvores.filter(l => secaoDoLouvor(l) === "ofertorio");
   const posPalavra = louvores.filter(l => secaoDoLouvor(l) === "pos");
   const ceia       = louvores.filter(l => secaoDoLouvor(l) === "ceia");
-  const dataStr    = formatarDataCulto(proximaData(def.diaSemana));
+  const dataStr    = formatarDataCulto(calData(oc.data));
 
   const linhaMusica = l => `${l.nome} — ${l.tom || "—"}`;
 
-  const linhas = [`${def.dia} — ${dataStr}`, ""];
+  const linhas = [`${oc.dia} — ${dataStr}`, ""];
   principais.forEach((l, i) => linhas.push(`${i + 1}. ${linhaMusica(l)}`));
   if (posPalavra.length) {
     linhas.push("", "Pós-palavra:");
@@ -953,24 +976,22 @@ function copiarTexto(texto) {
 }
 
 // clique no botão "Copiar" de um culto
-async function copiarCulto(tipo) {
-  const def   = CULTO_DEFS.find(d => d.tipo === tipo);
-  const dados = cultos[tipo];
-  if (!def || !dados || !(dados.louvores || []).length) {
+async function copiarCulto(chave) {
+  const oc    = calOcorrenciaPorChave(chave);
+  const dados = cultos[chave];
+  if (!oc || !dados || !(dados.louvores || []).length) {
     toast("Nada para copiar ainda.", true);
     return;
   }
-  const ok = await copiarTexto(textoCultoParaCopiar(def, dados));
+  const ok = await copiarTexto(textoCultoParaCopiar(oc, dados));
   toast(ok ? "Lista copiada ✓" : "Não consegui copiar — copie manualmente.", !ok);
 }
 
 
 async function carregarCultos() {
+  cultos = {};
   try {
     const rows = await req(`${CULTOS_TABLE}`) || [];
-    const vazio = () => ({ id: null, louvores: [], ministrante: "", ministrante_data: null, atualizado_em: null });
-    cultos = {};
-    CULTO_DEFS.forEach(d => { cultos[d.tipo] = vazio(); });
     rows.forEach(r => {
       const raw = typeof r.louvores === "string"
         ? (() => { try { return JSON.parse(r.louvores); } catch { return []; } })()
@@ -984,28 +1005,31 @@ async function carregarCultos() {
         ministrante = raw.ministrante || "";
         ministranteData = raw.ministrante_data || null;
       }
-      cultos[r.tipo] = {
+      // linha sem data é de antes da migração: adota a data do
+      // último louvor que ela guarda
+      const data = r.data
+        || lista.map(l => l.data).filter(Boolean).sort().pop()
+        || isoDia(new Date());
+
+      cultos[`${r.tipo}@${data}`] = {
         id: r.id,
+        tipo: r.tipo,
+        data,
+        nome: r.nome || null,
+        hora: r.hora || null,
+        cancelado: !!r.cancelado,
         louvores: lista,
         ministrante,
         ministrante_data: ministranteData,
         atualizado_em: r.atualizado_em || null,
       };
     });
-
-    // limpa louvores e escala de cultos que já passaram
-    await limparCultosExpirados();
-
-    renderCultos();
   } catch (e) {
+    // tabela sem as colunas novas ou fora do ar: a tela abre vazia
+    // em vez de travar
     console.error("Cultos:", e);
-    // se a tabela ainda não existe, só mostra vazio sem travar a página
-    cultos = {};
-    CULTO_DEFS.forEach(d => {
-      cultos[d.tipo] = { id: null, louvores: [], ministrante: "", ministrante_data: null, atualizado_em: null };
-    });
-    renderCultos();
   }
+  renderCultos();
 }
 
 // formato salvo no banco: { ministrante, ministrante_data, itens }
@@ -1018,72 +1042,26 @@ function serializarLouvores(dados) {
   };
 }
 
-// limpeza automática: remove os louvores cujo culto já passou (data < hoje)
-// e apaga o ministrante escalado daquele mesmo culto.
-// itens antigos sem o campo "data" são tratados como de cultos passados.
-async function limparCultosExpirados() {
-  const hoje = isoDia(new Date());
-  for (const def of CULTO_DEFS) {
-    const dados = cultos[def.tipo];
-    if (!dados) continue;
-
-    let mudou = false;
-
-    // ── louvores ──
-    if (dados.louvores && dados.louvores.length) {
-      const antes = dados.louvores.length;
-      // mantém só os que ainda não passaram (data do culto >= hoje)
-      dados.louvores = dados.louvores.filter(l => l.data && l.data >= hoje);
-      if (dados.louvores.length !== antes) mudou = true;
-    }
-
-    // ── ministrante escalado ──
-    if (dados.ministrante) {
-      if (!dados.ministrante_data) {
-        // escala salva antes deste campo existir: adota o próximo culto como referência
-        dados.ministrante_data = dataAlvoCulto(def.tipo);
-        mudou = true;
-      } else if (dados.ministrante_data < hoje) {
-        // o culto dele já passou → some com a escala
-        dados.ministrante = "";
-        dados.ministrante_data = null;
-        mudou = true;
-      }
-    } else if (dados.ministrante_data) {
-      dados.ministrante_data = null;
-      mudou = true;
-    }
-
-    if (mudou && dados.id) {
-      // persiste a limpeza (automática, sem exigir admin)
-      try {
-        const agora = new Date().toISOString();
-        await req(`${CULTOS_TABLE}?id=eq.${dados.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ louvores: serializarLouvores(dados), atualizado_em: agora }),
-        });
-        dados.atualizado_em = agora;
-      } catch (e) {
-        console.error("Falha ao limpar culto expirado:", e);
-      }
-    }
-  }
-}
+// A limpeza automática saiu daqui. Ela existia porque cada tipo de
+// culto tinha uma linha só: para caber a escala deste domingo era
+// preciso apagar a do domingo passado. Agora cada ocorrência tem a
+// sua linha, e o que passou fica guardado — é o que responde
+// "quando foi a última vez que cantamos essa?".
 
 // markup de uma linha de louvor (reutilizado nas duas seções: principal e ofertório)
-// recebe o índice ORIGINAL dentro de cultos[tipo].louvores para remover/abrir corretamente
-function louvorRowHTML(tipo, l, i) {
+// recebe o índice ORIGINAL dentro de cultos[chave].louvores para remover/abrir corretamente
+function louvorRowHTML(chave, l, i) {
   return `
     <div class="culto-louvor">
       <div class="culto-louvor-info culto-louvor-click"
-           onclick="abrirViewCulto('${tipo}',${i})" title="Ver detalhes">
+           onclick="abrirViewCulto('${chave}',${i})" title="Ver detalhes">
         <span class="culto-louvor-badge">${esc(l.tom || "—")}</span>
         <div class="culto-louvor-txt">
           <div class="culto-louvor-nome">${esc(l.nome)}</div>
         </div>
       </div>
       <button class="culto-louvor-rm" title="Remover"
-        onclick="event.stopPropagation();removerLouvorCulto('${tipo}',${i})">✕</button>
+        onclick="event.stopPropagation();removerLouvorCulto('${chave}',${i})">✕</button>
     </div>`;
 }
 
@@ -1092,10 +1070,20 @@ function renderCultos() {
   if (!grid) return;
   grid.innerHTML = "";
 
-  CULTO_DEFS.forEach(def => {
-    const dados    = cultos[def.tipo] || { louvores: [] };
+  // as colunas são os cultos do dia escolhido no calendário
+  const ocs = (typeof calOcorrenciasVisiveis === "function") ? calOcorrenciasVisiveis() : [];
+  grid.classList.toggle("solo", ocs.length === 1);
+
+  if (!ocs.length) {
+    grid.innerHTML = `<div class="culto-empty">Nenhum culto neste dia.</div>`;
+    return;
+  }
+
+  ocs.forEach(def => {
+    const chave    = def.key;
+    const dados    = cultos[chave] || { louvores: [] };
     const louvores = dados.louvores || [];
-    const dataStr  = formatarDataCulto(proximaData(def.diaSemana));
+    const dataStr  = formatarDataCulto(calData(def.data));
 
     // separa por seção, preservando o índice original de cada louvor
     const principais = [];
@@ -1107,39 +1095,42 @@ function renderCultos() {
 
     // a Ceia só existe no culto de primeiro domingo — ou quando já
     // houver louvor guardado nela, para nada sumir da tela
-    const temCeia = ehPrimeiroDomingo(proximaData(def.diaSemana)) || ceia.length > 0;
+    const temCeia = ehPrimeiroDomingo(calData(def.data)) || ceia.length > 0;
 
     const itensHTML = principais.length
-      ? principais.map(x => louvorRowHTML(def.tipo, x.l, x.i)).join("")
+      ? principais.map(x => louvorRowHTML(chave, x.l, x.i)).join("")
       : `<div class="culto-empty">Nenhum louvor adicionado.</div>`;
 
     const ofertorioHTML = ofertorio.length
-      ? ofertorio.map(x => louvorRowHTML(def.tipo, x.l, x.i)).join("")
+      ? ofertorio.map(x => louvorRowHTML(chave, x.l, x.i)).join("")
       : `<div class="culto-empty">Nenhum ofertório definido.</div>`;
 
     const posHTML = posPalavra.length
-      ? posPalavra.map(x => louvorRowHTML(def.tipo, x.l, x.i)).join("")
+      ? posPalavra.map(x => louvorRowHTML(chave, x.l, x.i)).join("")
       : `<div class="culto-empty">Nenhum louvor de pós-palavra.</div>`;
 
     const ceiaHTML = ceia.length
-      ? ceia.map(x => louvorRowHTML(def.tipo, x.l, x.i)).join("")
+      ? ceia.map(x => louvorRowHTML(chave, x.l, x.i)).join("")
       : `<div class="culto-empty">Nenhum louvor da Ceia.</div>`;
 
     const secaoCeiaHTML = temCeia ? `
       <div class="culto-secao culto-secao-ceia">
         <div class="culto-secao-label">Ceia</div>
         <div class="culto-secao-bd">${ceiaHTML}</div>
-        <button class="culto-add-btn culto-add-secao" onclick="abrirCultoModal('${def.tipo}','ceia')">+ Adicionar ceia</button>
+        <button class="culto-add-btn culto-add-secao" onclick="abrirCultoModal('${chave}','ceia')">+ Adicionar ceia</button>
       </div>` : "";
 
     const col = document.createElement("div");
     col.className = "culto-col";
+    // a coluna carrega sua ocorrência: antes o culto era descoberto
+    // pela POSIÇÃO da coluna, o que passaria a mostrar a escala errada
+    col.dataset.cultoKey = chave;
 
     const atualizadoStr = tempoRelativo(dados.atualizado_em);
     const metaHTML = louvores.length
       ? `<div class="culto-col-meta">
            <span class="culto-atualizado">${atualizadoStr ? "Atualizado " + atualizadoStr : ""}</span>
-           <button class="culto-copy-btn" onclick="copiarCulto('${def.tipo}')" title="Copiar lista">
+           <button class="culto-copy-btn" onclick="copiarCulto('${chave}')" title="Copiar lista">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
              Copiar
            </button>
@@ -1154,7 +1145,7 @@ function renderCultos() {
     const escalaHTML = `
       <div class="culto-escala">
         <span class="culto-escala-label">Ministrante</span>
-        <select class="culto-escala-sel" onchange="definirEscalado('${def.tipo}', this.value)">
+        <select class="culto-escala-sel" onchange="definirEscalado('${chave}', this.value)">
           <option value="">— escalar —</option>
           ${optsEscalado}
         </select>
@@ -1174,17 +1165,17 @@ function renderCultos() {
       </div>
       ${escalaHTML}
       <div class="culto-col-bd">${itensHTML}</div>
-      <button class="culto-add-btn" onclick="abrirCultoModal('${def.tipo}')">+ Adicionar louvor</button>
+      <button class="culto-add-btn" onclick="abrirCultoModal('${chave}')">+ Adicionar louvor</button>
       <div class="culto-secao culto-secao-pos">
         <div class="culto-secao-label">Pós-palavra</div>
         <div class="culto-secao-bd">${posHTML}</div>
-        <button class="culto-add-btn culto-add-secao" onclick="abrirCultoModal('${def.tipo}','pos')">+ Adicionar pós-palavra</button>
+        <button class="culto-add-btn culto-add-secao" onclick="abrirCultoModal('${chave}','pos')">+ Adicionar pós-palavra</button>
       </div>
       ${secaoCeiaHTML}
       <div class="culto-secao">
         <div class="culto-secao-label">Ofertório</div>
         <div class="culto-secao-bd">${ofertorioHTML}</div>
-        <button class="culto-add-btn culto-add-secao" onclick="abrirCultoModal('${def.tipo}','ofertorio')">+ Adicionar ofertório</button>
+        <button class="culto-add-btn culto-add-secao" onclick="abrirCultoModal('${chave}','ofertorio')">+ Adicionar ofertório</button>
       </div>
       ${metaHTML}`;
     grid.appendChild(col);
@@ -1192,21 +1183,30 @@ function renderCultos() {
 }
 
 // ── persistência ──────────────────────────────────────────────
-async function salvarCulto(tipo) {
-  const dados = cultos[tipo];
+async function salvarCulto(chave) {
+  const dados = cultoGarantir(chave);
   const agora = new Date().toISOString();
   const louvoresSerial = serializarLouvores(dados);
-  const payload = { tipo, louvores: louvoresSerial, atualizado_em: agora };
+
+  const campos = {
+    louvores: louvoresSerial,
+    atualizado_em: agora,
+    cancelado: !!dados.cancelado,
+  };
+  // nome e hora só existem em culto eventual
+  if (dados.nome != null) campos.nome = dados.nome;
+  if (dados.hora != null) campos.hora = dados.hora;
+
   try {
     if (dados.id) {
       await req(`${CULTOS_TABLE}?id=eq.${dados.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ louvores: louvoresSerial, atualizado_em: agora }),
+        body: JSON.stringify(campos),
       });
     } else {
       const novo = await req(CULTOS_TABLE, {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ tipo: dados.tipo, data: dados.data, ...campos }),
       });
       if (novo && novo[0]) dados.id = novo[0].id;
     }
@@ -1220,18 +1220,17 @@ async function salvarCulto(tipo) {
 }
 
 // define/troca o ministrante escalado de um culto
-async function definirEscalado(tipo, valor) {
+async function definirEscalado(chave, valor) {
   if (!isAdmin()) { toast("Faça login para editar.", true); return; }
-  const dados = cultos[tipo];
-  if (!dados) return;
+  const dados = cultoGarantir(chave);
   const anterior = dados.ministrante || "";
   const anteriorData = dados.ministrante_data || null;
   if (valor === anterior) return;
   dados.ministrante = valor;
-  // guarda a qual culto esta escala pertence, para expirar junto com ele
-  dados.ministrante_data = valor ? dataAlvoCulto(tipo) : null;
+  // a escala pertence a esta ocorrência, e só a ela
+  dados.ministrante_data = valor ? dataDaChave(chave) : null;
   renderCultos();
-  const ok = await salvarCulto(tipo);
+  const ok = await salvarCulto(chave);
   if (ok) {
     toast(valor ? `Escalado: ${valor} ✓` : "Ministrante removido ✓");
   } else {
@@ -1241,24 +1240,25 @@ async function definirEscalado(tipo, valor) {
   }
 }
 
-async function removerLouvorCulto(tipo, idx) {
+async function removerLouvorCulto(chave, idx) {
   if (!isAdmin()) { toast("Faça login para editar.", true); return; }
-  cultos[tipo].louvores.splice(idx, 1);
+  if (!cultos[chave]) return;
+  cultos[chave].louvores.splice(idx, 1);
   renderCultos();
-  await salvarCulto(tipo);
+  await salvarCulto(chave);
 }
 
 // ── modal de adicionar louvor ─────────────────────────────────
-function abrirCultoModal(tipo, secao = "principal") {
+function abrirCultoModal(chave, secao = "principal") {
   if (!isAdmin()) { abrirLogin(); return; }
-  cultoTipoAtual = tipo;
+  cultoChaveAtual = chave;
   cultoMusicaSel = null;
   cultoSecaoAtual = SECAO_LABEL[secao] ? secao : "principal";
 
-  const def = CULTO_DEFS.find(d => d.tipo === tipo);
+  const oc = calOcorrenciaPorChave(chave);
   const tituloSecao = cultoSecaoAtual === "principal" ? "ADICIONAR" : SECAO_LABEL[cultoSecaoAtual].toUpperCase();
   document.getElementById("cultoModalTitulo").textContent =
-    `${tituloSecao} · ${def.titulo.toUpperCase()}`;
+    `${tituloSecao} · ${(oc ? oc.titulo : "CULTO").toUpperCase()}`;
 
   // reset campos
   document.getElementById("cBuscaMusica").value = "";
@@ -1276,7 +1276,7 @@ function abrirCultoModal(tipo, secao = "principal") {
 
 function fecharCultoModal() {
   document.getElementById("cultoOverlay").classList.remove("open");
-  cultoTipoAtual = null;
+  cultoChaveAtual = null;
   cultoMusicaSel = null;
   cultoSecaoAtual = "principal";
 }
@@ -1334,7 +1334,7 @@ function selecionarMusicaCulto(id) {
   sel.onchange = null;
 
   // ministrante escalado para este culto (definido no topo da coluna)
-  const escalado = cultos[cultoTipoAtual]?.ministrante || "";
+  const escalado = cultos[cultoChaveAtual]?.ministrante || "";
   let tomAuto = "";
 
   if (escalado) {
@@ -1402,14 +1402,14 @@ async function confirmarLouvorCulto() {
     }
 
     // adiciona ao culto na seção em que o modal foi aberto
-    // "data" = dia do culto a que o louvor pertence, usado para limpeza automática
+    // "data" = dia desta ocorrência, lido da chave
     // obs.: o ministrante agora é por culto (escalado no topo), não por louvor
-    const item = { musica_id: musicaId, nome, tom, data: dataAlvoCulto(cultoTipoAtual) };
+    const item = { musica_id: musicaId, nome, tom, data: dataDaChave(cultoChaveAtual) };
     if (cultoSecaoAtual === "ofertorio") item.ofertorio = true;
     if (cultoSecaoAtual === "pos")       item.pos = true;
     if (cultoSecaoAtual === "ceia")      item.ceia = true;
-    cultos[cultoTipoAtual].louvores.push(item);
-    const ok = await salvarCulto(cultoTipoAtual);
+    cultoGarantir(cultoChaveAtual).louvores.push(item);
+    const ok = await salvarCulto(cultoChaveAtual);
 
     if (ok) {
       renderCultos();
@@ -1420,7 +1420,7 @@ async function confirmarLouvorCulto() {
       fecharCultoModal();
     } else {
       // desfaz se falhou
-      cultos[cultoTipoAtual].louvores.pop();
+      cultos[cultoChaveAtual].louvores.pop();
     }
   } catch (e) {
     console.error(e);
