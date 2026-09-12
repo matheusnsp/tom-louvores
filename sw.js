@@ -13,28 +13,28 @@
 //      cache como rede de segurança quando ela falha
 // ============================================================
 
-const CACHE = "tom-louvores-v11";
+const CACHE = "tom-louvores-v13";
 
 const APP = [
   "./",
   "./index.html",
   "./repertorio.html",
-  "./style.css",
-  "./config.js",
-  "./app.js",
-  "./lyra.js",
-  "./acordes.js",
-  "./opcoes.js",
-  "./afinador.js",
-  "./metronomo.js",
-  "./vista-lista.js",
-  "./culto-seletor.js",
-  "./escala-ministrante.js",
-  "./calendario.js",
-  "./busca-limpar.js",
-  "./paginas.js",
-  "./atualizar.js",
-  "./sons.js",
+  "./css/style.css",
+  "./js/config.js",
+  "./js/app.js",
+  "./js/lyra.js",
+  "./js/acordes.js",
+  "./js/opcoes.js",
+  "./js/afinador.js",
+  "./js/metronomo.js",
+  "./js/vista-lista.js",
+  "./js/culto-seletor.js",
+  "./js/escala-ministrante.js",
+  "./js/calendario.js",
+  "./js/busca-limpar.js",
+  "./js/paginas.js",
+  "./js/atualizar.js",
+  "./js/sons.js",
 
   //  Sem estes, o app abria offline mas sem o fundo do topo e sem
   //  o ícone na tela de início do celular.
@@ -44,9 +44,9 @@ const APP = [
   //  um arquivo que ninguém exibe e deixar de fora os dois que
   //  aparecem na tela.
   "./manifest.json",
-  "./image.jpg",
-  "./logo2.png",
-  "./logo3.png",
+  "./img/image.jpg",
+  "./img/logo2.png",
+  "./img/logo3.png",
 ];
 
 self.addEventListener("install", e => {

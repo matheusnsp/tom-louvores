@@ -21,7 +21,13 @@
 //
 //  O calendário vive atrás de um botão, não na página: fixo na
 //  tela ele disputava largura com as colunas de culto, que são o
-//  que a equipe realmente vem ver. Só o admin tem o botão.
+//  que a equipe realmente vem ver.
+//
+//  Ele aparece para TODOS: o baixista quer conferir a escala de
+//  duas semanas à frente na quinta-feira, e esconder o mês não
+//  protegeria nada — os dados vêm do mesmo endpoint público de
+//  qualquer forma. Atrás do login ficam só as AÇÕES: cancelar,
+//  restaurar, apagar e criar culto eventual.
 // ============================================================
 
 // por quantas horas um culto que já começou continua sendo "o culto"
@@ -358,11 +364,6 @@ function calGarantirPadroes() {
 //  BOTÃO
 // ============================================================
 
-function calRemoverBarra() {
-  const b = document.getElementById("calBar");
-  if (b) b.remove();
-}
-
 function calMontarBarra() {
   if (document.getElementById("calBar")) return;
 
@@ -452,7 +453,6 @@ function calMontarModal() {
 }
 
 function calAbrir() {
-  if (!calAdmin()) { abrirLogin(); return; }
   calGarantirPadroes();
   calMontarModal();
   calFormAberto = false;
@@ -545,7 +545,8 @@ function calRenderDia(prox) {
   const box = document.getElementById("calDiaBox");
   if (!box) return;
 
-  const ocs   = calOcorrenciasDoDia(calDiaSel, true);
+  const admin = calAdmin();
+  const ocs   = calOcorrenciasDoDia(calDiaSel, admin);   // cancelado só p/ admin
   const dLong = calData(calDiaSel).toLocaleDateString("pt-BR",
     { weekday: "long", day: "2-digit", month: "long" });
 
@@ -561,11 +562,13 @@ function calRenderDia(prox) {
       : o.extra ? `<span class="cal-tag ev">Eventual</span>`
       : "";
 
-    const acao = o.extra
-      ? `<button class="cal-acao perigo" onclick="calApagarExtra('${o.key}')">Apagar</button>`
-      : o.cancelado
-        ? `<button class="cal-acao" onclick="calRestaurar('${o.key}')">Restaurar</button>`
-        : `<button class="cal-acao perigo" onclick="calCancelar('${o.key}')">Não vai ter</button>`;
+    // quem só visualiza vê o que acontece, não o que mudar
+    const acao = !admin ? ""
+      : o.extra
+        ? `<button class="cal-acao perigo" onclick="calApagarExtra('${o.key}')">Apagar</button>`
+        : o.cancelado
+          ? `<button class="cal-acao" onclick="calRestaurar('${o.key}')">Restaurar</button>`
+          : `<button class="cal-acao perigo" onclick="calCancelar('${o.key}')">Não vai ter</button>`;
 
     html += `
       <div class="cal-oc ${o.cancelado ? "off" : ""}">
@@ -574,7 +577,7 @@ function calRenderDia(prox) {
       </div>`;
   });
 
-  html += calFormAberto ? `
+  html += !admin ? "" : calFormAberto ? `
     <div class="cal-form">
       <input class="finput" id="calExtraNome" placeholder="Nome do culto (ex.: Vigília)" maxlength="60">
       <div class="cal-form-row">
@@ -699,15 +702,6 @@ function calAjustarGrade() {
 // o render das colunas passa a ser o render do dia escolhido
 const calRenderCultosOriginal = renderCultos;
 renderCultos = function () {
-  if (!calAdmin()) {
-    // deslogado: sempre o próximo culto, sem botão e sem calendário
-    calIrParaProximo();
-    calFechar();
-    calRemoverBarra();
-    calRenderCultosOriginal();
-    calAjustarGrade();
-    return;
-  }
   calGarantirPadroes();
   calRenderCultosOriginal();   // colunas dos cultos do dia
   calMontarBarra();
@@ -716,7 +710,7 @@ renderCultos = function () {
   if (calAberto()) calRender();   // mantém o modal em sincronia
 };
 
-// entrar/sair põe e tira o botão
+// entrar/sair muda só as ações dentro do modal, não o calendário
 if (typeof aplicarEstadoAuth === "function") {
   const calAuthOriginal = aplicarEstadoAuth;
   aplicarEstadoAuth = function () {
@@ -732,12 +726,6 @@ setInterval(() => {
 
   const p = calProximo();
   if (!p) return;
-
-  if (!calAdmin()) {
-    if (p.data !== calDiaSel) renderCultos();
-    return;
-  }
-
   if (calFormAberto) return;
 
   if (p.data !== calDiaSel) {
