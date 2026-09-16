@@ -185,7 +185,9 @@ async function lyraCarregarIndice() {
           title: r.title,
           artist: r.artist,
           base_key: r.base_key,
-          keys: r.available_keys || [],
+          // o site transpõe sozinho, então todo tom fica disponível,
+          // mesmo quando o Lyra só cadastrou o original
+          keys: lyraDozeTons(r.base_key) || r.available_keys || [],
           versao: r.updated_at || "",       // muda quando você edita a cifra
           has_chords: true,
         };
@@ -664,10 +666,13 @@ if (document.readyState === "loading") {
 // ── Reconhecer linhas de acorde ──────────────────────────────
 
 //  Aceita qualificador e número em qualquer ordem: E7M(9), C#m7(11),
-//  A7(2), Bm, F#/A#. Antes o "7M" não passava, porque o número vinha
-//  obrigatoriamente depois da letra, e a linha inteira deixava de ser
-//  tratada como linha de acorde.
-const LYRA_RE_ACORDE = /^[A-G](#|b)?((m|maj|min|sus|dim|aug|add|M|°|\+)|\d+|\(.*?\))*(\/[A-G](#|b)?)?$/;
+//  A7(2), Bm, F#/A#. Também A7/4 e Bb9/7, em que a barra seguida de
+//  número faz parte do nome e não é baixo.
+const LYRA_RE_ACORDE = /^[A-G](#|b)?((m|maj|min|sus|dim|aug|add|M|°|º|ø|Δ|\+|-|#|b)|\d+|\(.*?\)|\/\d+)*(\/[A-G](#|b)?)?$/;
+
+//  Anotações que aparecem no meio das linhas de acorde e não
+//  devem contar como palavra: "Riff 2", "Bis", "2x", "(x3)".
+const LYRA_ANOTACAO = /^\(?(riff|bis|\d+x|x\d+|\d+)\)?:?$/i;
 
 function lyraEhLinhaDeAcorde(linha) {
   const t = linha.trim();
@@ -678,27 +683,165 @@ function lyraEhLinhaDeAcorde(linha) {
   //  "( Cm  Cm7(9) )" tem 2 acordes em 4 pedaços — 0,50 — e ficava
   //  de fora, sem cor e sem clique.
   const tokens = t.split(/\s+/).filter(Boolean)
-    .filter(tk => !/^[()\[\]|/\-–—.,:;]+$/.test(tk));
+    .filter(tk => !/^[()\[\]|/\-–—.,:;]+$/.test(tk))
+    .filter(tk => !LYRA_ANOTACAO.test(tk));
   if (!tokens.length) return false;
 
-  //  Tenta o pedaço como veio. Só se falhar tira um par de
-  //  parênteses que o envolva — cortar o fecha-parênteses sem
-  //  critério estragava "Cm7(9)", que vira "Cm7(9" e não é nada.
+  //  Tenta o pedaço como veio, sem ponto colado ("G."). Só se falhar
+  //  tira um par de parênteses que o envolva — cortar o
+  //  fecha-parênteses sem critério estragava "Cm7(9)".
   const ehAcorde = tk => {
-    if (LYRA_RE_ACORDE.test(tk)) return true;
-    const semColchete = tk.replace(/^\[|\]$/g, "");
+    const limpo = tk.replace(/[.,;:]+$/, "");
+    if (LYRA_RE_ACORDE.test(limpo)) return true;
+    const semColchete = limpo.replace(/^\[|\]$/g, "");
     if (LYRA_RE_ACORDE.test(semColchete)) return true;
     const m = semColchete.match(/^\((.*)\)$/);
     return !!m && LYRA_RE_ACORDE.test(m[1]);
   };
-  const acordes = tokens.filter(ehAcorde);
-  return acordes.length / tokens.length >= 0.6;
+  return tokens.filter(ehAcorde).length / tokens.length >= 0.6;
 }
 
-// ── Música completa: cifra em todos os tons + letra ──────────
+// ── Transposição feita aqui ──────────────────────────────────
+//  O servidor pula a linha inteira quando não entende um acorde
+//  (Gm7(9/11), A7/4, Bb9/7, "G.", "[Solo 2] C D"). Transpondo a
+//  partir do tom original, o site não depende disso.
+
+const LYRA_SUST = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const LYRA_BEM  = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+const LYRA_ALT  = { "Cb":11, "Fb":4, "E#":5, "B#":0 };
+
+function lyraPc(nota) {
+  if (nota in LYRA_ALT) return LYRA_ALT[nota];
+  let i = LYRA_SUST.indexOf(nota);
+  if (i < 0) i = LYRA_BEM.indexOf(nota);
+  return i < 0 ? null : i;
+}
+
+//  Tom com bemol na armadura escreve os acidentes com bemol.
+//  Menor segue a relativa maior: Dm → F, Gm → Bb.
+function lyraUsaBemol(tom) {
+  const { raiz, menor } = lyraPartesTom(tom);
+  if (raiz.includes("b")) return true;
+  if (raiz.includes("#")) return false;
+  return menor ? ["D","G","C","F"].includes(raiz) : raiz === "F";
+}
+
+function lyraMoverNota(nota, semis, bemol) {
+  const pc = lyraPc(nota);
+  if (pc === null) return nota;
+  return (bemol ? LYRA_BEM : LYRA_SUST)[(pc + semis + 120) % 12];
+}
+
+//  Só a raiz e o baixo mudam. A barra dentro do parêntese e o
+//  "/4" de A7/4 fazem parte do nome, não são baixo.
+function lyraTransporAcorde(ac, semis, bemol) {
+  if (!LYRA_RE_ACORDE.test(ac)) return null;
+  const raiz  = ac.match(/^[A-G][#b]?/)[0];
+  const baixo = ac.match(/\/([A-G][#b]?)$/);
+  const meio  = ac.slice(raiz.length, baixo ? baixo.index : ac.length);
+  return lyraMoverNota(raiz, semis, bemol) + meio +
+         (baixo ? "/" + lyraMoverNota(baixo[1], semis, bemol) : "");
+}
+
+//  O pedaço pode vir com ponto colado ("G.") ou entre parênteses
+//  ("(Cm", "Cm7(9))"). O que não é acorde ("Bis", "Riff") volta intacto.
+function lyraTransporPedaco(tk, semis, bemol) {
+  const [, nucleo, pont] = tk.match(/^(.*?)([.,;:]*)$/);
+  const tentar = (miolo, antes, depois) => {
+    const r = lyraTransporAcorde(miolo, semis, bemol);
+    return r === null ? null : antes + r + depois + pont;
+  };
+  let m;
+  return tentar(nucleo, "", "")
+    ?? ((m = nucleo.match(/^\((.*)\)$/)) && tentar(m[1], "(", ")"))
+    ?? ((m = nucleo.match(/^\((.*)$/))   && tentar(m[1], "(", ""))
+    ?? ((m = nucleo.match(/^(.*)\)$/))   && tentar(m[1], "", ")"))
+    ?? tk;
+}
+
+//  Cada acorde fica na coluna em que estava, em cima da sílaba
+//  certa. Se um acorde cresceu (C → C#), o seguinte anda só o
+//  necessário para não grudar.
+function lyraTransporLinha(linha, semis, bemol) {
+  let saida = "";
+  const re = /\S+/g;
+  let m;
+  while ((m = re.exec(linha))) {
+    const novo = lyraTransporPedaco(m[0], semis, bemol);
+    const col  = saida.length && m.index <= saida.length ? saida.length + 1 : m.index;
+    saida = saida.padEnd(col, " ") + novo;
+  }
+  return saida;
+}
+
+function lyraTransporTexto(texto, tomDe, tomPara) {
+  const de   = lyraPc(lyraPartesTom(tomDe).raiz);
+  const para = lyraPc(lyraPartesTom(tomPara).raiz);
+  if (de === null || para === null) return null;
+  const semis = (para - de + 12) % 12;
+  if (!semis) return texto;                  // mesmo tom: o original, sem mexer
+  const bemol = lyraUsaBemol(tomPara);
+
+  return texto.split("\n").map(linha => {
+    //  "Tom: F" também anda. Algumas cifras escrevem ali a relativa
+    //  (Tom: F numa música cadastrada em Dm), por isso não é trocado
+    //  direto pelo tom escolhido.
+    const cab = linha.match(/^(\s*Tom:\s*)(\S+)(.*)$/i);
+    if (cab) {
+      const n = cab[2].match(/^([A-G][#b]?)(.*)$/);
+      return n ? cab[1] + lyraMoverNota(n[1], semis, bemol) + n[2] + cab[3] : linha;
+    }
+
+    // etiqueta na frente dos acordes: "[Solo 2] C D G"
+    const et = linha.match(/^(\s*\[[^\]]*\]\s*)(.*)$/);
+    if (et) {
+      if (!et[2].trim() || !lyraEhLinhaDeAcorde(et[2])) return linha;
+      const resto = lyraTransporLinha(" ".repeat(et[1].length) + et[2], semis, bemol);
+      return et[1] + resto.slice(et[1].length);
+    }
+    return lyraEhLinhaDeAcorde(linha) ? lyraTransporLinha(linha, semis, bemol) : linha;
+  }).join("\n");
+}
+
+// "fs" → "F#", "bb" → "Bb", "ebm" → "Ebm", "b" → "B"
+function lyraTomDoSlug(slug) {
+  const m = String(slug).match(/^([a-g])(s|b)?(m)?$/);
+  if (!m) return null;
+  return m[1].toUpperCase() + (m[2] === "s" ? "#" : m[2] || "") + (m[3] || "");
+}
+
+//  Refaz todos os tons a partir do original, assim que a música
+//  chega. Qualquer parte do site que leia porTom (o leitor, o
+//  painel de opções, o que vier depois) já recebe a versão certa.
+function lyraRefazerTons(musica) {
+  const base = musica.base_key;
+  const original = base && musica.porTom.get(lyraKeySlug(base));
+  if (!original) return musica;
+  for (const chave of [...musica.porTom.keys()]) {
+    const tom = lyraTomDoSlug(chave);
+    if (!tom) continue;
+    const texto = lyraTransporTexto(original, base, tom);
+    if (texto !== null) musica.porTom.set(chave, texto);
+  }
+  return musica;
+}
+
+//  Os 12 tons a partir do original, com os nomes que o Lyra usa.
+//  Assim até música cadastrada num tom só pode ser transposta.
+function lyraDozeTons(base) {
+  const { raiz, menor } = lyraPartesTom(base || "");
+  const pc = lyraPc(raiz);
+  if (pc === null) return null;
+  const lista = menor
+    ? ["Cm","C#m","Dm","Ebm","Em","Fm","F#m","Gm","G#m","Am","Bbm","Bm"]
+    : ["C","Db","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+  return Array.from({ length: 12 }, (_, i) => lista[(pc + i) % 12]);
+}
+
+// ── Música completa: cifra + letra ───────────────────────────
 //  Uma requisição por música (?include=all_keys) traz a letra e a
-//  cifra já transposta em todos os tons. Trocar de tom e abrir a
-//  letra passam a ser instantâneos, sem ir à rede de novo.
+//  cifra. A transposição é refeita aqui, a partir do tom original;
+//  trocar de tom e abrir a letra não vão à rede de novo.
 
 const lyraMusicaPendente = new Map();   // slug → carregamento em andamento
 
@@ -712,6 +855,7 @@ async function lyraCarregarMusica(slug, forcar = false) {
   const carga = (async () => {
     const salva = forcar ? null : await lyraDoDisco(slug);
     if (salva && salva.porTom.size) {
+      lyraRefazerTons(salva);            // o que foi salvo antes da correção também sai certo
       lyraCacheMusica.set(slug, salva);
       return salva;
     }
@@ -731,7 +875,7 @@ async function lyraCarregarMusica(slug, forcar = false) {
     // resposta sem all_keys: ao menos o tom base vem em "chords"
     if (!porTom.size && d.chords) porTom.set(lyraKeySlug(d.base_key || ""), d.chords);
 
-    const musica = { lyrics: d.lyrics || "", porTom, base_key: d.base_key || "" };
+    const musica = lyraRefazerTons({ lyrics: d.lyrics || "", porTom, base_key: d.base_key || "" });
     lyraCacheMusica.set(slug, musica);
     // o que foi aberto uma vez fica guardado, sem depender do botão
     lyraGravarNoDisco(slug, musica).catch(() => {});
@@ -745,10 +889,20 @@ async function lyraCarregarMusica(slug, forcar = false) {
 
 async function lyraCarregarCifra(slug, tomLyra) {
   const musica = await lyraCarregarMusica(slug);
-  const chave  = lyraKeySlug(tomLyra);
+
+  //  Transpõe a partir do tom original, em vez de usar as versões
+  //  prontas do servidor, que deixavam linhas sem transpor.
+  const base = musica.base_key;
+  const original = base && musica.porTom.get(lyraKeySlug(base));
+  if (original) {
+    const texto = lyraTransporTexto(original, base, tomLyra);
+    if (texto !== null) return texto;
+  }
+
+  // reserva: sem o original, usa o que o servidor mandou
+  const chave = lyraKeySlug(tomLyra);
   if (musica.porTom.has(chave)) return musica.porTom.get(chave);
 
-  // tom que não veio no pacote: busca o avulso e guarda junto
   const r = await fetch(`${LYRA_API}/songs/${slug}/chords/${chave}`);
   if (!r.ok) return "";
   const d = await r.json();
@@ -891,7 +1045,7 @@ async function lyraIrPara(direcao) {
       tom: temCifra
         ? (lyraTomDisponivel(item.tom, song.keys) || song.base_key || (song.keys || [])[0])
         : "",
-        tonsDaCasa: [item.tom].filter(Boolean),
+      tonsDaCasa: [item.tom].filter(Boolean),
       nav: { itens, idx: i },
     };
 
