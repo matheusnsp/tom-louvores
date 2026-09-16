@@ -37,49 +37,91 @@ function acLer(nome) {
   const barra = resto.match(/\/([A-G][#b]?)$/);
   if (barra) { baixo = acPitch(barra[1]); resto = resto.slice(0, barra.index); }
 
-  const t = resto.replace(/\s+/g, "");
-  const tem = re => re.test(t);
+  //  Normaliza as grafias antes de ler: toda sétima maior vira
+  //  "7M", e o meio-diminuto vira m7(b5).
+  let t = resto.replace(/\s+/g, "")
+    .replace(/[°º]/g, "dim")
+    .replace(/ø/g, "m7(b5)")
+    .replace(/maj7|M7|Δ7?|7\+/g, "7M");
 
-  const menor  = /^(m|min)(?!aj)/.test(t);
-  const dim    = tem(/^(dim|°|o)/);
-  const aum    = tem(/^(aug|\+)/);
-  const sus2   = tem(/(sus2|^2)/);
-  const sus4   = tem(/(sus4|^4)/);
-  const setima = tem(/(^|[^0-9])7(?!M)/) || tem(/\(7\)/);
-  const maj7   = tem(/(7M|maj7|M7)/);
-  const sexta  = tem(/(^|[^0-9])6/);
-  const nona   = tem(/9/);
+  //  qualidade: só no começo do sufixo
+  let menor = false, dim = false, aum = false;
+  if      (/^dim/.test(t))     { dim = true;   t = t.slice(3); }
+  else if (/^aug/.test(t))     { aum = true;   t = t.slice(3); }
+  else if (/^\+/.test(t))      { aum = true;   t = t.slice(1); }
+  else if (/^min/.test(t))     { menor = true; t = t.slice(3); }
+  else if (/^m(?!aj)/.test(t)) { menor = true; t = t.slice(1); }
+
+  //  Alterações (b9, #11, 5+, -5...) saem do texto antes de ler as
+  //  extensões naturais. Sem isso, "b9" era lido como 9 natural.
+  const GRAU = { "5": 7, "9": 2, "11": 5, "13": 9 };
+  const altera = [];
+  t = t.replace(/([b#+-])(13|11|5|9)|(13|11|5|9)([+-])/g, (_, p1, g1, g2, p2) => {
+    const sinal = p1 || p2;
+    altera.push({ grau: GRAU[g1 || g2], delta: (sinal === "b" || sinal === "-") ? -1 : 1 });
+    return " ";
+  });
+
+  //  a sétima maior sai do texto para não ser lida também como menor
+  const maj7 = /7M/.test(t);
+  t = t.replace(/7M/g, " ");
+
+  const tem = re => re.test(t);
+  const sus2   = tem(/sus2|^2/);
+  const sus4   = tem(/sus4|^4|(^|[^0-9])4(?![0-9])/);   // C4, C7(4)
+  const setima = tem(/(^|[^0-9])7(?![0-9])/);
+  const sexta  = tem(/(^|[^0-9])6(?![0-9])/);
+  const nona   = tem(/(^|[^0-9])9/);
   const onze   = tem(/11/);
   const treze  = tem(/13/);
 
   const g = new Set([0]);
+  const exigidas = [];          // notas que a forma do violão não pode omitir
+  const por = x => { x = ((x % 12) + 12) % 12; g.add(x); exigidas.push(x); };
 
-  if (dim)            g.add(3), g.add(6);
-  else if (aum)       g.add(4), g.add(8);
-  else if (sus2 && !menor) g.add(2), g.add(7);
-  else if (sus4 && !menor) g.add(5), g.add(7);
-  else                g.add(menor ? 3 : 4), g.add(7);
+  let quinta = dim ? 6 : aum ? 8 : 7;
+  const alt5 = altera.find(a => a.grau === 7);
+  if (alt5) quinta = 7 + alt5.delta;          // b5 / #5 substituem a justa
 
-  if (maj7)   g.add(11);
-  if (setima) g.add(10);
-  if (sexta && !setima && !maj7) g.add(9);
-  if (nona)   g.add(2);
-  if (onze)   g.add(5);
-  if (treze)  g.add(9);
+  if (dim)                 g.add(3);
+  else if (aum)            g.add(4);
+  else if (sus2 && !menor) g.add(2);
+  else if (sus4 && !menor) g.add(5);
+  else                     g.add(menor ? 3 : 4);
+  g.add(quinta);
+  if (alt5) exigidas.push(quinta);
+
+  if (maj7)        por(11);
+  else if (setima) por(dim ? 9 : 10);         // °7 leva sétima diminuta
+  if (sexta && !setima && !maj7) por(9);
+  if (nona)  por(2);
+  if (onze)  por(5);
+  if (treze) por(9);
+  altera.filter(a => a.grau !== 7).forEach(a => por(a.grau + a.delta));
 
   const pcs = [...g].sort((a, b) => a - b);
   return {
     raiz, pcs, baixo,
-    // notas reais, já em altura absoluta de classe
     notas: pcs.map(x => (raiz + x) % 12),
+    exigidas: [...new Set(exigidas)],
     rotulo: String(nome).trim(),
     menor, dim, aum, sus: (sus2 || sus4) && !menor,
-    // a nota que dá identidade ao acorde e não pode faltar na forma
     caracteristica: dim ? 3 : (sus4 && !menor) ? 5 : (sus2 && !menor) ? 2 : (menor ? 3 : 4),
   };
 }
 
 function acNomeNota(pc) { return AC_NOTAS[((pc % 12) + 12) % 12]; }
+
+//  As notas do acorde na ordem em que o teclado mostra e toca,
+//  em semitons a partir da nota mais grave. O baixo abre e cada
+//  nota do acorde entra uma vez, subindo. A nota que já é o baixo
+//  (o F# de D/F#) não se repete em cima.
+function acGrausTeclado(ac) {
+  const inicio = ac.baixo !== null ? ac.baixo : ac.raiz;
+  const graus = new Set([0]);
+  ac.pcs.forEach(g => graus.add(((ac.raiz + g) - inicio + 24) % 12));
+  return { inicio, graus: [...graus].sort((a, b) => a - b) };
+}
 
 // ── Violão ──────────────────────────────────────────────────
 //  Afinação padrão, em semitons absolutos (E2 = 40)
@@ -143,10 +185,8 @@ function acFormasViolao(ac, limite = 3) {
       // tônica e terça (ou 2ª/4ª do sus) são obrigatórias
       if (!soam.has(ac.raiz) || !soam.has(terca)) return;
       // sétima e nona, quando o nome pede, também
-      for (const grau of ac.pcs) {
-        if (grau >= 9 || grau === 2 || grau === 5) {
-          if (!soam.has((ac.raiz + grau) % 12)) return;
-        }
+      for (const grau of ac.exigidas) {
+        if (!soam.has((ac.raiz + grau) % 12)) return;
       }
 
       achadas.push({ forma, pos: presas.length ? Math.min(...presas) : 0 });
@@ -276,7 +316,7 @@ function acSvgTeclado(ac, compacto = false) {
   const BRANCAS = [0, 2, 4, 5, 7, 9, 11];
   const ehBranca = pc => BRANCAS.includes(((pc % 12) + 12) % 12);
 
-  const inicio = ac.baixo !== null ? ac.baixo : ac.raiz;
+  const { inicio, graus } = acGrausTeclado(ac);
   const base = 0;                 // dó
   const desloca = inicio;         // a que altura o acorde começa
 
@@ -303,16 +343,8 @@ function acSvgTeclado(ac, compacto = false) {
     if (!pos[s].branca)
       sv += `<rect x="${pos[s].x}" y="2" width="${pw}" height="${ph}" rx="1.4" class="ac-preta"/>`;
 
-  //  cada nota do acorde uma vez, subindo a partir da inicial
-  const graus = new Set();
-  if (ac.baixo !== null) graus.add(0);                       // o baixo abre
-  ac.pcs.forEach(g => {
-    const rel = ((ac.raiz + g) - inicio + 24) % 12;
-    graus.add(rel === 0 && ac.baixo !== null ? 12 : rel);     // não pisa no baixo
-  });
-
   const r = compacto ? 3.4 : 4.4;
-  [...graus].sort((a, b) => a - b).forEach(rel => {
+  graus.forEach(rel => {
     const s = desloca + rel;
     if (!pos[s]) return;
     const ehRaiz = ((base + s) % 12) === ac.raiz;
@@ -329,7 +361,7 @@ function acSvgTeclado(ac, compacto = false) {
 //  LIGAÇÃO COM O LEITOR
 // ============================================================
 
-const AC_RE_TOKEN = /^[A-G](#|b)?((m|maj|min|sus|dim|aug|add|M|°|\+)|\d+|\(.*?\))*(\/[A-G](#|b)?)?$/;
+const AC_RE_TOKEN = LYRA_RE_ACORDE;
 //  A casa do capotraste fica guardada mesmo quando ele está
 //  desligado: quem toca sempre na 2ª não precisa reescolher.
 let acCapoCasa = Number(localStorage.getItem("tl_capo_casa") || 2);
@@ -487,24 +519,29 @@ lyraCifraParaHTML = function (texto) {
 };
 
 function acMarcarTokens(linha) {
-  // o token inclui parênteses: C#m7(11) é um acorde só, não dois.
-  // Um acorde envolvido, como "(Cm)", também vira botão — mas os
-  // parênteses ficam de fora dele, para o texto não mudar.
-  return linha.replace(/[^\s]+/g, tk => {
-    const nucleo = tk.match(/^(\(*)(.*?)(\)*)$/);
-    const [, abre, meio, fecha] = nucleo;
-    const limpo = meio.replace(/[.,;]+$/, "");
-    const marcar = alvo =>
-      `<button type="button" class="ac-tk" data-ac="${alvo}">${alvo}</button>`;
+  const marcar = alvo =>
+    `<button type="button" class="ac-tk" data-ac="${alvo}">${alvo}</button>`;
 
-    //  Etiqueta de divisão no meio de uma linha de acordes, como
-    //  "[Intro] F C Em Am": ela recebe a cor da seção, e os
-    //  acordes ao lado seguem laranja.
+  //  Etiqueta com espaço, como "[Solo 2]", vira um bloco só
+  //  antes de a linha ser quebrada em pedaços.
+  let prefixo = "";
+  const et = linha.match(/^(\s*)(\[[^\]]*\])/);
+  if (et) {
+    prefixo = et[1] + `<span class="lyra-secao">${et[2]}</span>`;
+    linha = linha.slice(et[0].length);
+  }
+
+  return prefixo + linha.replace(/[^\s]+/g, tk => {
     if (/^\[.+\]$/.test(tk)) return `<span class="lyra-secao">${tk}</span>`;
 
-    if (AC_RE_TOKEN.test(tk) && acLer(tk)) return marcar(tk);           // C#m7(11)
+    if (AC_RE_TOKEN.test(tk) && acLer(tk)) return marcar(tk);          // C#m7(11)
+
+    // "(Cm)", "G." — o que envolve o acorde fica de fora do botão,
+    // mas continua no texto, para o alinhamento não mudar
+    const [, abre, meio, fecha] = tk.match(/^(\(*)(.*?)(\)*)$/);
+    const limpo = meio.replace(/[.,;:]+$/, "");
     if (limpo && AC_RE_TOKEN.test(limpo) && acLer(limpo))
-      return abre + marcar(limpo) + fecha;                              // (Cm)
+      return abre + marcar(limpo) + meio.slice(limpo.length) + fecha;
     return tk;
   });
 }
@@ -656,7 +693,7 @@ function acDesenhar() {
   const v = alvo.querySelector("#acVariarPainel");
   if (v) v.addEventListener("click", () => { acPainelVar++; acDesenhar(); });
   const ou = alvo.querySelector("#acOuvirBtn");
-  if (ou) ou.addEventListener("click", () => acOuvir(acAtual, ou));
+  if (ou) ou.addEventListener("click", () => acOuvir(acAtual, ou, acPainelVar));
 }
 
 //  Toque num acorde da cifra.
@@ -946,8 +983,9 @@ function acPintarBalao() {
   if (v) v.addEventListener("click", e => {
     e.stopPropagation(); acBalaoVar++; acPintarBalao();
   });
+  //  o som segue a forma que o balão está mostrando, não a do painel
   const ob = b.querySelector("#acOuvirBalao");
-  if (ob) ob.addEventListener("click", e => { e.stopPropagation(); acOuvir(acBalaoAc, ob); });
+  if (ob) ob.addEventListener("click", e => { e.stopPropagation(); acOuvir(acBalaoAc, ob, acBalaoVar); });
 }
 
 function acEsconderBalao() {
@@ -994,7 +1032,6 @@ if (AC_TEM_HOVER) {
 if (!AC_TEM_HOVER) {
   document.addEventListener("scroll", acEsconderBalao, true);
   window.addEventListener("resize", acEsconderBalao);
-  window.addEventListener("resize", () => { cancelar(); ultimo = null; acEsconderBalao(); });
 }
 
 // ============================================================
@@ -1094,14 +1131,14 @@ function acNota(midi, quando, dur, ganho) {
 
 //  As notas que vão soar. No violão sai a forma que está na tela,
 //  corda por corda; no teclado, a sequência que o desenho mostra.
-function acNotasParaTocar(nome) {
+function acNotasParaTocar(nome, variacao = acPainelVar) {
   const ac = acLer(nome);
   if (!ac) return [];
 
   if (acAba === "violao") {
     const nomeForma = acCapo_() ? acComCapo(nome, acCapo_()) : nome;
-    const f = acFormasViolao(acLer(nomeForma), 3)[acPainelVar % 3] ||
-              acFormasViolao(acLer(nomeForma), 1)[0];
+    const formas = acFormasViolao(acLer(nomeForma), 3);
+    const f = formas.length ? formas[variacao % formas.length] : null;
     if (f) {
       const capo = acCapo_();
       return f.forma
@@ -1110,14 +1147,9 @@ function acNotasParaTocar(nome) {
     }
   }
 
-  const inicio = ac.baixo !== null ? ac.baixo : ac.raiz;
-  const graus = new Set();
-  if (ac.baixo !== null) graus.add(0);
-  ac.pcs.forEach(g => {
-    const rel = ((ac.raiz + g) - inicio + 24) % 12;
-    graus.add(rel === 0 && ac.baixo !== null ? 12 : rel);
-  });
-  return [...graus].sort((a, b) => a - b).map(rel => 48 + inicio + rel);
+  //  as mesmas notas que o desenho do teclado mostra
+  const { inicio, graus } = acGrausTeclado(ac);
+  return graus.map(rel => 48 + inicio + rel);
 }
 
 function acParar() {
@@ -1125,9 +1157,9 @@ function acParar() {
   acTocando = [];
 }
 
-function acOuvir(nome, botao) {
+function acOuvir(nome, botao, variacao) {
   acParar();
-  const notas = acNotasParaTocar(nome);
+  const notas = acNotasParaTocar(nome, variacao);
   if (!notas.length) return;
 
   const ctx = acCtx();
