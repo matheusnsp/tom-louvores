@@ -11,9 +11,14 @@
 //    · as amostras de som → do cache, e só busca se faltar
 //    · o banco de dados (Supabase, Lyra) → sempre da rede, com o
 //      cache como rede de segurança quando ela falha
+//
+//  IMPORTANTE: troque o número do CACHE a cada publicação. É ele
+//  que faz o navegador instalar a versão nova. Sem trocar, os js
+//  e o css continuam saindo do cache antigo — a página pode ser
+//  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v13";
+const CACHE = "tom-louvores-v17";
 
 const APP = [
   "./",
@@ -25,6 +30,7 @@ const APP = [
   "./js/lyra.js",
   "./js/acordes.js",
   "./js/opcoes.js",
+  "./js/seguir.js",
   "./js/afinador.js",
   "./js/metronomo.js",
   "./js/vista-lista.js",
@@ -32,6 +38,7 @@ const APP = [
   "./js/escala-ministrante.js",
   "./js/calendario.js",
   "./js/busca-limpar.js",
+  "./js/menu.js",
   "./js/paginas.js",
   "./js/atualizar.js",
   "./js/sons.js",
@@ -82,6 +89,32 @@ const ehBanco = url =>
 
 const ehAmostra = url => url.hostname.includes("gleitz.github.io");
 
+//  Uma resposta só pode ser lida UMA vez. Quem for guardar precisa
+//  da cópia feita antes de qualquer espera — se o clone acontecer
+//  depois que a página leu o corpo, estoura
+//  "Response body is already used" e nada é guardado.
+//
+//  Por isso o clone é a primeira linha, e o put corre solto.
+function guardar(req, resp) {
+  if (!resp || !resp.ok) return resp;
+  const copia = resp.clone();
+  caches.open(CACHE).then(c => c.put(req, copia)).catch(() => {});
+  return resp;
+}
+
+//  Sinal ruim é pior que sinal nenhum: sem rede o fetch falha na
+//  hora, mas com rede ruim ele fica pendurado e o app não abre.
+//  Passado o limite, vale o que está guardado.
+function comLimite(promessa, ms) {
+  return new Promise((ok, falha) => {
+    const t = setTimeout(() => falha(new Error("tempo esgotado")), ms);
+    promessa.then(
+      r => { clearTimeout(t); ok(r); },
+      e => { clearTimeout(t); falha(e); },
+    );
+  });
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -92,9 +125,7 @@ self.addEventListener("fetch", e => {
   if (ehBanco(url)) {
     e.respondWith((async () => {
       try {
-        const r = await fetch(req);
-        if (r.ok) (await caches.open(CACHE)).put(req, r.clone());
-        return r;
+        return guardar(req, await fetch(req));
       } catch {
         const c = await caches.match(req);
         if (c) return c;
@@ -109,9 +140,7 @@ self.addEventListener("fetch", e => {
     e.respondWith((async () => {
       const c = await caches.match(req);
       if (c) return c;
-      const r = await fetch(req);
-      if (r.ok) (await caches.open(CACHE)).put(req, r.clone());
-      return r;
+      return guardar(req, await fetch(req));
     })());
     return;
   }
@@ -120,13 +149,12 @@ self.addEventListener("fetch", e => {
   //  o app instalado abria sempre a versão guardada e só trocava de
   //  código no segundo lançamento — foi por isso que o recarregar
   //  depois de baixar não funcionava no app, mas funcionava no
-  //  navegador. A cópia guardada continua valendo quando falta rede.
+  //  navegador. A cópia guardada continua valendo quando falta rede
+  //  ou quando ela demora demais para responder.
   if (req.mode === "navigate" || url.pathname.endsWith(".html")) {
     e.respondWith((async () => {
       try {
-        const r = await fetch(req);
-        if (r.ok) (await caches.open(CACHE)).put(req, r.clone());
-        return r;
+        return guardar(req, await comLimite(fetch(req), 3500));
       } catch {
         return (await caches.match(req)) ||
                (await caches.match("./index.html")) ||
@@ -141,10 +169,7 @@ self.addEventListener("fetch", e => {
   if (url.origin === location.origin) {
     e.respondWith((async () => {
       const c = await caches.match(req);
-      const rede = fetch(req).then(r => {
-        if (r.ok) caches.open(CACHE).then(cc => cc.put(req, r.clone()));
-        return r;
-      }).catch(() => null);
+      const rede = fetch(req).then(r => guardar(req, r)).catch(() => null);
       return c || (await rede) || new Response("sem conexão", { status: 503 });
     })());
   }
