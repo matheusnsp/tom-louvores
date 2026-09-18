@@ -20,18 +20,22 @@ const PAGINA = document.body.dataset.pagina || "cultos";
   const st = document.createElement("style");
   st.textContent = `
   /* ── abas Cultos / Repertório ──────────────────────────────
-     No desktop elas moram dentro do header, ao lado da logo:
-     aproveita a faixa larga que estava vazia. No celular o
-     header quebra em duas linhas e as abas viram uma faixa de
-     largura inteira — mas ainda dentro do header, então tudo
-     sobe grudado ao rolar.                                     */
+     As abas moram dentro do header, ao lado da logo, em qualquer
+     tamanho de tela: aproveitam a faixa que estava vazia e o
+     header fica com uma linha só. No celular, com as ações
+     recolhidas no botão do menu, elas continuam ali — o que era
+     uma segunda faixa de 46px volta para a cifra.
+
+     No desktop ficam encostadas na logo, com um fio separando as
+     duas coisas. No celular vão para o centro da tela, e o fio
+     sai: ali ele viraria um risco solto.                        */
   .nav-pag{
     display:flex;align-items:stretch;gap:24px;flex-shrink:0;
     margin-left:28px;
     margin-right:auto;      /* encosta na logo e empurra o resto */
     padding-left:28px;
     border-left:1px solid var(--black4);
-    align-self:stretch;
+    align-self:stretch;     /* o sublinhado cai na borda do header */
   }
   .nav-pag a{
     display:inline-flex;align-items:center;
@@ -65,8 +69,10 @@ const PAGINA = document.body.dataset.pagina || "cultos";
 
   @media(max-width:768px){
     /* abaixo daqui a .toolbar vira display:contents e quem gruda
-       é a .search-row — a faixa acompanha */
-    .search-row{top:var(--header-alt, 110px)}
+       é a .search-row — a faixa acompanha.
+       O número aqui é só a reserva até o JS medir de verdade;
+       com o header em uma linha ele é a altura dela. */
+    .search-row{top:var(--header-alt, 64px)}
     .search-row::before{
       content:"";position:absolute;
       left:0;right:0;bottom:100%;height:26px;
@@ -75,20 +81,33 @@ const PAGINA = document.body.dataset.pagina || "cultos";
     }
   }
   @media(max-width:480px){
-    .search-row{top:var(--header-alt, 102px)}
+    .search-row{top:var(--header-alt, 56px)}
   }
 
+  /*  Uma linha só, sem quebra, e as abas no centro da TELA.
+      Centrar no espaço livre não serve aqui: a logo é larga, o
+      botão do menu tem 40px, e o meio do vão cai bem à direita
+      do meio da tela — as abas acabavam encostando no botão.
+      Fora do fluxo elas também deixam de empurrar os dois. */
   @media(max-width:900px){
-    .header-inner{flex-wrap:wrap;height:auto;padding-top:10px}
-    .logo{order:1}
-    .header-right{order:2}
+    .header-inner{flex-wrap:nowrap;gap:12px;position:relative}
     .nav-pag{
-      order:3;flex-basis:100%;gap:0;
-      margin:10px 0 0;padding-left:0;
+      position:absolute;left:50%;transform:translateX(-50%);
+      top:0;bottom:0;              /* altura inteira: o sublinhado
+                                      encosta na borda de baixo */
+      margin:0;padding-left:0;
       border-left:none;
-      border-top:1px solid var(--black4);
+      gap:22px;
     }
-    .nav-pag a{flex:1;justify-content:center;padding:12px 0 10px;font-size:11px}
+    .nav-pag a{
+      font-size:11px;letter-spacing:0.08em;
+      border-bottom-width:3px;
+    }
+  }
+
+  @media(max-width:600px){
+    .nav-pag{gap:18px}
+    .nav-pag a{font-size:10.5px;letter-spacing:0.06em}
   }
 
   /* Abaixo de 440px a logo e as ações começavam a não caber juntas
@@ -103,6 +122,9 @@ const PAGINA = document.body.dataset.pagina || "cultos";
     .btn-add{padding:8px 10px;font-size:11px;letter-spacing:0.01em}
     .btn-logout{padding:8px 9px;font-size:11px;letter-spacing:0.01em}
     .lyra-dl{padding:8px 9px}
+    /* com tão pouca largura, as abas cedem o espaçamento primeiro */
+    .nav-pag{gap:14px}
+    .nav-pag a{font-size:10px;letter-spacing:0.04em}
   }
 
   /* Abaixo de 350px nem o rótulo cabe: fica só o "+", que já é
@@ -110,6 +132,8 @@ const PAGINA = document.body.dataset.pagina || "cultos";
   @media(max-width:350px){
     .btn-lbl{display:none}
     .btn-add{padding:8px 13px;font-size:15px;line-height:1}
+    .nav-pag{gap:11px}
+    .nav-pag a{font-size:9.5px;letter-spacing:0.02em}
   }
 
   /* Seção vazia não aparece para quem só visualiza. Com login o
@@ -148,8 +172,7 @@ function navMontar() {
     <a href="./"${PAGINA === "cultos" ? ' aria-current="page"' : ""}>Cultos</a>
     <a href="repertorio.html"${PAGINA === "repertorio" ? ' aria-current="page"' : ""}>Repertório</a>`;
 
-  // entra logo depois da logo: no desktop fica à esquerda,
-  // no celular vira a terceira linha do header
+  // entra logo depois da logo, e fica ali em qualquer largura
   const logo = barra.querySelector(".logo");
   logo ? logo.insertAdjacentElement("afterend", nav) : barra.appendChild(nav);
 
@@ -157,10 +180,10 @@ function navMontar() {
 }
 
 // ── altura real do header ───────────────────────────────────
-//  O header muda de altura: ganha uma linha no celular, cresce
-//  com o notch. Em vez de repetir números pelo CSS, medimos uma
-//  vez e guardamos em --header-alt, que a busca usa para grudar
-//  no lugar certo logo abaixo.
+//  O header muda de altura: cresce com o notch, encolhe nos
+//  tamanhos menores. Em vez de repetir números pelo CSS, medimos
+//  uma vez e guardamos em --header-alt, que a busca usa para
+//  grudar no lugar certo logo abaixo.
 
 function ajustarHeader() {
   const h = document.querySelector(".header");

@@ -6,10 +6,13 @@
 //  quebra de linha, tamanho, instrumento, rolagem. Aqui esses
 //  controles saem da barra e viram um menu.
 //
-//    · no computador  → painel que entra pela esquerda
-//    · no celular     → folha que sobe de baixo, com uma barra
-//                       flutuante de atalhos (Tom, Rolagem,
-//                       Instrumento, Opções)
+//    · no computador  → painel que entra pela esquerda, em
+//                       caixas, com o controle na mesma linha
+//    · no celular     → cortina que desce do topo e para na
+//                       metade da tela. Cada linha vira item de
+//                       lista: ícone num quadrado, nome e, logo
+//                       abaixo, o que aquilo faz ou em que pé
+//                       está. Seções separadas por fio, sem caixa.
 //
 //  Os controles não são recriados: os próprios elementos do
 //  lyra.js são movidos para dentro do menu, então tudo que já
@@ -21,6 +24,10 @@
 //  continua fino e a barra flutuante nunca aparecia.
 const OP_MQ = window.matchMedia("(max-width: 820px), (pointer: coarse)");
 const opEhCelular = () => OP_MQ.matches;
+
+//  Painel de edição das cifras, fora deste site. Fica à mão de
+//  todos: ele tem senha própria, e o portão é do lado dele.
+const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
 
 (function opEstilo() {
   const st = document.createElement("style");
@@ -44,6 +51,11 @@ const opEhCelular = () => OP_MQ.matches;
         automática" cabe na mesma linha do controle — foi a medida
         que funcionou desde o começo. Abaixo disso o texto quebra. */
     --op-menu: clamp(320px, 20vw, 380px);
+
+    /*  Altura da cortina no celular. Metade da tela: mostra as
+        opções e deixa ver a cifra por baixo, para conferir o que
+        muda enquanto muda. Um número só, se quiser mais ou menos. */
+    --op-cortina: 50%;
   }
 
   /* ── barra do leitor ──
@@ -65,7 +77,7 @@ const opEhCelular = () => OP_MQ.matches;
   /* ── fundo ──
      No computador o painel empurra a cifra para o lado, então o
      fundo é só uma área invisível para fechar ao clicar fora.
-     No celular ele escurece, como folha que sobe. */
+     No celular ele escurece o que a cortina não cobre. */
   .op-fundo{
     position:absolute;inset:0;z-index:60;
     background:transparent;opacity:0;pointer-events:none;
@@ -115,17 +127,43 @@ const opEhCelular = () => OP_MQ.matches;
   .op-painel.on{transform:none}
   .claro .op-painel{border-right-color:rgba(0,0,0,.14)}
 
-  /* celular: sobe de baixo */
+  /* ── celular: cortina ──
+     Ela desce do topo e para na metade da tela. A saída pelo alto
+     é o movimento que a barra de cima já sugere: as opções vinham
+     dela, e voltam para lá quando fecham. */
   @media (max-width: 820px), (pointer: coarse){
     .op-painel{
-      left:0;right:0;bottom:0;top:auto;width:auto;
-      max-height:78%;
-      border-right:none;border-top:1px solid var(--gray3);
-      border-radius:18px 18px 0 0;
-      transform:translateY(101%);
-      padding:14px 16px calc(22px + env(safe-area-inset-bottom));
+      left:0;right:0;top:0;bottom:auto;width:auto;
+      height:var(--op-cortina);max-height:var(--op-cortina);
+      border-right:none;
+      border-bottom:1px solid var(--gray3);
+      border-radius:0 0 18px 18px;
+      transform:translateY(-101%);
+      /*  Desce solta e freia no fim, como tecido que assenta.
+          Um ease comum chega na metade e para seco. */
+      transition:transform .3s cubic-bezier(.22,1,.36,1);
+      box-shadow:0 18px 36px rgba(0,0,0,.45);
+      padding:calc(12px + env(safe-area-inset-top)) 18px 14px;
     }
-    .claro .op-painel{border-top-color:rgba(0,0,0,.14)}
+    .claro .op-painel{
+      border-bottom-color:rgba(0,0,0,.14);
+      box-shadow:0 18px 36px rgba(0,0,0,.18);
+    }
+
+    /*  A pega deixa de ser puxador do topo e vira a barra da
+        ponta de baixo: é de lá que a cortina é recolhida. */
+    .op-painel .op-pega{order:99;margin:10px auto 0}
+
+    /*  Meia tela é pouco para sete controles, então o conteúdo
+        rola. O cabeçalho fica grudado para o X nunca sair de
+        alcance no meio da rolagem. */
+    .op-painel .op-hd{
+      position:sticky;top:0;z-index:2;
+      background:inherit;
+      margin-bottom:6px;padding-bottom:12px;
+      border-bottom:1px solid var(--gray3);
+    }
+    .claro .op-painel .op-hd{border-bottom-color:rgba(0,0,0,.12)}
   }
 
   .op-hd{
@@ -189,6 +227,15 @@ const opEhCelular = () => OP_MQ.matches;
   }
   .op-controle{display:flex;align-items:center;gap:8px;flex-shrink:0}
 
+  /*  A legenda de cada item. No computador ela não aparece: o
+      menu tem 320px e o controle já divide a linha com o nome —
+      uma terceira coisa ali não caberia. */
+  .op-sub{
+    display:none;
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:400;
+    color:var(--gray);line-height:1.35;
+  }
+
   /*  Numa coluna de 250px o rótulo e o controle não cabem lado a
       lado: "Rolagem automática" quebrava em três linhas e ainda
       ficava por baixo do botão. Abaixo de 340px de menu a linha
@@ -221,12 +268,81 @@ const opEhCelular = () => OP_MQ.matches;
   .op-controle .lyra-tom select{height:34px;font-size:14px}
   .op-controle .ac-vel{width:96px}
 
+  /* ============================================================
+     ── celular: cada linha é um item de lista ──
+     Ícone num quadrado, nome, legenda embaixo, controle na
+     direita. A caixa do grupo sai de cena: em meia tela de
+     altura, sete molduras arredondadas só comem espaço. O que
+     separa as seções é um fio.
+     ============================================================ */
+  .op-rodape{display:none}
+
+  @media (max-width: 820px), (pointer: coarse){
+    .op-painel .op-grupo{
+      background:none;border:none;border-radius:0;
+      overflow:visible;margin:0;
+    }
+    .op-painel .op-grupo + .op-grupo{
+      margin-top:8px;padding-top:8px;
+      border-top:1px solid var(--gray3);
+    }
+    .claro .op-painel .op-grupo + .op-grupo{border-top-color:rgba(0,0,0,.12)}
+    /* dentro da seção os itens não têm fio entre si */
+    .op-painel .op-linha + .op-linha{border-top:none}
+
+    .op-painel .op-linha{
+      display:grid;
+      grid-template-columns:40px 1fr auto;
+      align-items:center;
+      column-gap:14px;row-gap:1px;
+      padding:11px 2px;min-height:62px;
+    }
+    .op-painel .op-ico{
+      grid-column:1;grid-row:1 / span 2;
+      width:40px;height:40px;border-radius:11px;
+      background:rgba(238,158,99,.10);
+      border:1px solid rgba(238,158,99,.22);
+      color:var(--cifra);
+    }
+    .claro .op-painel .op-ico{
+      background:rgba(194,65,12,.08);
+      border-color:rgba(194,65,12,.20);
+      color:var(--cifra-claro);
+    }
+    .op-painel .op-nome{
+      grid-column:2;grid-row:1;
+      font-size:15px;font-weight:600;color:#f0f0f0;
+    }
+    .claro .op-painel .op-nome{color:#1b1b1b}
+    .op-painel .op-sub{
+      display:block;grid-column:2;grid-row:2;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .op-painel .op-controle{grid-column:3;grid-row:1 / span 2}
+    /* o nome do instrumento agora é a legenda: um lugar só */
+    .op-painel .op-controle .op-valor{display:none}
+
+    /*  Assinatura no pé da cortina: diz onde você está sem gastar
+        uma linha de lista com isso. */
+    .op-rodape{
+      display:block;order:98;flex:0 0 auto;
+      margin-top:12px;padding-top:10px;
+      border-top:1px solid var(--gray3);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:11px;color:var(--gray2);text-align:center;
+      letter-spacing:.04em;
+    }
+    .claro .op-rodape{border-top-color:rgba(0,0,0,.12)}
+  }
+
   /* a linha inteira acende quando o atalho traz até ela */
   .op-linha.op-piscar{animation:opPisca 1.1s ease}
   @keyframes opPisca{
     0%,100%{background:transparent}
     30%{background:rgba(238,158,99,.16)}
   }
+
+  #opAdminBtn{gap:6px}
 
   /* ── barra flutuante do celular ── */
   .op-barra{
@@ -310,15 +426,26 @@ const OP_ICO = {
   quebra:  `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h11a3 3 0 1 1 0 6h-3M4 18h4"/><path d="M9 15l-2.5 3L9 21"/></svg>`,
   tema:    `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`,
   capo:    `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M13 4v16M18 4v16M3 9h18"/></svg>`,
+  admin:   `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>`,
 };
 
 // ── montagem ────────────────────────────────────────────────
 
-function opLinha(ico, nome, controle, id) {
+//  sub é a legenda que aparece embaixo do nome no celular. Pode
+//  ser texto fixo ("Evita rolar para o lado") ou, com um id, o
+//  estado do momento — "Violão", "Escuro", "Na 2ª casa".
+function opLinha(ico, nome, controle, id, sub, subId) {
   const d = document.createElement("div");
   d.className = "op-linha";
   if (id) d.id = id;
   d.innerHTML = `<span class="op-ico">${ico}</span><span class="op-nome">${nome}</span>`;
+  if (sub || subId) {
+    const s = document.createElement("span");
+    s.className = "op-sub";
+    if (subId) s.id = subId;
+    s.textContent = sub || "";
+    d.appendChild(s);
+  }
   const c = document.createElement("span");
   c.className = "op-controle";
   if (controle) c.appendChild(controle);
@@ -365,29 +492,46 @@ function opMontar() {
   if (tom) tom.querySelector(".lyra-lbl")?.remove();
 
   p.appendChild(opGrupo(
-    rolagem && opLinha(OP_ICO.rolagem, "Rolagem automática", rolagem, "opLinhaRolagem"),
+    rolagem && opLinha(OP_ICO.rolagem, "Rolagem automática", rolagem,
+                       "opLinhaRolagem", "Desce a cifra sozinha"),
     inst    && opLinhaInstrumento(inst),
   ));
 
   p.appendChild(opGrupo(
-    tom && opLinha(OP_ICO.tom, "Tom", tom, "opLinhaTom"),
+    tom && opLinha(OP_ICO.tom, "Tom", tom,
+                   "opLinhaTom", "Transpõe a cifra inteira"),
     opLinhaCapo(),
   ));
 
   p.appendChild(opGrupo(
-    texto  && opLinha(OP_ICO.texto,  "Tamanho do texto", texto),
-    quebra && opLinha(OP_ICO.quebra, "Quebrar linhas longas", quebra),
-    tema   && opLinha(OP_ICO.tema,   "Fundo claro", tema),
+    texto  && opLinha(OP_ICO.texto,  "Tamanho do texto", texto,
+                      null, "Para ler de longe"),
+    quebra && opLinha(OP_ICO.quebra, "Quebrar linhas longas", quebra,
+                      null, "Evita rolar para o lado"),
+    tema   && opLinha(OP_ICO.tema,   "Fundo", tema,
+                      "opLinhaTema", "", "opTemaSub"),
   ));
+
+  //  Último grupo: sai do site. Fica no fim porque não muda nada
+  //  na tela — é uma saída, não um ajuste de leitura.
+  p.appendChild(opGrupo(opLinhaAdmin()));
+
+  const rodape = document.createElement("div");
+  rodape.className = "op-rodape";
+  rodape.textContent = "tom louvores — leitor";
+  p.appendChild(rodape);
 
   opMontarBarra();
   opMontarBotao();
   opSincronizarInstrumento();
+  opSincronizarTema();
   opAbrirSeCabe();
 }
 
 //  Mostra qual instrumento está valendo, por escrito, além do
-//  ícone: "Instrumento" sozinho não dizia em qual estava.
+//  ícone: "Instrumento" sozinho não dizia em qual estava. No
+//  computador o nome fica ao lado do botão; no celular ele é a
+//  legenda da linha. Os dois saem da mesma função.
 function opLinhaInstrumento(botao) {
   const c = document.createElement("span");
   c.style.cssText = "display:flex;align-items:center;gap:10px";
@@ -396,17 +540,26 @@ function opLinhaInstrumento(botao) {
   nome.id = "opInstNome";
   c.appendChild(nome);
   c.appendChild(botao);
-  const l = opLinha(OP_ICO.inst, "Instrumento", c, "opLinhaInst");
-  return l;
+  return opLinha(OP_ICO.inst, "Instrumento", c, "opLinhaInst", "", "opInstSub");
 }
 
 //  Capotraste é coisa de violão. Com o teclado escolhido, a linha
 //  sai da tela em vez de ficar ali sem efeito nenhum.
 function opSincronizarInstrumento() {
+  const txt  = acAba === "teclado" ? "Teclado" : "Violão";
   const nome = document.getElementById("opInstNome");
-  if (nome) nome.textContent = acAba === "teclado" ? "Teclado" : "Violão";
+  if (nome) nome.textContent = txt;
+  const sub = document.getElementById("opInstSub");
+  if (sub) sub.textContent = txt;
   const capo = document.getElementById("opLinhaCapo");
   if (capo) capo.style.display = acAba === "teclado" ? "none" : "";
+}
+
+//  A legenda do fundo diz em qual dos dois você está, não o que o
+//  botão vai fazer: assim ela não mente enquanto ninguém toca.
+function opSincronizarTema() {
+  const sub = document.getElementById("opTemaSub");
+  if (sub) sub.textContent = lyraClaro ? "Claro" : "Escuro";
 }
 
 //  O capotraste é do painel de acordes, mas o lugar dele é aqui:
@@ -418,7 +571,7 @@ function opLinhaCapo() {
     <input type="checkbox" id="opCapoUsar" style="width:16px;height:16px;accent-color:var(--cifra);cursor:pointer">
     <select id="opCapoSel" class="op-sel">${
       Array.from({length:9},(_,i)=>`<option value="${i+1}">${i+1}ª casa</option>`).join("")}</select>`;
-  const l = opLinha(OP_ICO.capo, "Capotraste", c, "opLinhaCapo");
+  const l = opLinha(OP_ICO.capo, "Capotraste", c, "opLinhaCapo", "", "opCapoSub");
 
   const sel  = c.querySelector("#opCapoSel");
   const usar = c.querySelector("#opCapoUsar");
@@ -430,6 +583,8 @@ function opLinhaCapo() {
     sel.value     = acCapoCasa;
     sel.disabled  = !acCapoUsar;
     sel.style.opacity = acCapoUsar ? "1" : ".45";
+    const sub = l.querySelector("#opCapoSub");
+    if (sub) sub.textContent = acCapoUsar ? `Na ${acCapoCasa}ª casa` : "Sem capotraste";
   };
   usar.addEventListener("change", e => {
     acCapoUsar = e.target.checked;
@@ -441,6 +596,7 @@ function opLinhaCapo() {
   sel.addEventListener("change", e => {
     acCapoCasa = Number(e.target.value);
     localStorage.setItem("tl_capo_casa", acCapoCasa);
+    sincronizar();
     acPintarBalao();
     if (typeof acPintarTira === "function") acPintarTira();
     if (document.getElementById("acPainel")?.classList.contains("on")) acDesenhar();
@@ -449,11 +605,35 @@ function opLinhaCapo() {
   return l;
 }
 
+//  Atalho para o painel onde as cifras são cadastradas e
+//  corrigidas. Fica visível para todos: a senha é lá, não aqui —
+//  e a legenda avisa isso, senão quem não tem acesso cairia numa
+//  tela de login sem entender por quê.
+function opLinhaAdmin() {
+  const b = document.createElement("button");
+  b.className = "lyra-btn";
+  b.id = "opAdminBtn";
+  b.textContent = "Abrir";
+  b.title = "Abrir o painel de cifras do Lyra";
+  b.addEventListener("click", () => { location.href = LYRA_ADMIN_URL; });
+  return opLinha(OP_ICO.admin, "Editar cifras", b,
+                 "opLinhaAdmin", "Painel do Lyra · exige senha");
+}
+
 // ── botão na barra do leitor ────────────────────────────────
 const opPintarInstOriginal = acPintarInstrumento;
 acPintarInstrumento = function (...a) {
   const r = opPintarInstOriginal.apply(this, a);
   opSincronizarInstrumento();
+  return r;
+};
+
+//  O botão do fundo é do lyra.js. Em vez de duplicar o evento, o
+//  menu se pendura na função que já repinta o leitor.
+const opAplicarTemaOriginal = lyraAplicarTema;
+lyraAplicarTema = function (...a) {
+  const r = opAplicarTemaOriginal.apply(this, a);
+  opSincronizarTema();
   return r;
 };
 
@@ -543,6 +723,29 @@ document.addEventListener("keydown", e => {
   }
 }, true);
 
+//  Arrastar a cortina para cima também fecha, sem precisar
+//  acertar o X. O gesto só conta quando o painel já está no topo
+//  da própria rolagem, senão brigaria com a rolagem do conteúdo.
+function opLigarArrasteCortina() {
+  const p = document.getElementById("opPainel");
+  if (!p || p.dataset.arraste) return;
+  p.dataset.arraste = "1";
+
+  let y0 = 0, t0 = 0, noTopo = false;
+
+  p.addEventListener("touchstart", e => {
+    y0 = e.changedTouches[0].clientY;
+    t0 = Date.now();
+    noTopo = p.scrollTop <= 2;
+  }, { passive: true });
+
+  p.addEventListener("touchend", e => {
+    if (!noTopo || OP_LARGO()) return;
+    const dy = e.changedTouches[0].clientY - y0;
+    if (dy < -60 && Date.now() - t0 < 700) opFechar();
+  }, { passive: true });
+}
+
 // ── enxerto ─────────────────────────────────────────────────
 const opRenderOriginal = lyraRenderConteudo;
 lyraRenderConteudo = async function (...a) {
@@ -560,7 +763,9 @@ lyraFecharLeitor = function (...a) {
 // ============================================================
 //  FOLHAS RÁPIDAS
 //  Tocar num atalho da barra flutuante abre só aquele controle,
-//  numa folha pequena. O menu completo continua no "Opções".
+//  numa folha pequena. Elas continuam subindo de baixo: nascem
+//  de um botão que está lá embaixo, perto do dedo. O menu
+//  completo — a cortina — continua no "Opções".
 // ============================================================
 
 let opTomInicial = null;
@@ -654,7 +859,7 @@ function opRapidoFechar() {
 function opRapido(tipo) {
   const r = opRapidoEl();
   if (!r) return;
-  opFechar();                                   // o menu grande sai de cena
+  opFechar();                                   // a cortina sai de cena
   if (typeof afFechar === "function") afFechar();
   document.getElementById("opFundo")?.classList.add("on");
   r.classList.add("on");
@@ -759,7 +964,7 @@ function opLigarAtalhos() {
     b.replaceWith(novo);
     novo.addEventListener("click", () => {
       if (tipos[i]) { opRapido(tipos[i]); }
-      else { opRapidoFechar(); opAbrir(); }     // menu completo recolhe a folha
+      else { opRapidoFechar(); opAbrir(); }     // a cortina recolhe a folha
     });
   });
 }
@@ -773,6 +978,7 @@ const opMontarOriginal = opMontar;
 opMontar = function (...a) {
   const r = opMontarOriginal.apply(this, a);
   opLigarAtalhos();
+  opLigarArrasteCortina();
   return r;
 };
 
@@ -782,3 +988,37 @@ lyraFecharLeitor = function (...a) {
   opTomInicial = null;
   return opFecharLeitorRapido.apply(this, a);
 };
+
+// ============================================================
+//  ATALHO DO PAINEL NO CABEÇALHO DO SITE
+//  O leitor é para tocar; editar a cifra é outra tarefa, e o
+//  lugar dela é o cabeçalho, ao lado do "Baixar cifras".
+//
+//  Vale para todos: o painel tem senha própria. Abaixo de 900px
+//  o menu.js recolhe este botão para dentro da gaveta.
+// ============================================================
+
+(function opAdminNoHeader() {
+  const estilo = document.createElement("style");
+  estilo.textContent = `
+    #adminLyraBtn{display:inline-flex;align-items:center;gap:7px}
+    @media(max-width:600px){#adminLyraBtn .admin-lbl{display:none}}`;
+  document.head.appendChild(estilo);
+
+  const montar = () => {
+    if (document.getElementById("adminLyraBtn")) return;
+    const barra = document.querySelector(".header-right");
+    if (!barra) return;
+    const b = document.createElement("button");
+    b.id = "adminLyraBtn";
+    b.className = "btn-logout";
+    b.title = "Abrir o painel de cifras do Lyra";
+    b.innerHTML = `${OP_ICO.admin}<span class="admin-lbl">Cifras</span>`;
+    b.addEventListener("click", () => { location.href = LYRA_ADMIN_URL; });
+    barra.insertBefore(b, document.getElementById("btnLogout") || null);
+  };
+
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", montar);
+  else montar();
+})();
