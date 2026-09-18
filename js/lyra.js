@@ -139,6 +139,74 @@ function lyraTomDisponivel(tom, keys = []) {
 const LYRA_TABELA  = "musicas_lyra";
 const LYRA_COLUNAS = "slug,title,artist,base_key,available_keys,updated_at";
 
+// ── O id de cada música no Lyra ──────────────────────────────
+//  Os dois bancos conversam por SLUG, mas o painel do Lyra abre
+//  cada música por UUID (/admin/musica/<uuid>). Esse id não está
+//  na musicas_lyra: ele vem da própria API, e fica guardado aqui —
+//  indexado por slug, que é a chave que os dois lados dividem.
+//
+//  Fica num armazenamento próprio, separado do cache das cifras:
+//  assim o id sobrevive a uma limpeza do cache de texto, e mexer
+//  num não arrisca o outro.
+
+const LYRA_IDS_KEY = "lyra_ids_v1";
+const lyraIds = new Map();
+
+try {
+  const salvos = JSON.parse(localStorage.getItem(LYRA_IDS_KEY) || "{}");
+  Object.entries(salvos).forEach(([slug, id]) => lyraIds.set(slug, id));
+} catch (e) { /* nada guardado ainda */ }
+
+let lyraIdsTimer = null;
+function lyraGravarIds() {
+  clearTimeout(lyraIdsTimer);
+  lyraIdsTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(LYRA_IDS_KEY,
+        JSON.stringify(Object.fromEntries(lyraIds)));
+    } catch (e) { /* sem espaço ou modo privado */ }
+  }, 1000);
+}
+
+function lyraGuardarId(slug, id) {
+  if (!slug || !id || lyraIds.get(slug) === id) return;
+  lyraIds.set(slug, id);
+  lyraGravarIds();
+}
+
+function lyraIdDoSlug(slug) {
+  return (slug && lyraIds.get(slug)) || null;
+}
+
+//  Busca só o id. Serve para quem já tinha a cifra guardada no
+//  aparelho antes desta mudança: sem isto, o atalho direto para a
+//  edição só apareceria depois de baixar tudo de novo.
+const lyraIdPendente = new Map();
+
+async function lyraGarantirId(slug) {
+  if (!slug) return null;
+  const ja = lyraIdDoSlug(slug);
+  if (ja) return ja;
+  if (lyraIdPendente.has(slug)) return lyraIdPendente.get(slug);
+
+  const busca = (async () => {
+    try {
+      const r = await fetch(`${LYRA_API}/songs/${slug}`);
+      if (!r.ok) return null;
+      const d = await r.json();
+      //  Os três nomes prováveis do campo. Se a resposta não
+      //  trouxer nenhum, o atalho apenas cai na lista do painel.
+      const id = d && (d.id || d.song_id || d.uuid);
+      if (id) { lyraGuardarId(slug, id); return id; }
+    } catch (e) { /* sem rede: fica para a próxima */ }
+    return null;
+  })();
+
+  lyraIdPendente.set(slug, busca);
+  try { return await busca; }
+  finally { lyraIdPendente.delete(slug); }
+}
+
 // o app.js fala REST direto com o Supabase pelo helper req().
 // Se ele existir, usamos o mesmo caminho (mesma chave, mesmo host).
 async function lyraLerTabela() {
@@ -865,6 +933,9 @@ async function lyraCarregarMusica(slug, forcar = false) {
     if (!r.ok) throw new Error(`Resposta ${r.status}`);
     const d = await r.json();
     lyraContarBytes(url);
+    //  Toda música aberta passa por aqui, então o id do Lyra é
+    //  colhido de graça — sem uma requisição só para isso.
+    lyraGuardarId(slug, d.id || d.song_id || d.uuid);
 
     const porTom = new Map();
     (d.keys || []).forEach(k => {

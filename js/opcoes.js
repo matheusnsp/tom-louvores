@@ -8,11 +8,12 @@
 //
 //    · no computador  → painel que entra pela esquerda, em
 //                       caixas, com o controle na mesma linha
-//    · no celular     → cortina que desce do topo e para na
-//                       metade da tela. Cada linha vira item de
-//                       lista: ícone num quadrado, nome e, logo
-//                       abaixo, o que aquilo faz ou em que pé
-//                       está. Seções separadas por fio, sem caixa.
+//    · no celular     → folha que sobe de baixo, do mesmo canto
+//                       onde fica a barra flutuante. Cada linha
+//                       vira item de lista: ícone num quadrado,
+//                       nome e, logo abaixo, o que aquilo faz ou
+//                       em que pé está. Seções separadas por fio,
+//                       sem caixa.
 //
 //  Os controles não são recriados: os próprios elementos do
 //  lyra.js são movidos para dentro do menu, então tudo que já
@@ -52,10 +53,11 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
         que funcionou desde o começo. Abaixo disso o texto quebra. */
     --op-menu: clamp(320px, 20vw, 380px);
 
-    /*  Altura da cortina no celular. Metade da tela: mostra as
-        opções e deixa ver a cifra por baixo, para conferir o que
-        muda enquanto muda. Um número só, se quiser mais ou menos. */
-    --op-cortina: 50%;
+    /*  Até onde a folha sobe. Começou em 78%, com cinco linhas.
+        Com o afinador, o metrônomo e o acompanhar são nove — mas
+        passar de 80% deixa de ser folha e vira tela cheia, sem
+        mostrar mais nada da cifra por baixo. O resto rola. */
+    --op-folha: 78%;
   }
 
   /* ── barra do leitor ──
@@ -77,7 +79,7 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
   /* ── fundo ──
      No computador o painel empurra a cifra para o lado, então o
      fundo é só uma área invisível para fechar ao clicar fora.
-     No celular ele escurece o que a cortina não cobre. */
+     No celular ele escurece o que a folha não cobre. */
   .op-fundo{
     position:absolute;inset:0;z-index:60;
     background:transparent;opacity:0;pointer-events:none;
@@ -90,6 +92,13 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
   }
 
   /* a cifra desliza para o lado enquanto o painel está aberto */
+  /*  Duas condições, e as duas importam: tela larga E ponteiro
+      fino. Só "pointer: fine" não bastava — numa janela estreita
+      com mouse valiam ao mesmo tempo o painel de celular, que
+      sobe de baixo, e este empurrão, que é do painel lateral. A
+      cifra ia para o lado sem nada tê-la empurrado, e sobrava um
+      vão de 320px à esquerda. */
+  @media (min-width: 821px){
   @media not all and (pointer: coarse){
     /*  Com o menu aberto o conteúdo vira a segunda coluna: começa
         onde o menu termina e usa toda a largura que sobra. Antes
@@ -104,6 +113,7 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
       max-width:none;width:auto;
       padding-left:26px;padding-right:26px;
     }
+  }
   }
 
   /* ── painel ── */
@@ -127,36 +137,32 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
   .op-painel.on{transform:none}
   .claro .op-painel{border-right-color:rgba(0,0,0,.14)}
 
-  /* ── celular: cortina ──
-     Ela desce do topo e para na metade da tela. A saída pelo alto
-     é o movimento que a barra de cima já sugere: as opções vinham
-     dela, e voltam para lá quando fecham. */
+  /* ── celular: folha que sobe de baixo ──
+     Ela sai do mesmo canto onde está a barra flutuante: os botões
+     estão lá embaixo, o dedo está lá embaixo, e a folha abre a
+     partir dali. Cortina descendo do topo obrigava a mão a
+     atravessar a tela para alcançar o que acabou de aparecer. */
   @media (max-width: 820px), (pointer: coarse){
     .op-painel{
-      left:0;right:0;top:0;bottom:auto;width:auto;
-      height:var(--op-cortina);max-height:var(--op-cortina);
+      left:0;right:0;bottom:0;top:auto;width:auto;
+      height:auto;max-height:var(--op-folha);
       border-right:none;
-      border-bottom:1px solid var(--gray3);
-      border-radius:0 0 18px 18px;
-      transform:translateY(-101%);
-      /*  Desce solta e freia no fim, como tecido que assenta.
-          Um ease comum chega na metade e para seco. */
+      border-top:1px solid var(--gray3);
+      border-radius:18px 18px 0 0;
+      transform:translateY(101%);
+      /*  Sobe solta e freia no fim. Um ease comum chega e para
+          seco. */
       transition:transform .3s cubic-bezier(.22,1,.36,1);
-      box-shadow:0 18px 36px rgba(0,0,0,.45);
-      padding:calc(12px + env(safe-area-inset-top)) 18px 14px;
+      box-shadow:0 -18px 36px rgba(0,0,0,.45);
+      padding:14px 18px calc(18px + env(safe-area-inset-bottom));
     }
     .claro .op-painel{
-      border-bottom-color:rgba(0,0,0,.14);
-      box-shadow:0 18px 36px rgba(0,0,0,.18);
+      border-top-color:rgba(0,0,0,.14);
+      box-shadow:0 -18px 36px rgba(0,0,0,.18);
     }
 
-    /*  A pega deixa de ser puxador do topo e vira a barra da
-        ponta de baixo: é de lá que a cortina é recolhida. */
-    .op-painel .op-pega{order:99;margin:10px auto 0}
-
-    /*  Meia tela é pouco para sete controles, então o conteúdo
-        rola. O cabeçalho fica grudado para o X nunca sair de
-        alcance no meio da rolagem. */
+    /*  Nove linhas não cabem sem rolar, então o cabeçalho fica
+        grudado: o X nunca sai de alcance no meio da rolagem. */
     .op-painel .op-hd{
       position:sticky;top:0;z-index:2;
       background:inherit;
@@ -322,15 +328,25 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
     /* o nome do instrumento agora é a legenda: um lugar só */
     .op-painel .op-controle .op-valor{display:none}
 
-    /*  Assinatura no pé da cortina: diz onde você está sem gastar
-        uma linha de lista com isso. */
+    /*  A rolagem para no começo de uma seção, nunca no meio de uma
+        linha. Sem isto a folha ficava com um item cortado ao
+        meio na borda de cima — ícone pela metade, nome pela
+        metade. "proximity" só ajusta quando o dedo já parou perto,
+        então não briga com quem rola rápido. */
+    .op-painel{scroll-snap-type:y proximity;scroll-padding-top:6px}
+    .op-painel .op-grupo{scroll-snap-align:start}
+
+    /*  Assinatura no pé da folha: diz onde você está sem gastar
+        uma linha de lista com isso. Usa o rótulo do site — a
+        monoespaçada fica para as cifras. */
     .op-rodape{
       display:block;order:98;flex:0 0 auto;
-      margin-top:12px;padding-top:10px;
+      margin-top:14px;padding-top:12px;
       border-top:1px solid var(--gray3);
-      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      font-size:11px;color:var(--gray2);text-align:center;
-      letter-spacing:.04em;
+      font-family:'Inter',sans-serif;
+      font-size:9px;font-weight:700;color:var(--gray2);
+      letter-spacing:.16em;text-transform:uppercase;
+      text-align:center;
     }
     .claro .op-rodape{border-top-color:rgba(0,0,0,.12)}
   }
@@ -525,6 +541,7 @@ function opMontar() {
   opMontarBotao();
   opSincronizarInstrumento();
   opSincronizarTema();
+  opSincronizarAdmin();
   opAbrirSeCabe();
 }
 
@@ -606,18 +623,62 @@ function opLinhaCapo() {
 }
 
 //  Atalho para o painel onde as cifras são cadastradas e
-//  corrigidas. Fica visível para todos: a senha é lá, não aqui —
-//  e a legenda avisa isso, senão quem não tem acesso cairia numa
-//  tela de login sem entender por quê.
+//  corrigidas. Com uma música aberta, vai direto na página dela;
+//  sem isso, cai na lista do painel.
+//
+//  O endereço do painel é por UUID (/admin/musica/<uuid>), e os
+//  dois bancos conversam por slug — quem faz a ponte é o lyra.js,
+//  que guarda o id de cada slug (ver lyraIdDoSlug).
+function opAdminURL() {
+  const song = (typeof lyraAtual !== "undefined" && lyraAtual?.song) || null;
+  const id = song && typeof lyraIdDoSlug === "function"
+    ? lyraIdDoSlug(song.slug) : null;
+  return id ? `${LYRA_ADMIN_URL}/musica/${id}` : LYRA_ADMIN_URL;
+}
+
+//  Slugs cujo id já foi procurado. Sem isto, música que não tem id
+//  no Lyra pediria de novo a cada rolagem de tom.
+const opIdsTentados = new Set();
+
+//  O rótulo muda com o que está aberto: prometer "editar esta
+//  cifra" e cair na lista geral seria pior que não prometer.
+function opSincronizarAdmin() {
+  const l = document.getElementById("opLinhaAdmin");
+  if (!l) return;
+
+  const song = (typeof lyraAtual !== "undefined" && lyraAtual?.song) || null;
+  const id = song && typeof lyraIdDoSlug === "function"
+    ? lyraIdDoSlug(song.slug) : null;
+
+  l.querySelector(".op-nome").textContent = id ? "Editar esta cifra" : "Editar cifras";
+  const sub = l.querySelector("#opAdminSub");
+  if (sub) {
+    sub.textContent = id
+      ? `Abre "${song.title || lyraAtual.nome || "esta música"}" no Lyra`
+      : "Painel do Lyra · exige senha";
+  }
+  const b = l.querySelector("#opAdminBtn");
+  if (b) b.title = id ? "Editar esta cifra no Lyra" : "Abrir o painel de cifras do Lyra";
+
+  //  Cifra guardada no aparelho antes desta mudança não tem o id.
+  //  Busca uma vez, em segundo plano, e repinta quando chegar.
+  if (song && !id && !opIdsTentados.has(song.slug)
+      && typeof lyraGarantirId === "function") {
+    opIdsTentados.add(song.slug);
+    lyraGarantirId(song.slug).then(novo => { if (novo) opSincronizarAdmin(); });
+  }
+}
+
 function opLinhaAdmin() {
   const b = document.createElement("button");
   b.className = "lyra-btn";
   b.id = "opAdminBtn";
   b.textContent = "Abrir";
-  b.title = "Abrir o painel de cifras do Lyra";
-  b.addEventListener("click", () => { location.href = LYRA_ADMIN_URL; });
+  //  O endereço é montado no clique, não aqui: a música muda com
+  //  as setas e o menu não é remontado a cada troca.
+  b.addEventListener("click", () => { location.href = opAdminURL(); });
   return opLinha(OP_ICO.admin, "Editar cifras", b,
-                 "opLinhaAdmin", "Painel do Lyra · exige senha");
+                 "opLinhaAdmin", "Painel do Lyra · exige senha", "opAdminSub");
 }
 
 // ── botão na barra do leitor ────────────────────────────────
@@ -723,10 +784,10 @@ document.addEventListener("keydown", e => {
   }
 }, true);
 
-//  Arrastar a cortina para cima também fecha, sem precisar
-//  acertar o X. O gesto só conta quando o painel já está no topo
-//  da própria rolagem, senão brigaria com a rolagem do conteúdo.
-function opLigarArrasteCortina() {
+//  Arrastar a folha para baixo também fecha, sem precisar acertar
+//  o X. O gesto só conta quando o painel já está no topo da
+//  própria rolagem, senão brigaria com a rolagem do conteúdo.
+function opLigarArrasteFolha() {
   const p = document.getElementById("opPainel");
   if (!p || p.dataset.arraste) return;
   p.dataset.arraste = "1";
@@ -742,7 +803,8 @@ function opLigarArrasteCortina() {
   p.addEventListener("touchend", e => {
     if (!noTopo || OP_LARGO()) return;
     const dy = e.changedTouches[0].clientY - y0;
-    if (dy < -60 && Date.now() - t0 < 700) opFechar();
+    //  Para baixo, no sentido em que a folha se recolhe.
+    if (dy > 60 && Date.now() - t0 < 700) opFechar();
   }, { passive: true });
 }
 
@@ -751,6 +813,8 @@ const opRenderOriginal = lyraRenderConteudo;
 lyraRenderConteudo = async function (...a) {
   const r = await opRenderOriginal.apply(this, a);
   opMontar();
+  //  A música mudou: o rótulo do "Editar esta cifra" acompanha.
+  opSincronizarAdmin();
   return r;
 };
 
@@ -765,7 +829,7 @@ lyraFecharLeitor = function (...a) {
 //  Tocar num atalho da barra flutuante abre só aquele controle,
 //  numa folha pequena. Elas continuam subindo de baixo: nascem
 //  de um botão que está lá embaixo, perto do dedo. O menu
-//  completo — a cortina — continua no "Opções".
+//  completo continua no "Opções".
 // ============================================================
 
 let opTomInicial = null;
@@ -859,7 +923,7 @@ function opRapidoFechar() {
 function opRapido(tipo) {
   const r = opRapidoEl();
   if (!r) return;
-  opFechar();                                   // a cortina sai de cena
+  opFechar();                                   // o menu grande sai de cena
   if (typeof afFechar === "function") afFechar();
   document.getElementById("opFundo")?.classList.add("on");
   r.classList.add("on");
@@ -964,7 +1028,7 @@ function opLigarAtalhos() {
     b.replaceWith(novo);
     novo.addEventListener("click", () => {
       if (tipos[i]) { opRapido(tipos[i]); }
-      else { opRapidoFechar(); opAbrir(); }     // a cortina recolhe a folha
+      else { opRapidoFechar(); opAbrir(); }     // o menu recolhe a folha
     });
   });
 }
@@ -978,7 +1042,7 @@ const opMontarOriginal = opMontar;
 opMontar = function (...a) {
   const r = opMontarOriginal.apply(this, a);
   opLigarAtalhos();
-  opLigarArrasteCortina();
+  opLigarArrasteFolha();
   return r;
 };
 
