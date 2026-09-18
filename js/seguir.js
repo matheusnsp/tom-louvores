@@ -48,10 +48,32 @@ const SN_SALA   = "tom-louvores-leitor";
 const SN_ENVIOS = 100;      // no mínimo 100ms entre mensagens (~10/s)
 const SN_PULSO  = 3000;     // um retrato completo a cada 3s
 const SN_MINIMO = 0.0012;   // movimento pequeno demais não vira mensagem
-const SN_COLA   = 0.28;     // quanto do erro é corrigido por quadro
-const SN_PULO   = 0.20;     // erro maior que isso: vai direto, sem deslizar
-const SN_ECO    = 5000;     // mede a latência a cada 5s
-const SN_TETO   = 400;      // latência acima disso não é compensada
+//  Estes quatro são ajustáveis em tempo real pelo console, com
+//  snAjuste() — ver o fim do arquivo. É o jeito de achar o ponto
+//  sem recarregar nada.
+let SN_COLA   = 0.28;     // quanto do erro é corrigido por quadro
+let SN_PULO   = 0.30;     // erro maior que isso: vai direto, sem deslizar
+const SN_ECO  = 5000;     // mede a latência a cada 5s
+const SN_TETO = 400;      // latência acima disso não é compensada
+
+//  ── o atraso de propósito ──
+//  Prever o futuro dá certo enquanto a velocidade é constante. No
+//  fim de um arrastão o líder desacelera, o seguidor continua na
+//  velocidade antiga, passa do ponto, e a mensagem seguinte o traz
+//  de volta: é esse vai-e-volta que aparece como tela pulando.
+//
+//  Render atrasado resolve. Com as mensagens saindo a cada 100ms,
+//  260ms de atraso garantem que a posição a desenhar esteja SEMPRE
+//  entre duas mensagens já recebidas — a tela interpola entre dois
+//  pontos conhecidos e nunca precisa adivinhar. Foi por isso que
+//  120ms ainda deixava glitch: bastava uma mensagem atrasar um
+//  tico e voltávamos a inventar.
+//
+//  O preço é ver a tela do ministrante um quarto de segundo atrás.
+//  Para acompanhar cifra isso não se nota; o olho está na próxima
+//  linha, não no pixel.
+let SN_ATRASO  = 260;
+let SN_ADIANTE = 200;     // nunca adivinhar mais que isso à frente
 
 //  Quem está logado lidera. É o mesmo portão que solta o "Nova
 //  música" e o "Sair": uma regra só, no lugar onde ela já existe.
@@ -101,11 +123,11 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
   .sn-selo{
     position:absolute;left:50%;transform:translateX(-50%);
     top:calc(6px + env(safe-area-inset-top));z-index:80;
-    display:none;align-items:center;gap:8px;
+    display:none;align-items:center;gap:7px;
     background:rgba(28,28,28,.94);
     border:1px solid var(--gray3);
     border-radius:999px;
-    padding:6px 8px 6px 13px;
+    padding:6px 7px 6px 13px;
     box-shadow:0 8px 24px rgba(0,0,0,.45);
     backdrop-filter:blur(8px);
     font-family:'Inter',sans-serif;
@@ -133,7 +155,18 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
     letter-spacing:.06em;text-transform:uppercase;
     padding:5px 11px;
   }
+  .sn-selo button[hidden]{display:none}
   .claro .sn-selo button{background:#E4DFD8;border-color:rgba(0,0,0,.16);color:#242424}
+
+  /*  Com dois botões, um deles tem de ser o principal. O Voltar
+      fica sólido e o Desligar só com a borda: quem soltou a tela
+      para ver um verso vai querer voltar, não sair. */
+  .sn-selo .sn-acao2{background:transparent;color:var(--gray)}
+  .claro .sn-selo .sn-acao2{background:transparent;color:#6b6b6b}
+
+  /*  Numa tela estreita a pastilha com dois botões não pode
+      estourar as bordas. */
+  .sn-selo{max-width:calc(100vw - 20px)}
 
   /* o selo não briga com a barra flutuante nem com os painéis */
   #lyraBox:has(#opPainel.on) .sn-selo,
@@ -229,6 +262,21 @@ function snMedir() {
 }
 
 window.addEventListener("resize", () => { snMedir(); });
+
+//  A altura também é remedida de vez em quando. Ela muda depois de
+//  a cifra aparecer — a fonte monoespaçada termina de carregar, a
+//  quebra de linha é ligada, o teclado do aparelho sobe e desce —
+//  e uma altura velha faz a mesma fração cair em outro verso. Era
+//  um dos suspeitos do pulo "em algumas partes da música": não
+//  eram partes, era a medida envelhecendo.
+//
+//  Duas vezes por segundo é barato. O que não pode é ler
+//  scrollHeight dentro do laço de 60 quadros.
+setInterval(() => {
+  if (!snLigado || snEhLider() || snSolto) return;
+  if (!document.getElementById("lyraOverlay")?.classList.contains("open")) return;
+  snMedir();
+}, 2000);
 
 // ── o que é transmitido ─────────────────────────────────────
 function snPosAtual() {
@@ -382,10 +430,13 @@ function snRodarQuadros() {
     const dtQuadro = Math.min(50, agora - snUltFrame);   // aba escondida volta
     snUltFrame = agora;                                  // com um salto enorme
 
-    //  Onde o líder está AGORA: a posição que chegou, mais o que
-    //  ele andou desde a chegada, mais o caminho de ida que a
-    //  mensagem já havia gasto antes de aparecer aqui.
-    const adiante = (agora - snAlvo.em) + snLatencia;
+    //  Onde o líder estava há SN_ATRASO milissegundos: a posição
+    //  que chegou, mais o tempo decorrido, mais o caminho de ida
+    //  da mensagem, menos o atraso de propósito. O resultado é
+    //  limitado: passado esse limite estaríamos inventando, e
+    //  inventar é o que fazia a tela passar do ponto e voltar.
+    const adiante = Math.min(SN_ADIANTE, Math.max(0,
+      (agora - snAlvo.em) + snLatencia - SN_ATRASO));
     const alvo = Math.min(1, Math.max(0, snAlvo.pos + snAlvo.vel * adiante));
 
     const atual = c.scrollTop / snMax;
@@ -490,37 +541,43 @@ function snSelo() {
   s.innerHTML = `
     <span class="sn-ponto"></span>
     <span class="sn-txt"></span>
-    <button type="button" class="sn-acao"></button>`;
+    <button type="button" class="sn-acao"></button>
+    <button type="button" class="sn-acao2" hidden></button>`;
   box.appendChild(s);
 
-  //  O clique é ligado por DUAS rotas. "click" pode ser engolido
+  //  Cada botão é ligado por DUAS rotas. "click" pode ser engolido
   //  quando algo repinta ou cobre o botão no meio do gesto;
   //  "pointerdown" dispara no instante em que o dedo desce e não
   //  depende do resto do gesto. Uma tranca de 400ms evita que as
   //  duas contem como dois toques.
-  let ultimoToque = 0;
-  const agir = origem => {
-    const t = Date.now();
-    if (t - ultimoToque < 400) return;
-    ultimoToque = t;
-    console.info("[seguir] toque no selo via", origem,
-                 "— lider:", snEhLider(), "solto:", snSolto, "ligado:", snLigado);
-
-    //  Quem segue e toca aqui quer sair, não dar uma paradinha:
-    //  isto DESLIGA a função e desfaz a inscrição no canal. Sem
-    //  canal não chega mensagem, e nenhum caminho sobrou que possa
-    //  mexer na tela — é a saída garantida.
-    //
-    //  A paradinha continua existindo, mas por gesto: rolar com o
-    //  dedo solta a tela na hora e o selo passa a oferecer o
-    //  "Voltar a seguir".
-    if (snSolto && !snEhLider()) { snVoltarASeguir(); return; }
-    snAlternar(false);
+  const ligar = (btn, nome, fn) => {
+    let ultimo = 0;
+    const agir = origem => {
+      const t = Date.now();
+      if (t - ultimo < 400) return;
+      ultimo = t;
+      console.info("[seguir]", nome, "via", origem,
+                   "— lider:", snEhLider(), "solto:", snSolto, "ligado:", snLigado);
+      fn();
+    };
+    btn.addEventListener("click", () => agir("click"));
+    btn.addEventListener("pointerdown", () => agir("pointerdown"));
   };
 
-  const b = s.querySelector(".sn-acao");
-  b.addEventListener("click", () => agir("click"));
-  b.addEventListener("pointerdown", () => agir("pointerdown"));
+  //  Botão da esquerda: com a tela seguindo, ele desliga de vez —
+  //  desfaz a inscrição no canal, e sem canal não chega mensagem.
+  //  Com a tela livre, ele volta a seguir.
+  ligar(s.querySelector(".sn-acao"), "acao", () => {
+    if (snSolto && !snEhLider()) { snVoltarASeguir(); return; }
+    snAlternar(false);
+  });
+
+  //  Botão da direita: só aparece com a tela livre, e é a saída
+  //  definitiva. Soltar a tela é uma paradinha — quem soltou para
+  //  ver outro verso costuma querer voltar. Quem já decidiu que
+  //  não vai acompanhar este culto precisava abrir o menu para
+  //  desligar; agora não precisa mais.
+  ligar(s.querySelector(".sn-acao2"), "desligar", () => snAlternar(false));
 
   return s;
 }
@@ -533,20 +590,24 @@ function snPintarSelo() {
   if (!snLigado || !aberto) { s.classList.remove("on"); return; }
   s.classList.add("on");
 
-  const txt  = s.querySelector(".sn-txt");
-  const acao = s.querySelector(".sn-acao");
+  const txt   = s.querySelector(".sn-txt");
+  const acao  = s.querySelector(".sn-acao");
+  const acao2 = s.querySelector(".sn-acao2");
 
   if (snEhLider()) {
     s.classList.remove("sn-parado");
     txt.textContent  = "Transmitindo";
     acao.textContent = "Parar";
+    acao2.hidden = true;
     return;
   }
 
   if (snSolto) {
     s.classList.add("sn-parado");
-    txt.textContent  = "Tela livre";
-    acao.textContent = "Voltar a seguir";
+    txt.textContent   = "Tela livre";
+    acao.textContent  = "Voltar";
+    acao2.textContent = "Desligar";
+    acao2.hidden = false;
     return;
   }
 
@@ -557,6 +618,7 @@ function snPintarSelo() {
   s.classList.toggle("sn-parado", !vivo);
   txt.textContent  = vivo ? "Seguindo" : "Aguardando";
   acao.textContent = "Parar";
+  acao2.hidden = true;
 }
 
 setInterval(() => { if (snLigado && !snEhLider()) snPintarSelo(); }, 4000);
@@ -710,6 +772,26 @@ lyraFecharLeitor = function (...a) {
   snPararQuadros();
   document.getElementById("snSelo")?.classList.remove("on");
   return snFecharOriginal.apply(this, a);
+};
+
+//  Ajuste em tempo real, sem recarregar:
+//
+//    snAjuste({ atraso: 400 })   → mais atraso, menos adivinhação
+//    snAjuste({ cola: 0.18 })    → correção mais macia
+//    snAjuste({ pulo: 0.5 })     → tolera mais desvio antes de
+//                                   cortar caminho de uma vez
+//    snAjuste()                  → mostra o que está valendo
+//
+//  Se subir o atraso resolver, me diga o número que ficou bom e
+//  ele entra como padrão. Se NÃO resolver nem com 500, o pulo não
+//  vem da previsão — vem de outra coisa mexendo no scroll, e o
+//  caminho é olhar a rolagem automática do acordes.js.
+window.snAjuste = (o = {}) => {
+  if (typeof o.atraso  === "number") SN_ATRASO  = o.atraso;
+  if (typeof o.adiante === "number") SN_ADIANTE = o.adiante;
+  if (typeof o.cola    === "number") SN_COLA    = o.cola;
+  if (typeof o.pulo    === "number") SN_PULO    = o.pulo;
+  return { atraso: SN_ATRASO, adiante: SN_ADIANTE, cola: SN_COLA, pulo: SN_PULO };
 };
 
 //  Saída de emergência pelo console, sem depender de clique
