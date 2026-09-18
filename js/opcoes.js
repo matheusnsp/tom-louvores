@@ -58,6 +58,11 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
         passar de 80% deixa de ser folha e vira tela cheia, sem
         mostrar mais nada da cifra por baixo. O resto rola. */
     --op-folha: 78%;
+
+    /*  Altura do bloco grudado da folha (pega + cabeçalho). Serve
+        para duas coisas: onde a rolagem encosta e o quanto o
+        conteúdo precisa desviar dele. Uma medida, dois usos. */
+    --op-topo: 64px;
   }
 
   /* ── barra do leitor ──
@@ -123,9 +128,18 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
     background:#131313;
     display:flex;flex-direction:column;
     transition:transform .24s ease;
-    overflow:auto;overscroll-behavior:contain;
+    /*  none, e não contain: contain só corta o encadeamento para a
+        página, e deixa o elástico do próprio painel. Rolando além
+        do topo o conteúdo descia e abria um vão entre o cabeçalho
+        e a lista — parecia bug de layout no meio do gesto. */
+    overflow:auto;overscroll-behavior:none;
   }
   .claro .op-painel{background:#F4F0E9}
+
+  /*  Pega e cabeçalho num bloco só. É este bloco que gruda no
+      celular; no computador ele não tem estilo nenhum e some do
+      caminho. */
+  .op-topo{flex:0 0 auto}
 
   /* computador: entra pela esquerda */
   .op-painel{
@@ -161,15 +175,27 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
       box-shadow:0 -18px 36px rgba(0,0,0,.18);
     }
 
-    /*  Nove linhas não cabem sem rolar, então o cabeçalho fica
-        grudado: o X nunca sai de alcance no meio da rolagem. */
-    .op-painel .op-hd{
-      position:sticky;top:0;z-index:2;
-      background:inherit;
-      margin-bottom:6px;padding-bottom:12px;
+    /*  Nove linhas não cabem sem rolar, então o topo fica grudado:
+        o X nunca sai de alcance no meio da rolagem. Grudam os dois
+        juntos, pega e cabeçalho — a pega sozinha subia e o vão
+        dela deixava a lista passar por cima do título. */
+    .op-painel{padding-top:0}
+    .op-painel .op-topo{
+      position:sticky;top:0;z-index:3;
+      background:#131313;
+      /*  Sangra até as bordas do painel e refaz o preenchimento por
+          dentro: o padding lateral do painel era uma faixa sem
+          fundo por onde o conteúdo aparecia nas laterais. */
+      margin:0 -18px 6px;
+      padding:14px 18px 12px;
       border-bottom:1px solid var(--gray3);
     }
-    .claro .op-painel .op-hd{border-bottom-color:rgba(0,0,0,.12)}
+    .claro .op-painel .op-topo{
+      background:#F4F0E9;
+      border-bottom-color:rgba(0,0,0,.12);
+    }
+    .op-painel .op-hd{margin:0;padding:0;border:none}
+    .op-painel .op-pega{margin:0 auto 10px}
   }
 
   .op-hd{
@@ -189,11 +215,14 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
   .op-x:hover{color:#e6e6e6}
   .claro .op-x:hover{color:#111}
 
-  /* pega no celular */
+  /* pega no celular — marca de folha, não pega de arrastar */
   .op-pega{
     width:38px;height:4px;border-radius:2px;background:var(--gray3);
     margin:0 auto 12px;display:none;
   }
+  /*  Toque duplo num item saía selecionando o texto dele. */
+  .op-painel .op-nome,
+  .op-painel .op-sub{user-select:none}
   @media (max-width: 820px), (pointer: coarse){.op-pega{display:block}}
 
   /* ── grupos e linhas ── */
@@ -331,9 +360,11 @@ const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
     /*  A rolagem para no começo de uma seção, nunca no meio de uma
         linha. Sem isto a folha ficava com um item cortado ao
         meio na borda de cima — ícone pela metade, nome pela
-        metade. "proximity" só ajusta quando o dedo já parou perto,
-        então não briga com quem rola rápido. */
-    .op-painel{scroll-snap-type:y proximity;scroll-padding-top:6px}
+        metade. O desvio é a altura do topo grudado: encostar em 0
+        parava a seção por baixo do cabeçalho. "proximity" só
+        ajusta quando o dedo já parou perto, então não briga com
+        quem rola rápido. */
+    .op-painel{scroll-snap-type:y proximity;scroll-padding-top:var(--op-topo)}
     .op-painel .op-grupo{scroll-snap-align:start}
 
     /*  Assinatura no pé da folha: diz onde você está sem gastar
@@ -489,9 +520,14 @@ function opMontar() {
   const p = document.createElement("div");
   p.className = "op-painel";
   p.id = "opPainel";
+  //  Pega e cabeçalho vão juntos numa caixa: é ela que gruda no
+  //  topo da folha. Separados, a pega subia para fora e o vão
+  //  dela deixava a lista aparecer por cima do título.
   p.innerHTML = `
-    <div class="op-pega"></div>
-    <div class="op-hd"><h4>Opções</h4><button class="op-x" id="opX" aria-label="Fechar">&#10005;</button></div>`;
+    <div class="op-topo">
+      <div class="op-pega"></div>
+      <div class="op-hd"><h4>Opções</h4><button class="op-x" id="opX" aria-label="Fechar">&#10005;</button></div>
+    </div>`;
   box.appendChild(p);
   p.querySelector("#opX").addEventListener("click", opFechar);
 
@@ -757,6 +793,13 @@ function opAbrir(irPara) {
   document.getElementById("opFundo")?.classList.add("on");
   document.getElementById("lyraBox")?.classList.add("op-aberto");
   const p = document.getElementById("opPainel");
+  //  A altura do cabeçalho grudado, medida em vez de chutada: ela
+  //  muda com a fonte do aparelho e com a área segura, e o 64px do
+  //  :root é só um valor de partida. Quem usa isto é o
+  //  scroll-padding do snap — errado por poucos pixels, a folha se
+  //  ajustava sozinha ao abrir e parecia rolada desde o começo.
+  const topo = p?.querySelector(".op-topo");
+  if (topo?.offsetHeight) p.style.setProperty("--op-topo", `${topo.offsetHeight}px`);
   p?.classList.add("on");
   if (typeof acEsconderBalao === "function") acEsconderBalao();
 
@@ -783,30 +826,6 @@ document.addEventListener("keydown", e => {
     e.stopPropagation(); opFechar();
   }
 }, true);
-
-//  Arrastar a folha para baixo também fecha, sem precisar acertar
-//  o X. O gesto só conta quando o painel já está no topo da
-//  própria rolagem, senão brigaria com a rolagem do conteúdo.
-function opLigarArrasteFolha() {
-  const p = document.getElementById("opPainel");
-  if (!p || p.dataset.arraste) return;
-  p.dataset.arraste = "1";
-
-  let y0 = 0, t0 = 0, noTopo = false;
-
-  p.addEventListener("touchstart", e => {
-    y0 = e.changedTouches[0].clientY;
-    t0 = Date.now();
-    noTopo = p.scrollTop <= 2;
-  }, { passive: true });
-
-  p.addEventListener("touchend", e => {
-    if (!noTopo || OP_LARGO()) return;
-    const dy = e.changedTouches[0].clientY - y0;
-    //  Para baixo, no sentido em que a folha se recolhe.
-    if (dy > 60 && Date.now() - t0 < 700) opFechar();
-  }, { passive: true });
-}
 
 // ── enxerto ─────────────────────────────────────────────────
 const opRenderOriginal = lyraRenderConteudo;
@@ -843,7 +862,7 @@ let opTomInicial = null;
     border-radius:18px 18px 0 0;
     padding:12px 16px calc(20px + env(safe-area-inset-bottom));
     transform:translateY(101%);transition:transform .22s ease;
-    max-height:72%;overflow:auto;overscroll-behavior:contain;
+    max-height:72%;overflow:auto;overscroll-behavior:none;
   }
   .op-rapido.on{transform:none}
   .claro .op-rapido{background:#F4F0E9;border-top-color:rgba(0,0,0,.14)}
@@ -1042,7 +1061,6 @@ const opMontarOriginal = opMontar;
 opMontar = function (...a) {
   const r = opMontarOriginal.apply(this, a);
   opLigarAtalhos();
-  opLigarArrasteFolha();
   return r;
 };
 
