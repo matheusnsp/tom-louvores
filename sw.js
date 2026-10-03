@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v28";
+const CACHE = "tom-louvores-v29";
 
 const APP = [
   "./",
@@ -31,6 +31,7 @@ const APP = [
   "./js/lista-ministrantes.js",
   "./js/quebra.js",
   "./js/chat.js",
+  "./js/chat-aviso.js",
   "./js/acordes.js",
   "./js/opcoes.js",
   "./js/seguir.js",
@@ -174,6 +175,22 @@ self.addEventListener("fetch", e => {
       const c = await caches.match(req);
       const rede = fetch(req).then(r => guardar(req, r)).catch(() => null);
       return c || (await rede) || new Response("sem conexão", { status: 503 });
+    })());
+  }
+});
+
+//  Toque na notificação do chat: traz de volta o app que estava
+//  aberto e pede para ele abrir o painel. Sem nenhum aberto, abre
+//  o site.
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const dados = e.notification.data || {};
+  if (dados.abrirChat === true) {
+    e.waitUntil((async () => {
+      const abertos = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      if (abertos.length === 0) return self.clients.openWindow("./");
+      await abertos[0].focus().catch(() => {});
+      abertos[0].postMessage({ acao: "abrir-chat" });
     })());
   }
 });
