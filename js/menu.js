@@ -29,7 +29,7 @@
 const MN_MQ = window.matchMedia("(max-width: 900px)");
 const mnEhCelular = () => MN_MQ.matches;
 
-const MN_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
+const MN_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
 
 // ── ícones ──────────────────────────────────────────────────
 //  Traço 2.2 e pontas arredondadas, como o ícone de baixar e o

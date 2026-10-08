@@ -5,7 +5,7 @@
 //  Carregue DEPOIS do app.js. Não altera nada do app.js.
 // ============================================================
 
-const LYRA_API = "https://lyra-music-database.vercel.app/api/v1";
+const LYRA_API = "https://database.invbotafogo.com.br/api/v1";
 
 const lyraCacheBusca  = new Map();  // nome normalizado → música do Lyra (ou null)
 const lyraPendentes   = new Map();  // nome normalizado → busca em andamento

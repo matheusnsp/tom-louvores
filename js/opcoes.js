@@ -28,7 +28,7 @@ const opEhCelular = () => OP_MQ.matches;
 
 //  Painel de edição das cifras, fora deste site. Fica à mão de
 //  todos: ele tem senha própria, e o portão é do lado dele.
-const LYRA_ADMIN_URL = "https://lyra-music-database.vercel.app/admin";
+const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
 
 (function opEstilo() {
   const st = document.createElement("style");
