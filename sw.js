@@ -89,7 +89,7 @@ self.addEventListener("activate", e => {
 
 const ehBanco = url =>
   url.hostname.includes("supabase") ||
-  url.hostname.includes("lyra-music-database");
+  url.hostname === "database.invbotafogo.com.br";
 
 const ehAmostra = url => url.hostname.includes("gleitz.github.io");
 
