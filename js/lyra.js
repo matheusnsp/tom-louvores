@@ -1511,3 +1511,43 @@ fecharView = function () {
   lyraFecharLeitor();
   lyraFecharViewOriginal();
 };
+// ── TELA ACESA ──────────────────────────────────────────────
+//  Com a cifra aberta (lendo ou acompanhando o ministrante), a
+//  tela do celular não apaga sozinha no meio da música. Fechou o
+//  leitor, volta ao normal. O leitor aberto é o body com a classe
+//  "lyra-travado" — vigiar a classe pega todo jeito de abrir e de
+//  fechar. O navegador solta a trava quando o app vai para o
+//  fundo; ao voltar, ela é pedida de novo.
+//  Navegador sem a Wake Lock API: nada muda, sem erro.
+
+let lyraTelaTrava = null;
+let lyraTelaPedindo = false;
+
+async function lyraTelaAcesa() {
+  if (!("wakeLock" in navigator)) return;
+  const aberto = document.body.classList.contains("lyra-travado");
+
+  if (!aberto || document.visibilityState !== "visible") {
+    if (lyraTelaTrava) {
+      const t = lyraTelaTrava;
+      lyraTelaTrava = null;
+      t.release().catch(() => {});
+    }
+    return;
+  }
+  if (lyraTelaTrava || lyraTelaPedindo) return;
+
+  lyraTelaPedindo = true;
+  try {
+    const t = await navigator.wakeLock.request("screen");
+    t.addEventListener("release", () => { if (lyraTelaTrava === t) lyraTelaTrava = null; });
+    lyraTelaTrava = t;
+    //  Fechou enquanto o pedido estava no ar.
+    if (!document.body.classList.contains("lyra-travado")) lyraTelaAcesa();
+  } catch { /* sem bateria, sem permissão: segue como antes */ }
+  finally { lyraTelaPedindo = false; }
+}
+
+new MutationObserver(lyraTelaAcesa)
+  .observe(document.body, { attributes: true, attributeFilter: ["class"] });
+document.addEventListener("visibilitychange", lyraTelaAcesa);

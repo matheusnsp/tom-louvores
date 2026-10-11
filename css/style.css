@@ -663,6 +663,26 @@
      transition:background 0.15s;
    }
    .btn-login-submit:hover{background:var(--yellow2)}
+
+   /* confirmação de exclusão: mesma caixa do login, botão vermelho */
+   .confirma-overlay{
+     display:none;position:fixed;inset:0;
+     background:rgba(0,0,0,0.82);backdrop-filter:blur(6px);
+     z-index:400;align-items:center;justify-content:center;padding:24px;
+   }
+   .confirma-overlay.open{display:flex}
+   .confirma-box{padding:28px 24px 22px}
+   .confirma-box .login-sub{font-size:14px;line-height:1.5;color:var(--gray);margin-top:6px}
+   .confirma-box .login-sub b{color:var(--white);font-weight:700}
+   .btn-excluir{
+     flex:2;padding:12px 18px;
+     background:#DC2626;border:none;color:#fff;
+     font-family:'Inter',sans-serif;font-size:13px;font-weight:800;
+     letter-spacing:0.05em;text-transform:uppercase;
+     border-radius:var(--r);cursor:pointer;transition:background 0.15s;
+   }
+   .btn-excluir:hover{background:#B91C1C}
+   .confirma-box button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
    
    /* ============================================================
       MODAL DE LEITURA (ver música)
@@ -826,6 +846,10 @@
    .culto-louvor-nome{
      font-size:13px;font-weight:600;color:var(--white);line-height:1.2;
      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+   }
+   @media (max-width:820px){
+     .culto-louvor-nome{font-size:15px}
+     .culto-louvor-badge{font-size:21px;min-width:46px}
    }
    .culto-louvor-rm{
      width:24px;height:24px;flex-shrink:0;

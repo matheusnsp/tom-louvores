@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v32";
+const CACHE = "tom-louvores-v33";
 
 const APP = [
   "./",

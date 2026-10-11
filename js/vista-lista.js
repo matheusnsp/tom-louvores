@@ -210,17 +210,18 @@ let vistaLista   = [];
       /* aqui também com largura fixa: com "auto" cada linha
          media a própria coluna e os nomes começavam em pontos
          diferentes, de 89px a 203px */
-      grid-template-columns:78px minmax(0,1fr) auto;
+      grid-template-columns:92px minmax(0,1fr) auto;
       grid-template-areas:"tons nome del" "tons mins del";
       column-gap:10px;row-gap:4px;
       padding:7px 10px;
     }
     .lst-tons{grid-area:tons;min-width:0}
-    .lst-tom{font-size:15px;padding:3px 5px;min-width:30px}
+    .lst-tom{font-size:19px;padding:4px 6px;min-width:36px}
     .lst-mins{min-width:0;justify-content:flex-start;min-height:0}
     /* nome numa linha só, com reticências: a linha fica baixa e
        todas têm a mesma altura */
-    .lst-nome{grid-area:nome;line-height:1.3}
+    .lst-nome{grid-area:nome;line-height:1.3;font-size:16px}
+    .lst-min{font-size:10px}
     .lst-mins{grid-area:mins}
     /* "Todos" é o caso comum: no celular não ocupa uma linha
        inteira só para dizer isso. Vale o que o filtro mostra. */

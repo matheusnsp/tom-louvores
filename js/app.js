@@ -384,9 +384,61 @@ async function salvar() {
   }
 }
 
+//  Confirmação antes de excluir. O confirm() do navegador some
+//  num toque distraído (e no app instalado nem parece parte do
+//  site); aqui a pessoa vê QUAL música vai sair e precisa tocar
+//  no botão vermelho. O foco começa no "Cancelar".
+function confirmarExclusao(nome) {
+  return new Promise(resolve => {
+    let ov = document.getElementById("excluirOverlay");
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.id = "excluirOverlay";
+      ov.className = "confirma-overlay";
+      ov.innerHTML = `
+        <div class="login-box confirma-box" role="alertdialog" aria-modal="true"
+             aria-labelledby="excluirTitulo" aria-describedby="excluirTexto">
+          <div>
+            <h2 id="excluirTitulo">EXCLUIR MÚSICA?</h2>
+            <p class="login-sub" id="excluirTexto"></p>
+          </div>
+          <div class="login-actions">
+            <button type="button" class="btn-login-cancel" data-r="nao">Cancelar</button>
+            <button type="button" class="btn-excluir" data-r="sim">Excluir música</button>
+          </div>
+        </div>`;
+      document.body.appendChild(ov);
+    }
+    const antes = document.activeElement;
+    ov.querySelector("#excluirTexto").innerHTML =
+      `<b>${esc(nome || "Esta música")}</b> sai do repertório. Não dá para desfazer.`;
+
+    const fechar = r => {
+      ov.classList.remove("open");
+      ov.removeEventListener("click", clique);
+      document.removeEventListener("keydown", tecla, true);
+      if (antes && antes.focus) antes.focus();
+      resolve(r);
+    };
+    const clique = e => {
+      const b = e.target.closest("[data-r]");
+      if (b) fechar(b.dataset.r === "sim");
+      else if (e.target === ov) fechar(false);     // toque fora da caixa
+    };
+    const tecla = e => {
+      if (e.key === "Escape") { e.stopPropagation(); fechar(false); }
+    };
+    ov.addEventListener("click", clique);
+    document.addEventListener("keydown", tecla, true);
+    ov.classList.add("open");
+    ov.querySelector("[data-r='nao']").focus();
+  });
+}
+
 async function excluir(id) {
   if (!isAdmin()) { toast("Faça login para excluir.", true); return; }
-  if (!confirm("Excluir esta música?")) return;
+  const m = musicas.find(x => String(x.id) === String(id));
+  if (!(await confirmarExclusao(m && m.nome))) return;
   try {
     await req(`${TABLE}?id=eq.${id}`, { method: "DELETE" });
     toast("Música removida.");
