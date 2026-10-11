@@ -99,6 +99,12 @@ A aba **Sugestões** (`sugestoes.html`) deixa qualquer pessoa sugerir um louvor:
 
 **Para ativar:** no Supabase do site, abra **SQL Editor → New query**, cole o arquivo `supabase/sugestoes.sql` e clique em **Run** (uma vez só).
 
+**Se um dia aparecer spam** (sugestões em massa de um robô), apague no mesmo SQL Editor o que não foi aprovado nas últimas 24 horas:
+
+```sql
+delete from public.sugestoes where status <> 'aprovada' and criado_em > now() - interval '1 day';
+```
+
 ---
 
 ## 🛠 Como usar

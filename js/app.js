@@ -811,8 +811,10 @@ function toast(msg, err = false) {
   t._t = setTimeout(() => { t.className = "toast"; }, 3200);
 }
 
+// as aspas também: o esc() vai parar dentro de href="" e title=""
 function esc(s = "") {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+          .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
 document.addEventListener("keydown", e => {

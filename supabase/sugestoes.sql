@@ -32,14 +32,26 @@ returns text
 language sql
 immutable
 as $$
-  select coalesce(
-    'youtube:' || substring(link from '(?:youtu\.be/|[?&]v=|/shorts/|/embed/|/live/)([A-Za-z0-9_-]{11})'),
-    'spotify:' || substring(link from 'open\.spotify\.com/(?:intl-[a-zA-Z-]+/)?((?:track|album|playlist)/[A-Za-z0-9]+)'),
-    'deezer:'  || substring(link from 'deezer\.com/(?:[a-z]{2}/)?((?:track|album)/[0-9]+)'),
-    lower(regexp_replace(
-      regexp_replace(btrim(link), '^https?://(www\.|m\.)?', '', 'i'),
-      '([?#].*$)|(/+$)', '', 'g'))
-  )
+  select case
+    -- YouTube (inclusive youtu.be, music. e m.): o ID do vídeo
+    when l ~* '^https?://([a-z0-9-]+\.)*(youtube\.com|youtu\.be)(/|$)'
+     and substring(l from '(?:youtu\.be/|[?&]v=|/shorts/|/embed/|/live/)([A-Za-z0-9_-]{11})') is not null
+      then 'youtube:' || substring(l from '(?:youtu\.be/|[?&]v=|/shorts/|/embed/|/live/)([A-Za-z0-9_-]{11})')
+    -- Spotify: música, álbum ou playlist, com ou sem /intl-pt/
+    when l ~* '^https?://open\.spotify\.com/'
+     and substring(l from 'open\.spotify\.com/(?:intl-[a-zA-Z-]+/)?((?:track|album|playlist)/[A-Za-z0-9]+)') is not null
+      then 'spotify:' || substring(l from 'open\.spotify\.com/(?:intl-[a-zA-Z-]+/)?((?:track|album|playlist)/[A-Za-z0-9]+)')
+    -- Deezer: música ou álbum, com ou sem o país
+    when l ~* '^https?://([a-z0-9-]+\.)*deezer\.com/'
+     and substring(l from 'deezer\.com/(?:[a-z]{2}/)?((?:track|album)/[0-9]+)') is not null
+      then 'deezer:' || substring(l from 'deezer\.com/(?:[a-z]{2}/)?((?:track|album)/[0-9]+)')
+    -- o resto: o endereço inteiro, sem http, www e o #. A parte do
+    -- "?" fica: em muitos sites é ela que diz qual é a música.
+    else lower(regexp_replace(regexp_replace(
+      regexp_replace(l, '^https?://(www\.|m\.)?', '', 'i'),
+      '#.*$', ''), '/+$', ''))
+  end
+  from (select btrim(link) as l) as x
 $$;
 
 
@@ -57,7 +69,8 @@ create table if not exists public.sugestoes (
 
   constraint sugestoes_nome_tamanho  check (char_length(btrim(nome)) between 2 and 120),
   constraint sugestoes_quem_tamanho  check (char_length(btrim(sugerido_por)) between 2 and 80),
-  constraint sugestoes_link_valido   check (link ~* '^https?://[^[:space:]]+$' and char_length(link) <= 500),
+  -- sem espaço, aspas e < >: o link vai parar dentro de href="" no site
+  constraint sugestoes_link_valido   check (link ~* '^https?://[^[:space:]"''<>]+$' and char_length(link) <= 500),
   constraint sugestoes_status_valido check (status in ('pendente', 'aprovada', 'recusada'))
 );
 
@@ -68,6 +81,9 @@ create unique index if not exists sugestoes_chave_unica
 
 create index if not exists sugestoes_status_data
   on public.sugestoes (status, criado_em desc);
+
+create index if not exists sugestoes_data
+  on public.sugestoes (criado_em desc);
 
 
 -- ── data da análise ────────────────────────────────────────────
@@ -93,9 +109,10 @@ create trigger sugestoes_ao_analisar
 
 
 -- ── trava contra enxurrada ─────────────────────────────────────
---  O formulário é aberto a qualquer pessoa. Se um robô achar a
---  página, ele para em 30 sugestões a cada 10 minutos, em vez de
---  encher a lista da equipe.
+--  O formulário é aberto a qualquer pessoa. Por nome, no máximo 5
+--  sugestões a cada 10 minutos (pega também o clique repetido); no
+--  total, 60 a cada 10 minutos, para um robô não encher a lista.
+--  Se um dia aparecer spam, veja no README como limpar.
 
 create or replace function public.sugestoes_limite()
 returns trigger
@@ -105,7 +122,10 @@ set search_path = public
 as $$
 begin
   if (select count(*) from public.sugestoes
-      where criado_em > now() - interval '10 minutes') >= 30 then
+      where criado_em > now() - interval '10 minutes'
+        and lower(btrim(sugerido_por)) = lower(btrim(new.sugerido_por))) >= 5
+  or (select count(*) from public.sugestoes
+      where criado_em > now() - interval '10 minutes') >= 60 then
     raise exception 'muitas sugestoes em pouco tempo'
       using errcode = 'P0001', hint = 'limite';
   end if;

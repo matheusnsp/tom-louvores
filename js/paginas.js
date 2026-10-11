@@ -227,6 +227,7 @@ function navMontar() {
   logo ? logo.insertAdjacentElement("afterend", nav) : barra.appendChild(nav);
 
   ajustarHeader();
+  // a primeira contagem pode ter vindo antes de a aba existir
   navContarSugestoes();
 }
 
@@ -239,21 +240,27 @@ function navMontar() {
 //  Se a tabela ainda não existir no Supabase, a busca falha e a
 //  aba fica sem número — o resto do site nem percebe.
 
+let navContagemPedido = 0;
+
 async function navContarSugestoes() {
   const aba = document.getElementById("navSugestoes");
   if (!aba) return;
   // na própria página de sugestões quem conta é o sugestoes.js,
   // que já tem a lista inteira na mão
   if (PAGINA === "sugestoes") return;
-  const logado = typeof isAdmin === "function" && isAdmin();
+  const logado = () => typeof isAdmin === "function" && isAdmin();
+  const pedido = ++navContagemPedido;
   let n = 0;
-  if (logado) {
+  if (logado()) {
     try {
-      const pendentes = await req("sugestoes?select=id&status=eq.pendente");
+      const pendentes = await req("sugestoes?select=id&status=eq.pendente&limit=100");
       n = (pendentes || []).length;
     } catch { n = 0; }
   }
-  navMostrarContagem(n);
+  // resposta de uma busca mais velha, ou a pessoa saiu enquanto
+  // ela viajava: não mostra
+  if (pedido !== navContagemPedido) return;
+  navMostrarContagem(logado() ? n : 0);
 }
 
 function navMostrarContagem(n) {
@@ -340,6 +347,18 @@ if (PAGINA === "sugestoes") {
   render = function (lista) {
     if (typeof lyraListaVisivel !== "undefined") lyraListaVisivel = lista || [];
     if (typeof sugRepertorioMudou === "function") sugRepertorioMudou();
+  };
+}
+
+//  A contagem da aba Sugestões pega carona na busca dos cultos:
+//  ela acontece na abertura e o atualizar.js repete ao voltar para
+//  a aba, ao recuperar a conexão e de tempos em tempos.
+if (PAGINA !== "sugestoes" && typeof carregarCultos === "function") {
+  const navCultosOriginal = carregarCultos;
+  carregarCultos = async function (...a) {
+    const r = await navCultosOriginal.apply(this, a);
+    navContarSugestoes();
+    return r;
   };
 }
 

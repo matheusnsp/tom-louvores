@@ -29,10 +29,26 @@ const SUG_ABAS = [
   { status: "recusada", nome: "Recusadas",  vazio: "Nenhuma sugestão recusada." },
 ];
 
-let sugLista   = [];             // todas as sugestões, como vieram do banco
+let sugLista   = [];             // as sugestões que a tela mostra, como vieram do banco
 let sugAba     = "pendente";     // a aba aberta pela equipe
 let sugEstado  = "carregando";   // carregando | ok | sem-tabela | erro
 let sugOkTimer = null;
+
+//  Duas contas para não deixar resposta velha apagar o que é novo:
+//  cada busca leva um número, e cada coisa feita aqui (enviar,
+//  aprovar, recusar) muda o outro. Busca que volta depois de uma
+//  mais nova, ou depois de uma mudança, é descartada.
+let sugCarga    = 0;
+let sugMudancas = 0;
+
+//  As sugestões com aprovação/recusa a caminho do banco. Enquanto
+//  isso a linha fica parada, com os botões desligados: um toque
+//  duplo não cai na sugestão de baixo.
+const sugOcupadas = new Set();
+
+//  Quanto cada lista traz. Assim um robô que encha a lista de
+//  "em análise" não empurra as aprovadas para fora.
+const SUG_LIMITE = { pendente: 300, aprovada: 300, recusada: 100 };
 
 //  O mesmo desenho do "abrir fora" do chat e do Lyra.
 const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>`;
@@ -147,7 +163,7 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
   .sug-btn.sim:hover{background:var(--yellow2);border-color:var(--yellow2)}
   .sug-btn.fraco{color:var(--gray)}
   .sug-btn.fraco:hover{color:var(--white)}
-  .sug-btn:disabled{opacity:0.4;cursor:default}
+  .sug-btn:disabled,.sug-btn[aria-disabled="true"]{opacity:0.4;cursor:default}
   .sug-btn:focus-visible,.sug-abas button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 
   .sug-vazio{padding:44px 8px;text-align:center;font-size:13px;color:var(--gray2);line-height:1.6}
@@ -187,15 +203,18 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
 
 const sugEl = id => document.getElementById(id);
 
-//  O esc() do app.js não troca aspas: serve para texto, não para
-//  atributo. O link vai dentro de href="", então precisa deste.
+//  Para valores que vão dentro de atributos (href, data-id). O
+//  esc() do app.js troca as aspas também; aqui só garante texto.
 function sugAttr(s = "") {
-  return esc(String(s)).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  return esc(String(s));
 }
 
 //  Só http e https viram link clicável. O banco já recusa o
 //  resto, mas a tela não confia nisso sozinha.
 function sugLinkValido(link) {
+  //  aspas e < > nunca fazem parte de um link de verdade, e são
+  //  justamente o que permitiria escrever HTML dentro do href
+  if (!link || /["'<>\s]/.test(link)) return false;
   try {
     const u = new URL(link);
     return (u.protocol === "https:" || u.protocol === "http:") && !!u.hostname.includes(".");
@@ -269,19 +288,48 @@ function sugMensagemErro(e) {
 //  BANCO
 // ============================================================
 
+//  Cada lista vem separada e com limite. Quem só visualiza recebe
+//  as aprovadas completas e, das em análise, só o nome (para a
+//  contagem e para o aviso "já foi sugerida").
+async function sugBuscar(admin) {
+  const base = `${SUG_TABELA}?select=${SUG_CAMPOS}`;
+  const ordem = "order=analisado_em.desc.nullslast,criado_em.desc";
+  const partes = admin
+    ? [
+        req(`${base}&status=eq.pendente&order=criado_em.desc&limit=${SUG_LIMITE.pendente}`),
+        req(`${base}&status=eq.aprovada&${ordem}&limit=${SUG_LIMITE.aprovada}`),
+        req(`${base}&status=eq.recusada&${ordem}&limit=${SUG_LIMITE.recusada}`),
+      ]
+    : [
+        req(`${base}&status=eq.aprovada&${ordem}&limit=${SUG_LIMITE.aprovada}`),
+        req(`${SUG_TABELA}?select=id,nome,status&status=eq.pendente&order=criado_em.desc&limit=${SUG_LIMITE.pendente}`),
+      ];
+  return (await Promise.all(partes)).flatMap(l => l || []);
+}
+
 //  Nunca joga erro para fora: quem chama é o ciclo de atualização
 //  do site, e uma falha aqui não pode travar o resto.
 async function sugCarregar() {
   const admin = isAdmin();
+  const minha = ++sugCarga;
+  const mudancas = sugMudancas;
   const antes = sugEstado === "ok" ? sugLista.filter(s => s.status === "pendente").length : null;
 
-  try {
-    sugLista = await req(`${SUG_TABELA}?select=${SUG_CAMPOS}&order=criado_em.desc`) || [];
+  let lista = null, erro = null;
+  try { lista = await sugBuscar(admin); } catch (e) { erro = e; }
+
+  //  Resposta velha: veio depois de outra busca, depois de algo
+  //  feito aqui, ou de antes de a pessoa entrar/sair. Fica de fora;
+  //  a próxima busca traz o certo.
+  if (minha !== sugCarga || mudancas !== sugMudancas || admin !== isAdmin()) return;
+
+  if (lista) {
+    sugLista = lista;
     sugEstado = "ok";
-  } catch (e) {
-    console.error(e);
+  } else {
+    console.error(erro);
     //  Sem rede numa atualização de fundo: fica o que já estava.
-    if (sugEstado !== "ok" || sugTabelaFalta(e)) sugEstado = sugTabelaFalta(e) ? "sem-tabela" : "erro";
+    if (sugEstado !== "ok" || sugTabelaFalta(erro)) sugEstado = sugTabelaFalta(erro) ? "sem-tabela" : "erro";
   }
 
   //  Chegou sugestão enquanto a equipe estava com a página aberta.
@@ -321,15 +369,23 @@ async function sugEnviar(ev) {
       method: "POST",
       body: JSON.stringify({ nome, sugerido_por: quem, link }),
     });
-    if (Array.isArray(criadas) && criadas[0]) sugLista.unshift(criadas[0]);
-    if (sugEstado !== "ok") sugEstado = "ok";
+    sugMudancas++;
 
     try { localStorage.setItem("tl_sug_quem", quem); } catch { /* sem armazenamento: só não lembra */ }
     sugEl("sugNome").value = "";
     sugEl("sugLink").value = "";
-    sugDica();
     sugSucesso();
-    sugRender();
+
+    //  Com a lista na tela, a nova entra direto. Se a lista não
+    //  tinha carregado, busca agora: contar só a nova daria "0
+    //  aprovadas" como se fosse a lista inteira.
+    if (sugEstado === "ok") {
+      if (Array.isArray(criadas) && criadas[0]) sugLista.unshift(criadas[0]);
+      sugRender();
+      sugDica();
+    } else {
+      sugCarregar();
+    }
   } catch (e) {
     if (!["23505", "P0001"].includes(sugCodigo(e))) console.error(e);
     if (sugCodigo(e) === "23505") sugErroCampo("sugLink", sugMensagemErro(e));
@@ -340,16 +396,18 @@ async function sugEnviar(ev) {
   }
 }
 
-//  Aprovar, recusar ou voltar para análise. A tela muda na hora;
-//  se o banco recusar, volta como estava.
+//  Aprovar, recusar ou voltar para análise. A linha fica parada,
+//  com os botões desligados, até o banco responder — só então ela
+//  muda de lista. Se ela sumisse na hora, a de baixo subiria para
+//  debaixo do dedo e um toque duplo decidiria as duas.
 async function sugAnalisar(id, status) {
   if (!isAdmin()) { abrirLogin(); return; }
   const s = sugLista.find(x => String(x.id) === String(id));
-  if (!s || s.status === status) return;
+  const chave = String(id);
+  if (!s || s.status === status || sugOcupadas.has(chave)) return;
 
-  const antes = { status: s.status, analisado_em: s.analisado_em };
-  s.status = status;
-  s.analisado_em = status === "pendente" ? null : new Date().toISOString();
+  sugOcupadas.add(chave);
+  sugMudancas++;
   sugRender();
 
   try {
@@ -358,15 +416,18 @@ async function sugAnalisar(id, status) {
       body: JSON.stringify({ status }),
     });
     if (Array.isArray(r) && r[0]) Object.assign(s, r[0]);   // a data certa vem do banco
+    else { s.status = status; s.analisado_em = status === "pendente" ? null : new Date().toISOString(); }
     toast(status === "aprovada" ? "Sugestão aprovada ✓"
         : status === "recusada" ? "Sugestão recusada"
         : "Voltou para análise");
   } catch (e) {
     console.error(e);
-    Object.assign(s, antes);
     toast(sugCodigo(e) === "23505"
       ? "Esse louvor já está em outra sugestão."
       : "Não deu para salvar. Tente de novo.", true);
+  } finally {
+    sugOcupadas.delete(chave);
+    sugMudancas++;
   }
   sugRender();
 }
@@ -393,19 +454,23 @@ function sugItem(s, admin) {
   const chips = [`<span class="sug-chip">${esc(sugPlataforma(s.link))}</span>`];
   if (rep) chips.push(`<span class="sug-chip no-rep">No repertório</span>`);
 
+  const id = sugAttr(s.id);
   const ouvir = sugLinkValido(s.link)
-    ? `<a class="sug-btn" href="${sugAttr(s.link)}" target="_blank" rel="noopener noreferrer">Ouvir ${SUG_ICO_FORA}</a>`
+    ? `<a class="sug-btn" data-ouvir="${id}" href="${sugAttr(s.link)}" target="_blank" rel="noopener noreferrer">Ouvir ${SUG_ICO_FORA}</a>`
     : "";
 
+  //  aria-disabled, e não disabled: botão desligado perde o foco,
+  //  e quem usa teclado ficaria sem saber onde está.
+  const off = sugOcupadas.has(String(s.id)) ? ' aria-disabled="true"' : "";
   let acoes = "";
   if (admin && s.status === "pendente") {
     acoes = `
-      <button type="button" class="sug-btn sim" data-acao="aprovada" data-id="${sugAttr(s.id)}">Aprovar</button>
-      <button type="button" class="sug-btn" data-acao="recusada" data-id="${sugAttr(s.id)}">Recusar</button>`;
+      <button type="button" class="sug-btn sim" data-acao="aprovada" data-id="${id}"${off}>Aprovar</button>
+      <button type="button" class="sug-btn" data-acao="recusada" data-id="${id}"${off}>Recusar</button>`;
   } else if (admin) {
     if (s.status === "aprovada" && !rep)
-      acoes += `<button type="button" class="sug-btn" data-acao="repertorio" data-id="${sugAttr(s.id)}">+ Repertório</button>`;
-    acoes += `<button type="button" class="sug-btn fraco" data-acao="pendente" data-id="${sugAttr(s.id)}">Voltar para análise</button>`;
+      acoes += `<button type="button" class="sug-btn" data-acao="repertorio" data-id="${id}"${off}>+ Repertório</button>`;
+    acoes += `<button type="button" class="sug-btn fraco" data-acao="pendente" data-id="${id}"${off}>Voltar para análise</button>`;
   }
 
   return `
@@ -419,9 +484,36 @@ function sugItem(s, admin) {
     </li>`;
 }
 
+//  A lista é redesenhada a cada mudança e a cada atualização de
+//  fundo. Quem navega pelo teclado não pode perder o lugar: o
+//  foco volta para o mesmo botão (ou para a aba, se a sugestão
+//  mudou de lista).
+function sugChaveDoFoco(caixa) {
+  const f = document.activeElement;
+  if (!f || !caixa.contains(f)) return null;
+  if (f.dataset.aba)   return { seletor: `[data-aba="${f.dataset.aba}"]` };
+  if (f.dataset.acao)  return { seletor: `[data-acao="${f.dataset.acao}"][data-id="${f.dataset.id}"]` };
+  if (f.dataset.ouvir) return { seletor: `[data-ouvir="${f.dataset.ouvir}"]` };
+  return { seletor: null };
+}
+
+function sugDevolverFoco(caixa, chave) {
+  if (!chave) return;
+  const alvo = (chave.seletor && caixa.querySelector(chave.seletor))
+    || caixa.querySelector('.sug-abas [aria-pressed="true"]')
+    || caixa.querySelector(".sug-btn");
+  if (alvo) alvo.focus({ preventScroll: true });
+}
+
 function sugRender() {
   const caixa = sugEl("sugLista");
   if (!caixa) return;
+  const foco = sugChaveDoFoco(caixa);
+  sugDesenhar(caixa);
+  sugDevolverFoco(caixa, foco);
+}
+
+function sugDesenhar(caixa) {
   const admin = isAdmin();
 
   const por = { pendente: [], aprovada: [], recusada: [] };
@@ -530,7 +622,8 @@ function sugClique(e) {
   if (aba) { sugAba = aba.dataset.aba; sugRender(); return; }
 
   const b = e.target.closest("[data-acao]");
-  if (!b) return;
+  if (!b || b.getAttribute("aria-disabled") === "true") return;
+  if (e.detail > 1) return;          // o segundo clique de um clique duplo
   if (b.dataset.acao === "repertorio") sugParaRepertorio(b.dataset.id);
   else sugAnalisar(b.dataset.id, b.dataset.acao);
 }
@@ -561,13 +654,16 @@ function sugIniciar() {
   try { sugEl("sugQuem").value = localStorage.getItem("tl_sug_quem") || ""; } catch { /* sem armazenamento */ }
 }
 
-//  Entrou ou saiu: a lista troca entre a visão da equipe e a de
-//  quem só visualiza.
+//  Entrou ou saiu: a equipe vê outras listas (com quem sugeriu e
+//  o link das em análise, e as recusadas), então busca de novo.
 if (typeof aplicarEstadoAuth === "function") {
   const sugAuthOriginal = aplicarEstadoAuth;
   aplicarEstadoAuth = function (...a) {
     const r = sugAuthOriginal.apply(this, a);
+    sugEstado = "carregando";
+    sugAba = "pendente";
     sugRender();
+    sugCarregar();
     return r;
   };
 }
