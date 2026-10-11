@@ -10,7 +10,14 @@
    fixa com um ponto de 6px na cor da pessoa.
    ============================================================ */
 
-   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;900&display=swap');
+   /* A fonte vem pelo <link> de cada página. Um @import aqui baixava
+      a mesma fonte de novo e segurava a primeira pintura da tela. */
+
+   /* Troca de aba suave (Chrome e Safari recentes): a página nova
+      entra por cima da velha, sem o piscar em branco no meio. */
+   @media (prefers-reduced-motion: no-preference){
+     @view-transition{navigation:auto}
+   }
 
    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
    

@@ -235,6 +235,34 @@ async function req(path, opts = {}) {
   return t ? JSON.parse(t) : null;
 }
 
+// ============================================================
+//  CÓPIA NO APARELHO — trocar de aba sem esperar o banco
+//  Cada aba é uma página nova, e cada uma esperava o banco
+//  responder (meio segundo no Wi-Fi, bem mais no 4G da igreja)
+//  para mostrar qualquer coisa. Agora a última resposta fica
+//  guardada no aparelho: a página desenha com ela na hora e, se o
+//  banco trouxer algo diferente, redesenha.
+//  Só leituras públicas (repertório, cultos, sugestões) — nada
+//  que não apareça para qualquer visitante.
+// ============================================================
+
+const COPIA_PREFIXO = "tl_copia:";
+
+function copiaLer(chave) {
+  try {
+    const s = localStorage.getItem(COPIA_PREFIXO + chave);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
+function copiaGuardar(chave, dados) {
+  try { localStorage.setItem(COPIA_PREFIXO + chave, JSON.stringify(dados)); }
+  catch { /* aparelho sem espaço ou modo privado: segue sem cópia */ }
+}
+
+let musicasDoBanco = false;   // já chegou o repertório do banco nesta página?
+let cultosDoBanco  = false;
+
 // ordena alfabeticamente (A→Z), desempatando pela data mais recente
 function ordenarMusicas() {
   const col = new Intl.Collator("pt-BR", { sensitivity: "base", numeric: true });
@@ -246,17 +274,41 @@ function ordenarMusicas() {
   });
 }
 
+function mostrarMusicas(lista) {
+  musicas = lista;
+  ordenarMusicas();
+  atualizarStats();
+  atualizarFiltroTons();
+  render(musicas);
+}
+
 async function carregar() {
+  const caminho = `${TABLE}?order=criado_em.desc`;
+
+  //  Abertura da página: desenha com a cópia enquanto o banco responde.
+  let copia = null;
+  if (!musicasDoBanco) {
+    const c = copiaLer(caminho);
+    if (Array.isArray(c) && c.length) {
+      copia = JSON.stringify(c);
+      mostrarMusicas(c);
+    }
+  }
+
   try {
-    musicas = await req(`${TABLE}?order=criado_em.desc`) || [];
-    ordenarMusicas();
-    atualizarStats();
-    atualizarFiltroTons();
-    render(musicas);
+    const novas = await req(caminho) || [];
+    musicasDoBanco = true;
+    copiaGuardar(caminho, novas);
+    //  Igual à cópia: nada a redesenhar (e a rolagem fica onde está).
+    if (copia === null || JSON.stringify(novas) !== copia) mostrarMusicas(novas);
     setStatus(true);
   } catch (e) {
     console.error(e);
     setStatus(false);
+    if (copia !== null) {
+      toast("Sem conexão: mostrando a última versão guardada.", true);
+      return;
+    }
     toast("Erro ao conectar com o banco.", true);
     document.getElementById("stLoading").style.display = "none";
     document.getElementById("stEmpty").style.display   = "flex";
@@ -1014,46 +1066,66 @@ async function copiarCulto(chave) {
 }
 
 
-async function carregarCultos() {
+function montarCultos(rows) {
   cultos = {};
+  rows.forEach(r => {
+    const raw = typeof r.louvores === "string"
+      ? (() => { try { return JSON.parse(r.louvores); } catch { return []; } })()
+      : (r.louvores || []);
+    // formato antigo: array de louvores. formato novo: { ministrante, ministrante_data, itens: [...] }
+    let lista = [], ministrante = "", ministranteData = null;
+    if (Array.isArray(raw)) {
+      lista = raw;
+    } else if (raw && typeof raw === "object") {
+      lista = Array.isArray(raw.itens) ? raw.itens : [];
+      ministrante = raw.ministrante || "";
+      ministranteData = raw.ministrante_data || null;
+    }
+    // linha sem data é de antes da migração: adota a data do
+    // último louvor que ela guarda
+    const data = r.data
+      || lista.map(l => l.data).filter(Boolean).sort().pop()
+      || isoDia(new Date());
+
+    cultos[`${r.tipo}@${data}`] = {
+      id: r.id,
+      tipo: r.tipo,
+      data,
+      nome: r.nome || null,
+      hora: r.hora || null,
+      cancelado: !!r.cancelado,
+      louvores: lista,
+      ministrante,
+      ministrante_data: ministranteData,
+      atualizado_em: r.atualizado_em || null,
+    };
+  });
+}
+
+async function carregarCultos() {
+  //  Abertura da página: desenha com a cópia enquanto o banco responde.
+  let copia = null;
+  if (!cultosDoBanco) {
+    const c = copiaLer(CULTOS_TABLE);
+    if (Array.isArray(c)) {
+      copia = JSON.stringify(c);
+      montarCultos(c);
+      renderCultos();
+    }
+  }
+
   try {
     const rows = await req(`${CULTOS_TABLE}`) || [];
-    rows.forEach(r => {
-      const raw = typeof r.louvores === "string"
-        ? (() => { try { return JSON.parse(r.louvores); } catch { return []; } })()
-        : (r.louvores || []);
-      // formato antigo: array de louvores. formato novo: { ministrante, ministrante_data, itens: [...] }
-      let lista = [], ministrante = "", ministranteData = null;
-      if (Array.isArray(raw)) {
-        lista = raw;
-      } else if (raw && typeof raw === "object") {
-        lista = Array.isArray(raw.itens) ? raw.itens : [];
-        ministrante = raw.ministrante || "";
-        ministranteData = raw.ministrante_data || null;
-      }
-      // linha sem data é de antes da migração: adota a data do
-      // último louvor que ela guarda
-      const data = r.data
-        || lista.map(l => l.data).filter(Boolean).sort().pop()
-        || isoDia(new Date());
-
-      cultos[`${r.tipo}@${data}`] = {
-        id: r.id,
-        tipo: r.tipo,
-        data,
-        nome: r.nome || null,
-        hora: r.hora || null,
-        cancelado: !!r.cancelado,
-        louvores: lista,
-        ministrante,
-        ministrante_data: ministranteData,
-        atualizado_em: r.atualizado_em || null,
-      };
-    });
+    cultosDoBanco = true;
+    copiaGuardar(CULTOS_TABLE, rows);
+    if (copia !== null && JSON.stringify(rows) === copia) return;
+    montarCultos(rows);
   } catch (e) {
     // tabela sem as colunas novas ou fora do ar: a tela abre vazia
-    // em vez de travar
+    // em vez de travar (ou fica a cópia, se havia uma)
     console.error("Cultos:", e);
+    if (copia !== null) return;
+    cultos = {};
   }
   renderCultos();
 }

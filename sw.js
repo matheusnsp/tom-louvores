@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v31";
+const CACHE = "tom-louvores-v32";
 
 const APP = [
   "./",
@@ -95,6 +95,13 @@ const ehBanco = url =>
 
 const ehAmostra = url => url.hostname.includes("gleitz.github.io");
 
+//  A fonte do Google: sem isto, cada troca de aba esperava o
+//  servidor do Google responder antes de pintar a tela (era o
+//  maior atraso no 4G). O pedido do css não é CORS, então a
+//  resposta chega "opaca" — dá para guardar, só não dá para ler.
+const ehFonte = url =>
+  url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
+
 //  Uma resposta só pode ser lida UMA vez. Quem for guardar precisa
 //  da cópia feita antes de qualquer espera — se o clone acontecer
 //  depois que a página leu o corpo, estoura
@@ -141,6 +148,23 @@ self.addEventListener("fetch", e => {
     return;
   }
 
+  //  Fonte: a guardada sai na hora; a rede atualiza por trás.
+  if (ehFonte(url)) {
+    e.respondWith((async () => {
+      const c = await caches.match(req);
+      const rede = fetch(req).then(r => {
+        if (r && (r.ok || r.type === "opaque")) {
+          const copia = r.clone();
+          caches.open(CACHE).then(k => k.put(req, copia)).catch(() => {});
+        }
+        return r;
+      }).catch(() => null);
+      if (c) { e.waitUntil(rede); return c; }
+      return (await rede) || new Response("", { status: 503 });
+    })());
+    return;
+  }
+
   //  Amostras de som: uma vez baixadas, nunca mudam.
   if (ehAmostra(url)) {
     e.respondWith((async () => {
@@ -157,6 +181,26 @@ self.addEventListener("fetch", e => {
   //  depois de baixar não funcionava no app, mas funcionava no
   //  navegador. A cópia guardada continua valendo quando falta rede
   //  ou quando ela demora demais para responder.
+  //  Troca de aba DENTRO do site (veio de outra página nossa): a
+  //  página guardada sai na hora e a rede atualiza por trás, como
+  //  o css e o js. Esperar a rede aqui custava de 0,1s a 3,5s a
+  //  cada toque numa aba. A abertura do app continua indo à rede
+  //  primeiro, pelo motivo explicado logo abaixo.
+  const interna = (req.mode === "navigate" || url.pathname.endsWith(".html")) &&
+    url.origin === location.origin && req.referrer &&
+    new URL(req.referrer).origin === location.origin;
+  if (interna) {
+    e.respondWith((async () => {
+      const c = await caches.match(req);
+      const rede = fetch(req).then(r => guardar(req, r)).catch(() => null);
+      if (c) { e.waitUntil(rede); return c; }
+      return (await rede) ||
+             (await caches.match("./index.html")) ||
+             new Response("sem conexão", { status: 503 });
+    })());
+    return;
+  }
+
   if (req.mode === "navigate" || url.pathname.endsWith(".html")) {
     e.respondWith((async () => {
       try {

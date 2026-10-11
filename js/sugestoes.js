@@ -315,8 +315,21 @@ async function sugCarregar() {
   const mudancas = sugMudancas;
   const antes = sugEstado === "ok" ? sugLista.filter(s => s.status === "pendente").length : null;
 
+  //  Abertura da página: mostra a última lista guardada no aparelho
+  //  enquanto o banco responde (ver "CÓPIA NO APARELHO" no app.js).
+  const chaveCopia = "sugestoes:" + (admin ? "equipe" : "publico");
+  if (sugEstado === "carregando" && typeof copiaLer === "function") {
+    const c = copiaLer(chaveCopia);
+    if (Array.isArray(c)) {
+      sugLista = c;
+      sugEstado = "ok";
+      sugRender();
+    }
+  }
+
   let lista = null, erro = null;
   try { lista = await sugBuscar(admin); } catch (e) { erro = e; }
+  if (lista && typeof copiaGuardar === "function") copiaGuardar(chaveCopia, lista);
 
   //  Resposta velha: veio depois de outra busca, depois de algo
   //  feito aqui, ou de antes de a pessoa entrar/sair. Fica de fora;
