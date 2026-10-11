@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <!-- pintado antes de tudo: sem isso o navegador mostra um quadro
+       branco entre uma página e outra, até o style.css chegar -->
+  <meta name="color-scheme" content="dark" />
+  <style>html,body{background:#0A0A0A}</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Sugestões — Tom Louvores INVB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" type="image/png" href="img/logo3.png">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="apple-touch-icon" href="img/logo3.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+</head>
+<body class="read-only" data-pagina="sugestoes">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <img src="img/logo2.png" alt="Nova Vida Botafogo" class="logo-img" />
+      <div class="logo-sep"></div>
+      <span class="logo-sub">Tom<br>Louvores</span>
+    </div>
+    <div class="header-right">
+      <div class="status-pill" id="statusPill">
+        <span class="dot"></span>
+        <span id="statusTxt">Conectando</span>
+      </div>
+      <button class="btn-add" id="btnLoginShow" onclick="abrirLogin()" style="display:none">🔒 Entrar</button>
+      <button class="btn-add" id="btnNovaMusica" onclick="abrirModal()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
+      <button class="btn-logout" id="btnLogout" onclick="logout()" style="display:none">Sair</button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero-outer">
+  <div class="hero">
+    <div>
+      <div class="hero-tag">Botafogo · RJ</div>
+      <h1 class="hero-h1">SUGESTÕES DE<br><em>LOUVORES</em></h1>
+      <p class="hero-sub">Conhece um louvor que a igreja precisa cantar? Mande para a equipe de louvor.</p>
+    </div>
+    <!-- Estes campos existem só porque o app.js escreve neles. -->
+    <span id="totalMusicas" hidden></span>
+    <span id="totalTons" hidden></span>
+  </div>
+</section>
+
+<!-- SUGESTÕES -->
+<section class="sug-wrap" id="sugestoes">
+
+  <form class="sug-form" id="sugForm" novalidate>
+    <h2 class="sug-titulo">Sugerir um louvor</h2>
+    <p class="sug-ajuda">A equipe de louvor analisa cada sugestão antes de ela entrar na lista.</p>
+
+    <div class="sug-campo">
+      <label class="flabel" for="sugNome">Nome do louvor</label>
+      <input type="text" id="sugNome" class="finput" maxlength="120" autocomplete="off"
+             autocapitalize="words" placeholder="Ex.: Oceanos" required />
+      <p class="sug-dica" id="sugDica" aria-live="polite"></p>
+    </div>
+
+    <div class="sug-campo">
+      <label class="flabel" for="sugQuem">Seu nome</label>
+      <input type="text" id="sugQuem" class="finput" maxlength="80" autocomplete="name"
+             autocapitalize="words" placeholder="Quem está sugerindo" required />
+    </div>
+
+    <div class="sug-campo">
+      <label class="flabel" for="sugLink">Link do louvor</label>
+      <input type="url" id="sugLink" class="finput" maxlength="500" inputmode="url" autocomplete="off"
+             autocapitalize="none" spellcheck="false" placeholder="YouTube, Spotify, Deezer…" required />
+    </div>
+
+    <!-- Armadilha para robôs: pessoas não veem este campo, robôs preenchem. -->
+    <div class="sug-isca" aria-hidden="true">
+      <label>Site <input type="text" id="sugSite" tabindex="-1" autocomplete="off" /></label>
+    </div>
+
+    <p class="sug-erro" id="sugErro" role="alert"></p>
+    <p class="sug-ok" id="sugOk" role="status" hidden>
+      Sugestão enviada. Agora ela está em análise pela equipe de louvor.
+    </p>
+    <button type="submit" class="btn-save sug-enviar" id="sugEnviar">Enviar sugestão</button>
+  </form>
+
+  <div class="sug-lista" id="sugLista">
+    <div class="sug-carregando"><div class="spinner"></div></div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     O repertório não aparece aqui, mas os campos precisam existir:
+     o app.js conta com eles ao carregar, ao filtrar e ao salvar.
+     ============================================================ -->
+<section class="repertorio" hidden>
+  <div class="toolbar">
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-ico">&#9906;</span>
+        <input type="text" id="busca" class="inp-search" placeholder="Buscar música..." oninput="filtrar()"/>
+      </div>
+    </div>
+    <div class="filtros-row">
+      <select id="filtroMin" class="sel" onchange="filtrar()">
+        <option value="">Ministrantes</option>
+        <option>Raphaela</option><option>Daniela</option><option>Cris</option>
+        <option>Mirian</option><option>Pr. Humberto</option>
+      </select>
+      <select id="filtroTom" class="sel" onchange="filtrar()">
+        <option value="">Tons</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid-wrap">
+    <div class="grid" id="grid">
+      <div class="state-loading" id="stLoading"><div class="spinner"></div></div>
+      <div class="state-empty" id="stEmpty"></div>
+    </div>
+  </div>
+</section>
+
+<div class="cultos-grid" id="cultosGrid" hidden></div>
+
+<!-- MODAL ADICIONAR LOUVOR AO CULTO -->
+<div class="overlay-bg" id="cultoOverlay" onclick="cultoFecharFora(event)">
+  <div class="modal" id="cultoModal">
+    <div class="modal-hd">
+      <h2 id="cultoModalTitulo">ADICIONAR LOUVOR</h2>
+      <button class="modal-close" onclick="fecharCultoModal()">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div class="culto-tabs">
+        <button type="button" class="culto-tab active" id="tabEscolher" onclick="cultoTab('escolher')">Do repertório</button>
+        <button type="button" class="culto-tab" id="tabCriar" onclick="cultoTab('criar')">Criar nova</button>
+      </div>
+
+      <div id="cultoPaneEscolher">
+        <div>
+          <label class="flabel">Música</label>
+          <input type="text" id="cBuscaMusica" class="finput" placeholder="Buscar no repertório..." oninput="filtrarMusicasCulto()" />
+          <div class="culto-musica-list" id="cultoMusicaList"></div>
+        </div>
+        <div id="cultoTomWrap" style="display:none;margin-top:14px">
+          <label class="flabel">Tom deste culto</label>
+          <div class="tom-add-row" style="grid-template-columns:1fr">
+            <select id="cTomEscolhido" class="finput"><option value="">Tom</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div id="cultoPaneCriar" style="display:none">
+        <div>
+          <label class="flabel">Nome da música</label>
+          <input type="text" id="cNovoNome" class="finput" placeholder="Ex: Oceanos" />
+        </div>
+        <div style="margin-top:14px">
+          <label class="flabel">Tom e Ministrante</label>
+          <div class="tom-add-row" style="grid-template-columns:1fr 1fr">
+            <select id="cNovoTom" class="finput">
+              <option value="">Tom</option><option>Orig.</option>
+              <option>C</option><option>C#</option><option>D</option><option>D#</option>
+              <option>E</option><option>F</option><option>F#</option><option>G</option>
+              <option>G#</option><option>A</option><option>A#</option><option>B</option>
+              <option>Cm</option><option>C#m</option><option>Dm</option><option>D#m</option>
+              <option>Em</option><option>Fm</option><option>F#m</option><option>Gm</option>
+              <option>G#m</option><option>Am</option><option>A#m</option><option>Bm</option>
+            </select>
+            <select id="cNovoMin" class="finput">
+              <option value="">Ministrante</option>
+              <option>Raphaela</option><option>Daniela</option><option>Cris</option>
+              <option>Mirian</option><option>Pr. Humberto</option>
+            </select>
+          </div>
+          <p class="culto-hint">A música também será salva no repertório geral.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-cancel" onclick="fecharCultoModal()">Cancelar</button>
+      <button class="btn-save" id="btnAddLouvor" onclick="confirmarLouvorCulto()">ADICIONAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LEITURA -->
+<div class="overlay-bg" id="viewOverlay" onclick="viewFecharFora(event)">
+  <div class="modal view-modal" id="viewModal">
+    <div class="modal-hd">
+      <h2 id="viewTitulo">MÚSICA</h2>
+      <div class="view-hd-actions">
+        <button class="view-edit-btn" id="viewEditBtn" onclick="editarDaLeitura()" title="Editar">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+        <button class="modal-close" onclick="fecharView()">✕</button>
+      </div>
+    </div>
+    <div class="modal-bd view-bd">
+      <div class="view-section">
+        <label class="flabel">Tons e Ministrantes</label>
+        <div id="viewTons" class="view-tons"></div>
+      </div>
+      <div id="viewObsWrap" class="view-section">
+        <label class="flabel">Observações</label>
+        <div id="viewObs" class="view-obs"></div>
+      </div>
+      <div id="viewLinksWrap" class="view-links"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MÚSICA -->
+<div class="overlay-bg" id="overlay" onclick="fecharFora(event)">
+  <div class="modal" id="modal">
+    <div class="modal-hd">
+      <h2 id="modalTitulo">NOVA MÚSICA</h2>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div>
+        <label class="flabel">Nome da música</label>
+        <input type="text" id="fNome" class="finput" placeholder="Ex: Oceanos"/>
+      </div>
+      <div>
+        <label class="flabel">Tons e Ministrantes</label>
+        <div class="tom-add-row">
+          <select id="fTom" class="finput">
+            <option value="">Tom</option><option>Orig.</option>
+            <option>C</option><option>C#</option><option>D</option><option>D#</option>
+            <option>E</option><option>F</option><option>F#</option><option>G</option>
+            <option>G#</option><option>A</option><option>A#</option><option>B</option>
+            <option>Cm</option><option>C#m</option><option>Dm</option><option>D#m</option>
+            <option>Em</option><option>Fm</option><option>F#m</option><option>Gm</option>
+            <option>G#m</option><option>Am</option><option>A#m</option><option>Bm</option>
+          </select>
+          <select id="fMin" class="finput">
+            <option value="">Ministrante</option>
+            <option>Raphaela</option><option>Daniela</option><option>Cris</option>
+            <option>Mirian</option><option>Pr. Humberto</option>
+          </select>
+          <button type="button" class="btn-add-tom" onclick="adicionarTomMin()">+</button>
+        </div>
+        <div class="tom-list" id="tomList"></div>
+      </div>
+      <div>
+        <label class="flabel">Links de Cifra</label>
+        <div class="cifra-add-row">
+          <input type="text" id="fCifra" class="finput" placeholder="Cole o link da cifra"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarCifra();}"/>
+          <button type="button" class="btn-add-tom" onclick="adicionarCifra()">+</button>
+        </div>
+        <div class="cifra-list" id="cifraList"></div>
+      </div>
+      <div>
+        <label class="flabel">Link do YouTube</label>
+        <input type="text" id="fYoutube" class="finput" placeholder="Cole o link do YouTube"/>
+      </div>
+      <div>
+        <label class="flabel">Link do Spotify</label>
+        <input type="text" id="fSpotify" class="finput" placeholder="Cole o link do Spotify"/>
+      </div>
+      <div>
+        <label class="flabel">Observações</label>
+        <textarea id="fObs" class="finput ftextarea" placeholder="Notas, avisos, etc."></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-save" id="btnSalvar" onclick="salvar()">SALVAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginOverlay" onclick="loginFecharFora(event)">
+  <div class="login-box">
+    <div>
+      <h2>ÁREA ADMIN</h2>
+      <p class="login-sub">Acesso restrito para edição do repertório.</p>
+    </div>
+    <div>
+      <label>Usuário</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="username" />
+    </div>
+    <div>
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') tentarLogin()" />
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-actions">
+      <button class="btn-login-cancel" onclick="fecharLogin()">Cancelar</button>
+      <button class="btn-login-submit" onclick="tentarLogin()">ENTRAR</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/lyra.js"></script>
+<script src="js/acordes.js"></script>
+<script src="js/sons.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/seguir.js"></script>
+<script src="js/afinador.js"></script>
+<script src="js/metronomo.js"></script>
+<script src="js/vista-lista.js"></script>
+<script src="js/culto-seletor.js"></script>
+<script src="js/busca-limpar.js"></script>
+<script src="js/paginas.js"></script>
+<script src="js/sugestoes.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/atualizar.js"></script>
+<script src="js/lista-ministrantes.js"></script>
+<script src="js/quebra.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/chat-aviso.js"></script>
+<script>
+// Guarda o app no aparelho: abre instantâneo e funciona sem internet.
+//
+// E troca de versão sozinho. Sem isto, o app instalado só passava a
+// rodar o código novo no segundo lançamento — quem tinha o atalho na
+// tela de início ficava uma sessão inteira para trás.
+if ("serviceWorker" in navigator) {
+  addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js");
+
+      // uma recarga só, para não entrar em laço
+      let jaTrocou = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (jaTrocou) return;
+        jaTrocou = true;
+        location.reload();
+      });
+
+      // versão nova esperando: assume assim que estiver pronta
+      reg.addEventListener("updatefound", () => {
+        const novo = reg.installing;
+        if (!novo) return;
+        novo.addEventListener("statechange", () => {
+          if (novo.state === "installed" && navigator.serviceWorker.controller) {
+            novo.postMessage({ acao: "assumir" });
+          }
+        });
+      });
+
+      // procura versão nova ao voltar para o app
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) reg.update().catch(() => {});
+      });
+    } catch (e) { /* sem service worker: o app funciona igual, só não offline */ }
+  });
+}
+</script>
+</body>
+</html>

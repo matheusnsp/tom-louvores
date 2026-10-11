@@ -1,13 +1,14 @@
 // ============================================================
-//  TOM LOUVORES — duas páginas
+//  TOM LOUVORES — três páginas
 //  Carregue por ÚLTIMO, depois de todos os outros scripts.
 //
 //  index.html      → só os louvores escalados nos cultos
 //  repertorio.html → a lista completa, com busca e filtros
+//  sugestoes.html  → sugestões de louvores (sugestoes.js)
 //
-//  Os dois arquivos compartilham o mesmo app.js. Cada página
-//  traz escondidos os campos de que o app.js precisa mas que
-//  ela não mostra, então nada aqui altera o app.js.
+//  Os arquivos compartilham o mesmo app.js. Cada página traz
+//  escondidos os campos de que o app.js precisa mas que ela
+//  não mostra, então nada aqui altera o app.js.
 // ============================================================
 
 const PAGINA = document.body.dataset.pagina || "cultos";
@@ -49,6 +50,45 @@ const PAGINA = document.body.dataset.pagina || "cultos";
   }
   .nav-pag a:hover{color:var(--white)}
   .nav-pag a[aria-current]{color:var(--yellow);border-bottom-color:var(--yellow)}
+
+  /* quantas sugestões esperam análise (só com login), logo
+     depois do nome da aba */
+  .nav-conta{
+    display:inline-block;margin-left:7px;
+    min-width:16px;height:16px;padding:0 4px;border-radius:8px;
+    background:var(--yellow);color:var(--black);
+    font-size:9.5px;font-weight:800;line-height:16px;
+    letter-spacing:0;text-align:center;
+    pointer-events:none;
+  }
+  /* No celular as abas ficam centradas na tela: o número vai
+     para o canto da aba, fora do fluxo, para elas não mudarem de
+     lugar quando ele aparece ou some. */
+  @media(max-width:900px){
+    .nav-pag a{position:relative}
+    .nav-conta{position:absolute;top:calc(50% - 18px);right:-14px;margin-left:0}
+  }
+
+  /* Com três abas e a fileira de botões de quem está logado, o
+     cabeçalho do computador apertava abaixo de 1366px: os botões
+     quebravam em duas linhas e, abaixo de 1100px, saíam da tela.
+     Nessa faixa as abas se aproximam um pouco, e o "Conectado"
+     fica só com a bolinha verde (vermelha quando cai), como já
+     acontece no celular: abaixo de 1280px para quem está logado,
+     abaixo de 1025px para todo mundo. */
+  @media(min-width:901px) and (max-width:1366px){
+    .nav-pag{gap:18px;margin-left:20px;padding-left:20px}
+  }
+  @media(min-width:901px) and (max-width:1279px){
+    body:not(.read-only) #statusTxt{display:none}
+    body:not(.read-only) .status-pill{padding:7px 9px;gap:0}
+  }
+  @media(min-width:901px) and (max-width:1024px){
+    .nav-pag{gap:14px;margin-left:14px;padding-left:14px}
+    .nav-pag a{font-size:11px;letter-spacing:0.07em}
+    #statusTxt{display:none}
+    .status-pill{padding:7px 9px;gap:0}
+  }
 
   /* a busca gruda logo abaixo do header, seja qual for a altura
      dele. O valor é medido no navegador (ajustarHeader). */
@@ -127,9 +167,18 @@ const PAGINA = document.body.dataset.pagina || "cultos";
     .nav-pag a{font-size:10px;letter-spacing:0.04em}
   }
 
+  /* Com a terceira aba (Sugestões), as abas e o nome "Tom
+     Louvores" deixam de caber juntos abaixo de 420px: o nome
+     encostava no "Cultos". Dali para baixo fica só o V da logo,
+     e as três abas continuam à vista. */
+  @media(max-width:419px){
+    .logo-sub{display:none}
+  }
+
   /* Abaixo de 350px nem o rótulo cabe: fica só o "+", que já é
-     o símbolo entendido de adicionar. O nome da marca continua. */
+     o símbolo entendido de adicionar. */
   @media(max-width:350px){
+    .nav-conta{right:-10px}
     .btn-lbl{display:none}
     .btn-add{padding:8px 13px;font-size:15px;line-height:1}
     .nav-pag{gap:11px}
@@ -170,13 +219,65 @@ function navMontar() {
   nav.setAttribute("aria-label", "Seções");
   nav.innerHTML = `
     <a href="./"${PAGINA === "cultos" ? ' aria-current="page"' : ""}>Cultos</a>
-    <a href="repertorio.html"${PAGINA === "repertorio" ? ' aria-current="page"' : ""}>Repertório</a>`;
+    <a href="repertorio.html"${PAGINA === "repertorio" ? ' aria-current="page"' : ""}>Repertório</a>
+    <a href="sugestoes.html" id="navSugestoes"${PAGINA === "sugestoes" ? ' aria-current="page"' : ""}>Sugestões</a>`;
 
   // entra logo depois da logo, e fica ali em qualquer largura
   const logo = barra.querySelector(".logo");
   logo ? logo.insertAdjacentElement("afterend", nav) : barra.appendChild(nav);
 
   ajustarHeader();
+  navContarSugestoes();
+}
+
+// ── sugestões esperando análise ─────────────────────────────
+//  Para quem está logado, a aba mostra quantas sugestões estão
+//  esperando, em qualquer página: é assim que a equipe fica
+//  sabendo que chegou sugestão nova. Para quem só visualiza,
+//  nada (nem a busca no banco acontece).
+//
+//  Se a tabela ainda não existir no Supabase, a busca falha e a
+//  aba fica sem número — o resto do site nem percebe.
+
+async function navContarSugestoes() {
+  const aba = document.getElementById("navSugestoes");
+  if (!aba) return;
+  // na própria página de sugestões quem conta é o sugestoes.js,
+  // que já tem a lista inteira na mão
+  if (PAGINA === "sugestoes") return;
+  const logado = typeof isAdmin === "function" && isAdmin();
+  let n = 0;
+  if (logado) {
+    try {
+      const pendentes = await req("sugestoes?select=id&status=eq.pendente");
+      n = (pendentes || []).length;
+    } catch { n = 0; }
+  }
+  navMostrarContagem(n);
+}
+
+function navMostrarContagem(n) {
+  const aba = document.getElementById("navSugestoes");
+  if (!aba) return;
+  let bolha = aba.querySelector(".nav-conta");
+  if (!n) { if (bolha) bolha.remove(); return; }
+  if (!bolha) {
+    bolha = document.createElement("span");
+    bolha.className = "nav-conta";
+    aba.appendChild(bolha);
+  }
+  bolha.textContent = n > 99 ? "99+" : String(n);
+  bolha.setAttribute("aria-label", `${n} esperando análise`);
+}
+
+// entrou ou saiu: o número aparece ou some na hora
+if (typeof aplicarEstadoAuth === "function") {
+  const navAuthOriginal = aplicarEstadoAuth;
+  aplicarEstadoAuth = function (...a) {
+    const r = navAuthOriginal.apply(this, a);
+    navContarSugestoes();
+    return r;
+  };
 }
 
 // ── altura real do header ───────────────────────────────────
@@ -219,6 +320,27 @@ if (PAGINA === "repertorio") {
   //   e este arquivo roda antes disso acontecer)
   carregarCultos = async function () {};
   renderCultos   = function () {};
+}
+
+if (PAGINA === "sugestoes") {
+  //  No lugar dos cultos, as sugestões. O app.js chama
+  //  carregarCultos() na abertura, e o atualizar.js ao voltar para
+  //  a aba, ao recuperar a conexão e de tempos em tempos — com o
+  //  cuidado de não atualizar no meio de um formulário. As
+  //  sugestões pegam carona nesse mesmo ciclo.
+  carregarCultos = async function () {
+    if (typeof sugCarregar === "function") await sugCarregar();
+  };
+  renderCultos = function () {};
+
+  //  O repertório é carregado mesmo assim: é com ele que a página
+  //  avisa "essa já está no repertório". Mas não há lista para
+  //  montar — cada vez que ele chega (ou muda, depois de salvar
+  //  uma música), quem redesenha são as sugestões.
+  render = function (lista) {
+    if (typeof lyraListaVisivel !== "undefined") lyraListaVisivel = lista || [];
+    if (typeof sugRepertorioMudou === "function") sugRepertorioMudou();
+  };
 }
 
 if (document.readyState === "loading") {

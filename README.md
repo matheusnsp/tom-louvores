@@ -93,6 +93,14 @@ louvor-app/
 
 ---
 
+## 💡 Sugestões de louvores
+
+A aba **Sugestões** (`sugestoes.html`) deixa qualquer pessoa sugerir um louvor: nome, quem sugeriu e o link (YouTube, Spotify, Deezer…). A sugestão entra **em análise**; com login, a equipe **aprova** ou **recusa**. Quem não está logado vê as aprovadas e quantas estão esperando; com login, a aba mostra o número de sugestões esperando em qualquer página.
+
+**Para ativar:** no Supabase do site, abra **SQL Editor → New query**, cole o arquivo `supabase/sugestoes.sql` e clique em **Run** (uma vez só).
+
+---
+
 ## 🛠 Como usar
 
 - **Adicionar música:** clique em "+ Nova Música", preencha nome, tom e ministrante
