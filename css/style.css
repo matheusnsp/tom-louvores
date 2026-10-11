@@ -331,6 +331,13 @@
    .card-ton-row{
      display:flex;align-items:center;justify-content:space-between;gap:8px;
    }
+   /* o "m" do tom menor: a Bebas Neue não tem minúscula */
+   .tom-m{
+     font-family:'Inter',sans-serif;font-weight:700;
+     text-transform:none;letter-spacing:0;
+     font-size:.72em;margin-left:.04em;
+   }
+
    .card-badge{
      font-family:'Bebas Neue',sans-serif;
      font-size:20px;letter-spacing:0.04em;

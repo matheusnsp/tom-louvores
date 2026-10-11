@@ -58,7 +58,7 @@
           <span class="stat-l">Tons</span>
         </div>
         <div class="stat-row">
-          <span class="stat-n">5</span>
+          <span class="stat-n" id="totalMins">5</span>
           <span class="stat-l">Ministr.</span>
         </div>
       </div>
@@ -78,8 +78,6 @@
     <div class="filtros-row">
       <select id="filtroMin" class="sel" onchange="filtrar()">
         <option value="">Ministrantes</option>
-        <option>Raphaela</option><option>Daniela</option><option>Cris</option>
-        <option>Mirian</option><option>Pr. Humberto</option>
       </select>
       <select id="filtroTom" class="sel" onchange="filtrar()">
         <option value="">Tons</option>
@@ -94,7 +92,7 @@
         <p style="font-size:12px;color:#555;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Carregando...</p>
       </div>
       <div class="state-empty" id="stEmpty">
-        <div class="empty-sym">NO SONGS</div>
+        <div class="empty-sym">SEM MÚSICAS</div>
         <p class="empty-ttl">Nenhuma música</p>
         <p class="empty-sub">Clique em "+ Nova Música" para começar.</p>
       </div>
@@ -155,8 +153,6 @@
             </select>
             <select id="cNovoMin" class="finput">
               <option value="">Ministrante</option>
-              <option>Raphaela</option><option>Daniela</option><option>Cris</option>
-              <option>Mirian</option><option>Pr. Humberto</option>
             </select>
           </div>
           <p class="culto-hint">A música também será salva no repertório geral.</p>
@@ -222,8 +218,6 @@
           </select>
           <select id="fMin" class="finput">
             <option value="">Ministrante</option>
-            <option>Raphaela</option><option>Daniela</option><option>Cris</option>
-            <option>Mirian</option><option>Pr. Humberto</option>
           </select>
           <button type="button" class="btn-add-tom" onclick="adicionarTomMin()">+</button>
         </div>

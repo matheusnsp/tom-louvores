@@ -1,94 +1,73 @@
-# 🎵 Louvores — Gestão de Repertório
+# 🎵 Tom Louvores — INVB
 
-Sistema para gerenciar músicas, tons e ministrantes da sua equipe de louvor.
+Repertório do louvor da Igreja Nova Vida de Botafogo: músicas, tons, ministrantes, cifras e a escala dos cultos, num lugar só.
+
+No ar em **https://louvores.invbotafogo.com.br**
 
 ---
 
-## 🚀 Como configurar (passo a passo)
+## Como o site funciona
 
-### 1. Configurar o Supabase
+- **Site estático**: HTML, CSS e JavaScript puro, sem build e sem servidor próprio. O que está na `main` é o que vai para o ar.
+- **Hospedagem**: GitHub Pages. O arquivo `CNAME` aponta o domínio. Depois de um `git push`, o site atualiza sozinho em um ou dois minutos.
+- **Dados**: Supabase (tabelas `musicas`, `cultos` e `sugestoes`). O site fala com ele pela chave pública (anon), que fica no `js/config.js` — essa chave pode ficar no código. **A chave secreta (service_role) nunca entra aqui.**
+- **Escala mensal dos ministrantes**: lida do Firebase (projeto `escala-lideres`), também configurado no `js/config.js`.
+- **Funciona offline**: o `sw.js` guarda os arquivos no celular. Toda vez que mudar algum arquivo do site, aumente o número em `const CACHE = "tom-louvores-vNN"` no `sw.js`, senão quem já abriu o site continua vendo a versão antiga.
 
-1. Acesse [supabase.com](https://supabase.com) e crie uma conta
-2. Crie um novo projeto
-3. No menu lateral, vá em **SQL Editor**
-4. Cole o conteúdo do arquivo `supabase-setup.sql` e clique em **Run**
-5. Vá em **Project Settings → API** e copie:
-   - **Project URL** → algo como `https://xyzabcdef.supabase.co`
-   - **anon / public key** → chave longa que começa com `eyJ...`
+---
 
-----
- 
-### 2. Subir no GitHub
+## Páginas
+
+| Página | O que tem |
+|---|---|
+| `index.html` | Cultos da semana: o que vai ser tocado, em que tom e quem ministra |
+| `repertorio.html` | Todas as músicas, em lista ou em cards, com busca e filtros |
+| `sugestoes.html` | Qualquer pessoa sugere um louvor; a equipe aprova ou recusa |
+
+---
+
+## Arquivos
+
+```
+├── index.html, repertorio.html, sugestoes.html   → as páginas
+├── css/style.css          → estilo geral
+├── js/
+│   ├── config.js          → ⚙️ Supabase, Firebase, cultos fixos e MINISTRANTES
+│   ├── app.js             → base: login, repertório, cultos, modais
+│   ├── paginas.js         → o que muda de uma página para outra e o menu de abas
+│   ├── vista-lista.js     → repertório em lista (A–Z, por tom, recentes)
+│   ├── lyra.js            → leitor de cifras
+│   ├── sugestoes.js       → aba de sugestões
+│   └── …                  → um arquivo por recurso (afinador, metrônomo, chat…)
+├── supabase/sugestoes.sql → tabela das sugestões (rodar uma vez)
+├── dev/checar.sh          → conferência pelo terminal
+├── sw.js, manifest.json   → app instalável e offline
+└── CNAME                  → domínio do GitHub Pages
+```
+
+---
+
+## Tarefas comuns
+
+### Entrou ou saiu um ministrante
+
+Edite **só** a lista `MINISTRANTES` no `js/config.js`:
+
+```js
+const MINISTRANTES = ["Raphaela", "Daniela", "Cris", "Mirian", "Pr. Humberto"];
+```
+
+Os filtros, os formulários, a escala e o número de ministrantes no topo do repertório saem dessa lista. Escreva o nome igual ao que está na escala. Depois aumente o `CACHE` no `sw.js`.
+
+### Novo culto fixo na semana
+
+Acrescente uma linha em `CULTOS_FIX`, no `js/config.js` (tem um exemplo comentado lá).
+
+### Publicar uma mudança
 
 ```bash
-git init
-git add .
-git commit -m "primeiro commit"
-git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/SEU_REPO.git
-git push -u origin main
-```
-
----
-
-### 3. Deploy no Vercel
-
-1. Acesse [vercel.com](https://vercel.com) e conecte seu GitHub
-2. Importe o repositório
-3. Antes de fazer o deploy, vá em **Environment Variables** e adicione:
-
-| Nome da variável | Valor |
-|---|---|
-| `SUPABASE_URL` | `https://xyzabcdef.supabase.co` |
-| `SUPABASE_KEY` | `eyJhbGciOiJIUzI1NiIs...` |
-
-4. Clique em **Deploy** ✓
-
-> **⚠️ Importante:** Nunca coloque suas chaves diretamente no código e nem faça commit delas. Sempre use variáveis de ambiente no Vercel.
-
----
-
-### 4. Configurar as variáveis no Vercel para o app web
-
-Como este é um site estático (HTML puro, sem Node.js), as variáveis de ambiente do Vercel **não chegam automaticamente ao JavaScript do browser**. 
-
-Para injetar as variáveis, crie um arquivo `vercel.json` na raiz do projeto com os rewrites e um endpoint, **OU** use a abordagem mais simples: 
-
-**Opção simples — edite o `config.js` diretamente antes do deploy:**
-```js
-const CONFIG = {
-  SUPABASE_URL: "https://SUA-URL.supabase.co",
-  SUPABASE_KEY: "SUA-CHAVE-AQUI",
-  TABLE_NAME: "musicas",
-};
-```
-
-**Opção avançada — Vercel com Edge Function** (para nunca expor as chaves no repositório, fale com o desenvolvedor para adicionar um proxy).
-
----
-
-## 🎨 Ministrantes disponíveis
-
-- Raphaela
-- Daniela
-- Cris
-- Mirian
-- Pr. Humberto
-
-Para adicionar mais ministrantes, edite as opções em `index.html` (nos dois `<select>` de ministrante) e no objeto `MINISTRANTE_CORES` em `app.js`.
-
----
-
-## 📁 Estrutura de arquivos
-
-```
-louvor-app/
-├── index.html          → Estrutura da página
-├── style.css           → Estilos visuais
-├── app.js              → Lógica e comunicação com Supabase
-├── config.js           → ⚙️ CONFIGURAÇÕES (URL e chave do Supabase)
-├── supabase-setup.sql  → SQL para criar a tabela no Supabase
-└── README.md           → Este arquivo
+bash dev/checar.sh      # confere sintaxe e arquivos faltando
+git add -A && git commit -m "o que mudou" && git push
 ```
 
 ---
@@ -109,7 +88,12 @@ delete from public.sugestoes where status <> 'aprovada' and criado_em > now() - 
 
 ## 🛠 Como usar
 
-- **Adicionar música:** clique em "+ Nova Música", preencha nome, tom e ministrante
-- **Editar:** passe o mouse sobre o card e clique no ✏️
-- **Excluir:** passe o mouse sobre o card e clique no 🗑️
-- **Filtrar:** use a barra de busca ou os filtros de ministrante/tom
+- **Entrar**: "🔒 Entrar", no topo. Sem login, o site é só leitura.
+- **Adicionar música**: "+ Nova música", com nome, tom e ministrante.
+- **Editar**: abra a música e use o lápis. **Excluir**: o ✕ na linha da lista (com login).
+- **Filtrar**: busca, ministrante e tom; no repertório, agrupe por letra, tom ou mais recentes.
+- **Montar o culto**: na página inicial, escolha as músicas de cada culto e o tom.
+
+### Sobre o login
+
+Hoje o login acontece só no navegador: ele esconde e mostra os botões de edição, mas o banco não sabe quem é da equipe. Para proteger de verdade, o próximo passo seria passar o login para o Supabase Auth.

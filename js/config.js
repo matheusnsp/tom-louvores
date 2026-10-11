@@ -19,6 +19,11 @@ const CONFIG = {
     },
   };
 
+  // Ministrantes do louvor. Entrou ou saiu alguém? Mude só esta
+  // lista: os filtros, os formulários, a escala e o número do topo
+  // do repertório saem daqui. Escreva o nome igual ao da escala.
+  const MINISTRANTES = ["Raphaela", "Daniela", "Cris", "Mirian", "Pr. Humberto"];
+
   const CULTOS_FIX = [
     { tipo: "quarta",        titulo: "Quarta",  dia: "Quarta-feira",    diaSemana: 3, h: 19, min: 30 },
     { tipo: "domingo_manha", titulo: "Domingo", dia: "Domingo · Manhã", diaSemana: 0, h: 10, min: 0  },

@@ -15,15 +15,22 @@ let editandoId = null;
 let tomMinList = [];   // [{ tom, mins: [nomes...] }]
 let cifraList  = [];   // URLs de cifra do modal de edição
 
-const CHIP_CLASS = {
-  "Raphaela":    "chip-Raphaela",
-  "Daniela":     "chip-Daniela",
-  "Cris":        "chip-Cris",
-  "Mirian":      "chip-Mirian",
-  "Pr. Humberto":"chip-Humberto",
-};
+// A lista de ministrantes fica no config.js. Daqui sai a classe de
+// cor de cada um ("Pr. Humberto" → chip-Humberto) e as opções dos
+// <select> de ministrante das páginas.
+const CHIP_CLASS = Object.fromEntries(MINISTRANTES.map(n => [n,
+  "chip-" + n.replace(/^Pr\.?\s+/i, "").normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]/g, "")]));
 
-const MINISTRANTES = ["Raphaela", "Daniela", "Cris", "Mirian", "Pr. Humberto"];
+(function preencherMinistrantes() {
+  ["filtroMin", "cNovoMin", "fMin"].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    MINISTRANTES.forEach(n => sel.add(new Option(n, n)));
+  });
+  const total = document.getElementById("totalMins");
+  if (total) total.textContent = MINISTRANTES.length;
+})();
 
 // ============================================================
 //  AUTH — Login / Logout
@@ -190,7 +197,7 @@ function tonsParaHTML(m, expandir = true) {
   const pares = deserializarPares(m.tom);
 
   if (!pares.length) {
-    return `<div class="card-ton-row"><span class="card-badge">${esc(m.tom || "—")}</span></div>`;
+    return `<div class="card-ton-row"><span class="card-badge">${tomHTML(m.tom || "—")}</span></div>`;
   }
 
   return pares.map(p => {
@@ -202,7 +209,7 @@ function tonsParaHTML(m, expandir = true) {
 
     return `
       <div class="card-ton-row">
-        <span class="card-badge">${esc(p.tom)}</span>
+        <span class="card-badge">${tomHTML(p.tom)}</span>
         <span class="ton-row-right">${chipsHTML}</span>
       </div>`;
   }).join("");
@@ -393,7 +400,7 @@ function renderTomList() {
 
     div.innerHTML = `
       <div class="tom-list-info" style="flex-wrap:wrap;gap:6px;align-items:center;">
-        <span class="tom-list-badge">${esc(p.tom)}</span>
+        <span class="tom-list-badge">${tomHTML(p.tom)}</span>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${chipsHTML}</div>
       </div>`;
     container.appendChild(div);
@@ -817,6 +824,13 @@ function esc(s = "") {
           .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
+// Tom para mostrar na tela. A Bebas Neue só tem maiúsculas, então
+// "Bm" aparecia como "BM" e o tom menor parecia maior. O "m" vai
+// numa fonte que tem minúscula.
+function tomHTML(t = "") {
+  return esc(t).replace(/m$/, '<span class="tom-m">m</span>');
+}
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     fecharModal();
@@ -1067,7 +1081,7 @@ function louvorRowHTML(chave, l, i) {
     <div class="culto-louvor">
       <div class="culto-louvor-info culto-louvor-click"
            onclick="abrirViewCulto('${chave}',${i})" title="Ver detalhes">
-        <span class="culto-louvor-badge">${esc(l.tom || "—")}</span>
+        <span class="culto-louvor-badge">${tomHTML(l.tom || "—")}</span>
         <div class="culto-louvor-txt">
           <div class="culto-louvor-nome">${esc(l.nome)}</div>
         </div>

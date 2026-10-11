@@ -210,21 +210,22 @@ let vistaLista   = [];
       /* aqui também com largura fixa: com "auto" cada linha
          media a própria coluna e os nomes começavam em pontos
          diferentes, de 89px a 203px */
-      grid-template-columns:100px minmax(0,1fr) auto;
-      grid-template-areas:"tons nome del" "tons mins mins";
-      row-gap:6px;
+      grid-template-columns:78px minmax(0,1fr) auto;
+      grid-template-areas:"tons nome del" "tons mins del";
+      column-gap:10px;row-gap:4px;
+      padding:7px 10px;
     }
     .lst-tons{grid-area:tons;min-width:0}
-    .lst-mins{min-width:0;justify-content:flex-start}
-    /* o nome pode usar duas linhas, mas o espaço das duas é sempre
-       reservado: assim uma música de nome curto ocupa a mesma
-       altura de uma de nome longo, e a lista fica com um ritmo só */
-    .lst-nome{
-      grid-area:nome;white-space:normal;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-      overflow:hidden;line-height:1.3;min-height:calc(1.3em * 2);
-    }
+    .lst-tom{font-size:15px;padding:3px 5px;min-width:30px}
+    .lst-mins{min-width:0;justify-content:flex-start;min-height:0}
+    /* nome numa linha só, com reticências: a linha fica baixa e
+       todas têm a mesma altura */
+    .lst-nome{grid-area:nome;line-height:1.3}
     .lst-mins{grid-area:mins}
+    /* "Todos" é o caso comum: no celular não ocupa uma linha
+       inteira só para dizer isso. Vale o que o filtro mostra. */
+    .lst-row.lst-todos{grid-template-areas:"tons nome del";row-gap:0}
+    .lst-row.lst-todos .lst-mins{display:none}
     .lst-del {grid-area:del;opacity:1}
     .lst-data{display:none}
     .lst-wrap{padding:0 20px}
@@ -316,7 +317,7 @@ function vistaLinhaHTML(m) {
   const mins = vistaMins(m);
 
   const tonsHTML = (tons.length ? tons.slice(0, 3) : ["—"])
-    .map(t => `<span class="lst-tom">${esc(t)}</span>`).join("")
+    .map(t => `<span class="lst-tom">${tomHTML(t)}</span>`).join("")
     + (tons.length > 3 ? `<span class="lst-tom mais">+${tons.length - 3}</span>` : "");
 
   const minsHTML = mins === null
@@ -328,7 +329,7 @@ function vistaLinhaHTML(m) {
     : "";
 
   return `
-    <div class="lst-row" data-id="${m.id}" tabindex="0" role="button">
+    <div class="lst-row${mins === null ? " lst-todos" : ""}" data-id="${m.id}" tabindex="0" role="button">
       <div class="lst-tons">${tonsHTML}</div>
       <div class="lst-nome">${esc(m.nome)}</div>
       <div class="lst-mins">${minsHTML}</div>
@@ -377,7 +378,7 @@ function vistaRenderLista(lista) {
   const corpo = grupos.map(([nome, itens]) => `
     <span class="lst-ancora" id="lstG-${encodeURIComponent(nome)}" aria-hidden="true"></span>
     <div class="lst-grupo">
-      <b>${esc(nome)}</b>
+      <b>${vistaAgrupar === "tom" ? tomHTML(nome) : esc(nome)}</b>
       <span>${itens.length}</span>
       <i></i>
     </div>
