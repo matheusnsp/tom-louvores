@@ -274,8 +274,14 @@ function ordenarMusicas() {
   });
 }
 
+//  Música na lixeira (excluida_em preenchido) some de todo o site,
+//  mas continua no banco até alguém apagar de vez — ver lixeira.js.
+let musicasLixeira = [];
+
 function mostrarMusicas(lista) {
-  musicas = lista;
+  musicasLixeira = lista.filter(m => m.excluida_em);
+  musicas = lista.filter(m => !m.excluida_em);
+  if (typeof lixAtualizar === "function") lixAtualizar();
   ordenarMusicas();
   atualizarStats();
   atualizarFiltroTons();
@@ -388,7 +394,14 @@ async function salvar() {
 //  num toque distraído (e no app instalado nem parece parte do
 //  site); aqui a pessoa vê QUAL música vai sair e precisa tocar
 //  no botão vermelho. O foco começa no "Cancelar".
-function confirmarExclusao(nome) {
+//  A lixeira usa a mesma caixa para "apagar de vez", com outro texto.
+function confirmarExclusao(nome, opcoes = {}) {
+  const o = {
+    titulo: "EXCLUIR MÚSICA?",
+    texto: "vai para a lixeira. Dá para restaurar depois.",
+    botao: "Excluir música",
+    ...opcoes,
+  };
   return new Promise(resolve => {
     let ov = document.getElementById("excluirOverlay");
     if (!ov) {
@@ -399,19 +412,20 @@ function confirmarExclusao(nome) {
         <div class="login-box confirma-box" role="alertdialog" aria-modal="true"
              aria-labelledby="excluirTitulo" aria-describedby="excluirTexto">
           <div>
-            <h2 id="excluirTitulo">EXCLUIR MÚSICA?</h2>
+            <h2 id="excluirTitulo"></h2>
             <p class="login-sub" id="excluirTexto"></p>
           </div>
           <div class="login-actions">
             <button type="button" class="btn-login-cancel" data-r="nao">Cancelar</button>
-            <button type="button" class="btn-excluir" data-r="sim">Excluir música</button>
+            <button type="button" class="btn-excluir" data-r="sim"></button>
           </div>
         </div>`;
       document.body.appendChild(ov);
     }
     const antes = document.activeElement;
-    ov.querySelector("#excluirTexto").innerHTML =
-      `<b>${esc(nome || "Esta música")}</b> sai do repertório. Não dá para desfazer.`;
+    ov.querySelector("#excluirTitulo").textContent = o.titulo;
+    ov.querySelector("#excluirTexto").innerHTML = `<b>${esc(nome || "Esta música")}</b> ${esc(o.texto)}`;
+    ov.querySelector("[data-r='sim']").textContent = o.botao;
 
     const fechar = r => {
       ov.classList.remove("open");
@@ -439,12 +453,22 @@ async function excluir(id) {
   if (!isAdmin()) { toast("Faça login para excluir.", true); return; }
   const m = musicas.find(x => String(x.id) === String(id));
   if (!(await confirmarExclusao(m && m.nome))) return;
+  //  Não apaga: marca a data e a música vai para a lixeira.
   try {
-    await req(`${TABLE}?id=eq.${id}`, { method: "DELETE" });
-    toast("Música removida.");
+    await req(`${TABLE}?id=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ excluida_em: new Date().toISOString() }),
+    });
+    toast("Música foi para a lixeira.");
     await carregar();
-  } catch {
-    toast("Erro ao excluir.", true);
+  } catch (e) {
+    console.error(e);
+    //  Sem a coluna no banco (SQL da lixeira não rodado): não exclui
+    //  de jeito nenhum, em vez de apagar sem volta como antes.
+    if (/excluida_em/.test(String(e && e.message)))
+      toast("Falta ativar a lixeira no Supabase (supabase/lixeira.sql).", true);
+    else
+      toast("Erro ao excluir.", true);
   }
 }
 

@@ -40,6 +40,7 @@ No ar em **https://louvores.invbotafogo.com.br**
 │   ├── sugestoes.js       → aba de sugestões
 │   └── …                  → um arquivo por recurso (afinador, metrônomo, chat…)
 ├── supabase/sugestoes.sql → tabela das sugestões (rodar uma vez)
+├── supabase/lixeira.sql   → ativa a lixeira (rodar uma vez)
 ├── dev/checar.sh          → conferência pelo terminal
 ├── sw.js, manifest.json   → app instalável e offline
 └── CNAME                  → domínio do GitHub Pages
@@ -71,6 +72,19 @@ git add -A && git commit -m "o que mudou" && git push
 ```
 
 ---
+
+## 🗑 Lixeira e backup
+
+Com login, o repertório mostra dois botões logo abaixo dos filtros:
+
+- **Lixeira**: o ✕ de uma música não apaga mais, ele manda para a lixeira. Lá dá para **restaurar** ou **apagar de vez** (só esse apaga do banco, com confirmação).
+  **Para ativar:** rode uma vez o `supabase/lixeira.sql` no SQL Editor do Supabase. Ele só acrescenta uma coluna vazia (`excluida_em`) e não mexe em nenhuma música. Antes de rodar, o ✕ avisa que falta ativar e não exclui nada.
+- **Baixar backup**: baixa um `.json` com o repertório (inclusive a lixeira), os cultos, as sugestões e o texto das cifras. Guarde no Drive de tempos em tempos.
+
+## 📊 Agrupar por uso e busca na letra
+
+- **Agrupar → Uso**: separa o repertório em mais tocadas, tocadas uma vez, sem tocar há 3 meses e ainda não tocadas, contando os cultos montados no site.
+- **Busca**: a partir de 3 letras, procura também dentro das letras das músicas que têm cifra, e mostra o verso que bateu.
 
 ## 💡 Sugestões de louvores
 

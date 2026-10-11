@@ -373,6 +373,7 @@ function vistaRenderLista(lista) {
         <button data-g="letra"${vistaAgrupar === "letra" ? ' class="on"' : ""}>A–Z</button>
         <button data-g="tom"${vistaAgrupar === "tom" ? ' class="on"' : ""}>Tom</button>
         <button data-g="recente"${vistaAgrupar === "recente" ? ' class="on"' : ""}>Recentes</button>
+        <button data-g="uso"${vistaAgrupar === "uso" ? ' class="on"' : ""}>Uso</button>
       </span>
     </div>`;
 
