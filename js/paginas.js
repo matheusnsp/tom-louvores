@@ -79,9 +79,34 @@ const PAGINA = document.body.dataset.pagina || "cultos";
   @media(min-width:901px) and (max-width:1366px){
     .nav-pag{gap:18px;margin-left:20px;padding-left:20px}
   }
-  @media(min-width:901px) and (max-width:1279px){
+  /* com login a fileira de botões é longa (e o "Baixar cifras"
+     ganha o contador "81/86"): o "Conectado" fica só com a bolinha
+     em qualquer computador comum */
+  @media(min-width:901px) and (max-width:1680px){
     body:not(.read-only) #statusTxt{display:none}
     body:not(.read-only) .status-pill{padding:7px 9px;gap:0}
+  }
+  /* nunca encostar as abas nos botões */
+  @media(min-width:901px){
+    .header-right{margin-left:24px}
+  }
+  /* Em tela de notebook menor os botões quebravam em
+     duas linhas ("Baixar cifras / (81/86)", "Nova / música"). Aqui
+     eles ficam numa linha só e um pouco mais justos; abaixo de
+     1150px o nome "Tom Louvores" sai e fica só o V da logo. */
+  @media(min-width:901px) and (max-width:1279px){
+    .header-right{gap:6px}
+    .header-right > *{white-space:nowrap}
+    .header-right .btn-add,
+    .header-right .btn-logout,
+    .header-right a,
+    .header-right button{padding-left:10px;padding-right:10px;letter-spacing:0.04em}
+    .nav-pag{gap:14px;margin-left:14px;padding-left:14px}
+  }
+  @media(min-width:901px) and (max-width:1150px){
+    body:not(.read-only) .logo-sub,
+    body:not(.read-only) .logo-sep{display:none}
+    body:not(.read-only) .nav-pag{border-left:none;padding-left:0}
   }
   @media(min-width:901px) and (max-width:1024px){
     .nav-pag{gap:14px;margin-left:14px;padding-left:14px}
