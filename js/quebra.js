@@ -121,7 +121,8 @@ function qbCortarPar(acordes, letra, n) {
 
 //  A mesma classificação do lyra.js, linha a linha.
 function qbClasse(l) {
-  return lyraEhSecao(l) ? "lyra-secao"
+  return lyraEhComentario(l) ? "lyra-comentario"
+       : lyraEhSecao(l) ? "lyra-secao"
        : lyraEhLinhaDeAcorde(l) ? "lyra-acordes"
        : "lyra-letra";
 }

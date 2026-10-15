@@ -30,7 +30,7 @@ const LIX_ICO = {
   .lix-btn{
     display:inline-flex;align-items:center;gap:7px;
     background:transparent;border:1px solid var(--black5);
-    color:var(--gray);font-family:'Inter',sans-serif;
+    color:var(--gray);font-family:var(--font-ui);
     font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
     padding:9px 13px;border-radius:var(--r);cursor:pointer;transition:all 0.15s;
   }
@@ -52,11 +52,11 @@ const LIX_ICO = {
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lix-quando{font-size:12px;color:var(--gray2);margin-top:2px}
   .lix-item button{
-    flex-shrink:0;font-family:'Inter',sans-serif;font-size:11px;font-weight:800;
+    flex-shrink:0;font-family:var(--font-ui);font-size:11px;font-weight:800;
     letter-spacing:0.05em;text-transform:uppercase;
     padding:8px 10px;border-radius:var(--r);cursor:pointer;
   }
-  .lix-restaurar{background:var(--yellow);color:var(--black);border:none}
+  .lix-restaurar{background:var(--gold);color:var(--black);border:none}
   .lix-apagar{background:transparent;color:#F87171;border:1px solid rgba(248,113,113,.35)}
   .lix-item button:disabled{opacity:.5;cursor:default}
   /*  celular: nome inteiro numa linha, botões embaixo */
@@ -110,7 +110,7 @@ function lixAbrir() {
     ov.innerHTML = `
       <div class="modal lix-modal" role="dialog" aria-modal="true" aria-labelledby="lixTitulo">
         <div class="modal-hd">
-          <h2 id="lixTitulo">LIXEIRA</h2>
+          <h2 id="lixTitulo">Lixeira</h2>
           <button class="modal-close" type="button" aria-label="Fechar" id="lixFechar">✕</button>
         </div>
         <div class="modal-bd">
@@ -178,7 +178,7 @@ async function lixClique(e) {
 
   if (btn.dataset.acao === "apagar") {
     const ok = await confirmarExclusao(m && m.nome, {
-      titulo: "APAGAR DE VEZ?",
+      titulo: "Apagar de vez?",
       texto: "some do banco para sempre. Não dá para desfazer.",
       botao: "Apagar de vez",
     });

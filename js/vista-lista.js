@@ -47,17 +47,17 @@ let vistaLista   = [];
     .lst-bar{gap:8px}
     .lst-bar-lbl{display:none}
     .lst-count{font-size:10px}
-    .lst-seg button{padding:6px 8px;font-size:9px;letter-spacing:0.06em}
+    .lst-seg button{padding:6px 10px;font-size:11px;letter-spacing:0}
   }
-  .lst-seg{display:inline-flex;border:1px solid var(--black5);border-radius:var(--r);overflow:hidden}
+  .lst-seg{display:inline-flex;border:1px solid var(--fio);border-radius:var(--pill);overflow:hidden;padding:3px;gap:2px;background:rgba(255,255,255,0.02)}
   .lst-seg button{
     background:transparent;border:none;cursor:pointer;
-    font-family:'Inter',sans-serif;
-    font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-    color:var(--gray2);padding:7px 12px;transition:all 0.15s;
+    font-family:var(--font-ui);
+    font-size:12px;font-weight:600;letter-spacing:0;
+    color:var(--dim);padding:6px 14px;border-radius:var(--pill);transition:all 0.2s;
   }
   .lst-seg button:hover{color:var(--white);background:var(--black3)}
-  .lst-seg button.on{background:var(--yellow);color:var(--black)}
+  .lst-seg button.on{background:var(--gold);color:var(--on-gold)}
 
   /* âncora do pulo: um ponto de altura zero ANTES do cabeçalho.
      Ela nunca gruda, então medir a posição dela sempre dá certo. */
@@ -98,8 +98,8 @@ let vistaLista   = [];
      tinham o mesmo tamanho e a mesma cor, e a lista virava um
      bloco só. */
   .lst-grupo b{
-    font-family:'Bebas Neue',sans-serif;
-    font-size:36px;line-height:0.8;letter-spacing:0.04em;
+    font-family:var(--font-display);font-weight:600;
+    font-size:30px;line-height:1;letter-spacing:-0.01em;font-weight:700;
     color:var(--white);
   }
   .lst-grupo span{
@@ -126,7 +126,7 @@ let vistaLista   = [];
   }
   .lst-row + .lst-row{box-shadow:inset 0 1px 0 var(--black4)}
   .lst-row:hover{background:var(--black2)}
-  .lst-row:focus-visible{border-color:var(--yellow);background:var(--black2)}
+  .lst-row:focus-visible{border-color:var(--gold);background:var(--black2)}
 
   /* dois tons por linha: com 3 ou 4 tons a coluna cresce para
      baixo em vez de empurrar o nome para a direita */
@@ -136,17 +136,17 @@ let vistaLista   = [];
     min-width:0;
   }
   .lst-tom{
-    font-family:'Bebas Neue',sans-serif;
-    font-size:16px;line-height:1;letter-spacing:0.04em;
-    color:var(--yellow);
-    background:rgba(255,224,0,0.08);
-    border:1px solid rgba(255,224,0,0.2);
+    font-family:var(--font-tom);font-weight:700;
+    font-size:13px;line-height:1;letter-spacing:0;
+    color:var(--gold-hi);
+    background:rgba(var(--gold-rgb),0.08);
+    border:1px solid rgba(var(--gold-rgb),0.2);
     padding:4px 7px;border-radius:4px;
     min-width:34px;text-align:center;
   }
   .lst-tom.mais{
     color:var(--gray2);background:transparent;
-    border-color:var(--black5);font-family:'Inter',sans-serif;
+    border-color:var(--black5);font-family:var(--font-ui);
     font-size:10px;font-weight:700;padding:5px 6px;
   }
   .lst-nome{
@@ -156,15 +156,15 @@ let vistaLista   = [];
   }
   .lst-mins{display:flex;gap:5px;flex-shrink:0;min-width:150px;justify-content:flex-end;min-height:19px}
   .lst-min{
-    font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-    color:#B4B4B4;background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.08);
-    padding:3px 8px;border-radius:3px;white-space:nowrap;
+    font-size:11px;font-weight:500;letter-spacing:0;
+    color:var(--paper);background:rgba(255,255,255,0.04);
+    border:1px solid var(--fio);
+    padding:3px 10px;border-radius:var(--pill);white-space:nowrap;
   }
-  .lst-min.todos{color:#8A8A8A}
+  .lst-min.todos{color:var(--dim);background:transparent}
   .lst-data{
-    font-size:10px;color:var(--gray2);text-align:right;
-    letter-spacing:0.04em;white-space:nowrap;
+    font-size:12px;color:var(--gray2);text-align:right;
+    letter-spacing:0;white-space:nowrap;
   }
   .lst-del{
     width:22px;height:22px;
@@ -184,12 +184,12 @@ let vistaLista   = [];
   }
   .lst-az button{
     background:none;border:none;cursor:pointer;
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
     font-size:9px;font-weight:700;color:var(--gray2);
     width:18px;height:15px;border-radius:3px;
     transition:all 0.12s;
   }
-  .lst-az button:hover{color:var(--black);background:var(--yellow)}
+  .lst-az button:hover{color:var(--black);background:var(--gold)}
   .lst-az button:disabled{opacity:0.25;cursor:default}
   .lst-az button:disabled:hover{color:var(--gray2);background:none}
 
@@ -198,12 +198,12 @@ let vistaLista   = [];
   /* botão de alternar vista, na barra de filtros */
   .btn-vista{
     display:inline-flex;align-items:center;gap:7px;flex-shrink:0;
-    background:var(--black2);border:1px solid var(--black5);
-    color:var(--gray);font-family:'Inter',sans-serif;
-    font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
-    padding:11px 14px;border-radius:var(--r);cursor:pointer;transition:all 0.15s;
+    background:rgba(11,11,12,0.4);border:1px solid var(--line);
+    color:var(--paper);font-family:var(--font-ui);
+    font-size:13px;font-weight:500;letter-spacing:0;
+    padding:12px 18px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
   }
-  .btn-vista:hover{border-color:var(--gray3);color:var(--white)}
+  .btn-vista:hover{border-color:var(--gold);color:var(--gold)}
 
   @media(max-width:820px){
     .lst-row{
@@ -234,7 +234,7 @@ let vistaLista   = [];
     .lst-grupo b{font-size:30px}
     .lst-az{right:2px}
     .btn-vista span{display:none}
-    .btn-vista{padding:11px 12px}
+    .btn-vista{padding:12px 14px}
   }`;
   document.head.appendChild(st);
 })();

@@ -32,7 +32,7 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   @media (min-width:1100px){ .lyra-box.op-fixo .mt-painel{left:var(--op-menu)} }
 
   .mt-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-  .mt-hd h4{margin:0;font-family:'Inter',sans-serif;font-size:12px;font-weight:800;
+  .mt-hd h4{margin:0;font-family:var(--font-ui);font-size:12px;font-weight:800;
     letter-spacing:.14em;text-transform:uppercase;color:var(--gray)}
   .mt-x{background:none;border:none;color:var(--gray);font-size:17px;cursor:pointer;padding:2px 6px}
 
@@ -48,8 +48,8 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   /* o número é um campo: dá para digitar 140 em vez de subir de
      um em um cinquenta vezes */
   .mt-bpm-campo{
-    font-family:'Bebas Neue',sans-serif;font-size:62px;line-height:1;
-    color:#eee;letter-spacing:.02em;background:none;border:none;
+    font-family:var(--font-display);font-weight:600;font-size:62px;line-height:1;
+    color:#eee;letter-spacing:-0.01em;background:none;border:none;
     width:3.1ch;padding:0;text-align:center;caret-color:var(--cifra);
     border-bottom:2px solid transparent;transition:border-color .15s;
   }
@@ -58,7 +58,7 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   .mt-bpm-campo::-webkit-outer-spin-button,
   .mt-bpm-campo::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   .claro .mt-bpm-campo{color:#1a1a1a}
-  .mt-bpm span{font-family:'Inter',sans-serif;font-size:12px;color:var(--gray);margin-left:6px}
+  .mt-bpm span{font-family:var(--font-ui);font-size:12px;color:var(--gray);margin-left:6px}
 
   .mt-linha{display:flex;align-items:center;gap:10px;margin-bottom:12px}
   .mt-linha input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;
@@ -68,7 +68,7 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   .mt-passo{
     flex:0 0 44px;height:44px;border-radius:11px;cursor:pointer;
     background:var(--black5);border:1px solid var(--gray3);color:#ddd;
-    font-family:'Inter',sans-serif;font-size:19px;font-weight:700;
+    font-family:var(--font-ui);font-size:19px;font-weight:700;
   }
   .claro .mt-passo{background:#E4DFD8;border-color:rgba(0,0,0,.16);color:#242424}
 
@@ -76,7 +76,7 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   .mt-atalhos button{
     flex:1;padding:8px 2px;border-radius:10px;cursor:pointer;
     background:none;border:1px solid var(--gray3);color:var(--gray);
-    font-family:'Inter',sans-serif;font-size:11px;font-weight:700;line-height:1.3;
+    font-family:var(--font-ui);font-size:11px;font-weight:700;line-height:1.3;
   }
   .mt-atalhos button small{display:block;font-size:12.5px;color:#ddd;font-weight:800;margin-top:1px}
   .mt-atalhos button.on{border-color:var(--cifra);color:var(--cifra)}
@@ -87,7 +87,7 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   .mt-compassos button{
     flex:1;padding:10px 4px;border-radius:11px;cursor:pointer;
     background:var(--black5);border:1px solid var(--gray3);color:#ddd;
-    font-family:'Inter',sans-serif;font-size:13px;font-weight:700;
+    font-family:var(--font-ui);font-size:13px;font-weight:700;
   }
   .mt-compassos button.on{background:var(--cifra);border-color:var(--cifra);color:#1a1a1a}
   .claro .mt-compassos button{background:#E4DFD8;border-color:rgba(0,0,0,.16);color:#242424}
@@ -97,7 +97,7 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   .mt-tocar{
     flex:1;padding:15px;border-radius:12px;border:none;cursor:pointer;
     background:var(--cifra);color:#1a1a1a;
-    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:800;
+    font-family:var(--font-ui);font-size:14.5px;font-weight:800;
   }
   .mt-tocar.on{background:none;border:1px solid var(--gray3);color:#ddd}
   .mt-ativo{
@@ -108,7 +108,7 @@ const MT_OLHADA = 25;              // de quanto em quanto se olha a fila
   .mt-batendo{
     flex:0 0 122px;padding:15px 8px;border-radius:12px;cursor:pointer;
     background:none;border:1px dashed var(--gray3);color:var(--gray);
-    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;
+    font-family:var(--font-ui);font-size:12.5px;font-weight:700;
   }`;
   document.head.appendChild(st);
 })();

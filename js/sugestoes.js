@@ -77,8 +77,8 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
     position:sticky;top:calc(var(--header-alt, 64px) + 20px);
   }
   .sug-titulo{
-    font-family:'Bebas Neue',sans-serif;font-weight:400;
-    font-size:30px;letter-spacing:0.04em;line-height:1;color:var(--white);
+    font-family:var(--font-display);font-weight:600;
+    font-size:30px;letter-spacing:-0.01em;line-height:1;color:var(--white);
   }
   .sug-ajuda{font-size:13px;font-weight:300;color:var(--gray);line-height:1.55;margin-top:-8px}
   .sug-campo .finput.sug-invalido{border-color:rgba(248,113,113,0.6)}
@@ -102,69 +102,69 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
   .sug-lista{min-width:0}
   .sug-topo{
     display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;
-    padding-bottom:14px;border-bottom:1px solid var(--black4);
+    padding-bottom:14px;border-bottom:1px solid var(--line);
   }
   .sug-rotulo{
-    font-size:11px;font-weight:700;letter-spacing:0.1em;
-    text-transform:uppercase;color:var(--gray);
+    font-size:12px;font-weight:400;letter-spacing:3px;
+    text-transform:uppercase;color:var(--gold);
   }
-  .sug-rotulo b{color:var(--white);font-weight:700}
+  .sug-rotulo b{color:var(--gold-hi);font-weight:600}
   .sug-nota{font-size:12px;color:var(--gray2);margin-left:auto}
 
   /* abas da equipe: o mesmo controle do "Agrupar" do repertório */
   .sug-abas{
-    display:inline-flex;border:1px solid var(--black5);
-    border-radius:var(--r);overflow:hidden;
+    display:inline-flex;border:1px solid var(--fio);gap:2px;padding:3px;
+    border-radius:var(--pill);overflow:hidden;
   }
   .sug-abas button{
-    font-family:'Inter',sans-serif;font-size:10.5px;font-weight:700;
-    letter-spacing:0.08em;text-transform:uppercase;
-    color:var(--gray);background:transparent;border:none;
-    padding:9px 13px;cursor:pointer;
+    font-family:var(--font-ui);font-size:12px;font-weight:600;
+    letter-spacing:0;border-radius:var(--pill);
+    color:var(--dim);background:transparent;border:none;
+    padding:7px 14px;cursor:pointer;
     transition:background 0.15s,color 0.15s;
   }
-  .sug-abas button + button{border-left:1px solid var(--black5)}
+  
   .sug-abas button:hover{color:var(--white)}
-  .sug-abas button[aria-pressed="true"]{background:var(--yellow);color:var(--black)}
+  .sug-abas button[aria-pressed="true"]{background:var(--gold);color:var(--on-gold)}
   .sug-abas .n{margin-left:6px;font-weight:800;opacity:0.7}
 
   .sug-itens{list-style:none}
   .sug-item{
     display:flex;align-items:center;gap:16px;
-    padding:15px 2px;border-bottom:1px solid var(--black4);
+    padding:16px 2px;border-bottom:1px solid var(--fio);
   }
   .sug-info{flex:1;min-width:0}
   .sug-nome{
-    font-size:15px;font-weight:600;color:var(--white);
-    letter-spacing:-0.01em;line-height:1.3;overflow-wrap:anywhere;
+    font-size:16px;font-weight:600;color:var(--paper);
+    letter-spacing:0;line-height:1.3;overflow-wrap:anywhere;
   }
-  .sug-meta{font-size:12px;color:var(--gray);margin-top:4px;line-height:1.4}
-  .sug-meta b{color:#B4B4B4;font-weight:600}
+  .sug-meta{font-size:13px;color:var(--dim);margin-top:4px;line-height:1.4}
+  .sug-meta b{color:var(--paper);font-weight:600}
   .sug-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
   .sug-chip{
-    font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-    color:#B4B4B4;background:rgba(255,255,255,0.05);
-    border:1px solid var(--black5);border-radius:4px;padding:3px 7px;
+    font-size:11px;font-weight:500;letter-spacing:0;
+    color:var(--paper);background:rgba(255,255,255,0.04);
+    border:1px solid var(--fio);border-radius:var(--pill);padding:3px 10px;
   }
   .sug-chip.no-rep{color:#4ADE80;border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.06)}
 
   .sug-acoes{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
   .sug-btn{
     display:inline-flex;align-items:center;gap:6px;
-    font-family:'Inter',sans-serif;font-size:11px;font-weight:700;
-    letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;
-    color:var(--white);background:transparent;text-decoration:none;
-    border:1px solid var(--black5);border-radius:var(--r);
-    padding:8px 12px;cursor:pointer;
+    font-family:var(--font-ui);font-size:13px;font-weight:500;
+    letter-spacing:0;white-space:nowrap;
+    color:var(--paper);background:rgba(11,11,12,0.4);text-decoration:none;
+    border:1px solid var(--line);border-radius:var(--pill);
+    padding:8px 15px;cursor:pointer;
     transition:background 0.15s,border-color 0.15s,color 0.15s;
   }
   .sug-btn:hover{background:var(--black3);border-color:var(--gray3)}
-  .sug-btn.sim{background:var(--yellow);border-color:var(--yellow);color:var(--black)}
-  .sug-btn.sim:hover{background:var(--yellow2);border-color:var(--yellow2)}
+  .sug-btn.sim{background:var(--gold);border-color:var(--gold);color:var(--black)}
+  .sug-btn.sim:hover{background:var(--gold-hi);border-color:var(--gold-hi)}
   .sug-btn.fraco{color:var(--gray)}
   .sug-btn.fraco:hover{color:var(--white)}
   .sug-btn:disabled,.sug-btn[aria-disabled="true"]{opacity:0.4;cursor:default}
-  .sug-btn:focus-visible,.sug-abas button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .sug-btn:focus-visible,.sug-abas button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
   .sug-vazio{padding:44px 8px;text-align:center;font-size:13px;color:var(--gray2);line-height:1.6}
   .sug-aviso{

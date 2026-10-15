@@ -590,21 +590,21 @@ function lyraMontarBotaoBaixar() {
 
   const estilo = document.createElement("style");
   estilo.textContent = `
-    /* divisões da música: verde-água, para separar do laranja
-       dos acordes sem competir com ele */
-    .lyra-secao{color:#6FD3C7;font-weight:700;letter-spacing:.02em}
-    .claro .lyra-secao{color:#0F7D6F}
+    /* divisões da música: claras e com um fio dourado ao lado,
+       para separar dos acordes (dourados) sem competir com eles */
+    .lyra-secao{color:#F6F5F1;font-weight:700;letter-spacing:.04em}
+    .claro .lyra-secao{color:#14110E}
     .lyra-dl{display:inline-flex;align-items:center;gap:7px;position:relative;overflow:hidden}
     .lyra-dl:disabled{opacity:1;cursor:default}
     /* a faixa cresce por trás do texto, do zero até cem por cento */
     .lyra-dl.baixando::before{
       content:"";position:absolute;left:0;top:0;bottom:0;
       width:var(--dl,0%);
-      background:rgba(255,224,0,0.22);
+      background:rgba(var(--gold-rgb),0.22);
       transition:width .25s ease;
       pointer-events:none;
     }
-    .lyra-dl.baixando{border-color:var(--yellow);color:var(--yellow)}
+    .lyra-dl.baixando{border-color:var(--gold);color:var(--gold)}
     .lyra-dl > *{position:relative;z-index:1}
     /* enquanto baixa, o texto aparece mesmo no celular */
     .lyra-dl.baixando .lyra-dl-txt{display:inline!important;font-variant-numeric:tabular-nums}
@@ -742,9 +742,17 @@ const LYRA_RE_ACORDE = /^[A-G](#|b)?((m|maj|min|sus|dim|aug|add|M|°|º|ø|Δ|\+
 //  devem contar como palavra: "Riff 2", "Bis", "2x", "(x3)".
 const LYRA_ANOTACAO = /^\(?(riff|bis|\d+x|x\d+|\d+)\)?:?$/i;
 
+//  Linha que começa com "//" é comentário de quem escreveu a cifra
+//  ("// no final sobe meio tom"). Fica na tela, apagada, mas não é
+//  acorde, não é parte da música e não vira botão no mapa.
+function lyraEhComentario(linha = "") {
+  return /^\s*\/\//.test(linha);
+}
+
 function lyraEhLinhaDeAcorde(linha) {
   const t = linha.trim();
   if (!t) return false;
+  if (lyraEhComentario(t)) return false;
   if (t.startsWith("[")) return true;              // [Intro], [Refrão]...
   //  Parênteses, barras de compasso e traços não são palavras:
   //  entravam na conta e derrubavam a proporção. Uma linha como
@@ -993,12 +1001,13 @@ async function lyraCarregarLetra(slug) {
 //  e o olho tinha que ler para saber se era estrutura ou nota.
 function lyraEhSecao(linha) {
   const t = linha.trim();
-  return t.startsWith("[") && t.endsWith("]");
+  return t.startsWith("[") && t.endsWith("]") && !lyraEhComentario(t);
 }
 
 function lyraCifraParaHTML(texto) {
   return texto.split("\n").map(linha => {
-    const cls = lyraEhSecao(linha) ? "lyra-secao"
+    const cls = lyraEhComentario(linha) ? "lyra-comentario"
+              : lyraEhSecao(linha) ? "lyra-secao"
               : lyraEhLinhaDeAcorde(linha) ? "lyra-acordes"
               : "lyra-letra";
     return `<span class="${cls}">${lyraEsc(linha) || " "}</span>`;
@@ -1008,7 +1017,8 @@ function lyraCifraParaHTML(texto) {
 function lyraLetraParaHTML(texto) {
   return texto.split("\n").map(linha => {
     const t = linha.trim();
-    const cls = (t.startsWith("[") || /^\(.*\)$/.test(t)) ? "lyra-secao" : "lyra-letra";
+    const cls = lyraEhComentario(t) ? "lyra-comentario"
+              : (t.startsWith("[") || /^\(.*\)$/.test(t)) ? "lyra-secao" : "lyra-letra";
     return `<span class="${cls}">${lyraEsc(linha) || " "}</span>`;
   }).join("\n");
 }
@@ -1433,7 +1443,7 @@ function lyraBlocoBotoes(m, song, nav) {
     <button type="button" class="view-yt-btn view-cf-btn" data-lyra-cifra="1">
       ${LYRA_ICO_CIFRA}Abrir cifra
     </button>
-    <button type="button" class="view-yt-btn view-cf-btn" data-lyra-letra="1">
+    <button type="button" class="view-yt-btn view-lt-btn" data-lyra-letra="1">
       ${LYRA_ICO_LETRA}Ver letra
     </button>`;
 

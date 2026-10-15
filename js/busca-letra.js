@@ -29,7 +29,7 @@ const blTrechos = new Map();   // id → verso que bateu (da última busca)
     font-size:12px;font-weight:500;font-style:italic;color:var(--gray);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .lst-trecho mark{background:rgba(255,224,0,.18);color:var(--white);font-style:normal;border-radius:2px;padding:0 1px}`;
+  .lst-trecho mark{background:rgba(var(--gold-rgb),.18);color:var(--white);font-style:normal;border-radius:2px;padding:0 1px}`;
   document.head.appendChild(st);
 })();
 

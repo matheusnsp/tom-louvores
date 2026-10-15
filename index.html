@@ -5,17 +5,17 @@
   <!-- pintado antes de tudo: sem isso o navegador mostra um quadro
        branco entre uma página e outra, até o style.css chegar -->
   <meta name="color-scheme" content="dark" />
-  <style>html,body{background:#0A0A0A}</style>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <style>html,body{background:#14110E}</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Cultos — Tom Louvores INVB</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="icon" type="image/png" href="img/logo3.png">
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="apple-touch-icon" href="img/logo3.png">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#0B0B0C">
 </head>
 <body class="read-only" data-pagina="cultos">
 
@@ -23,7 +23,10 @@
 <header class="header">
   <div class="header-inner">
     <div class="logo">
-      <img src="img/logo2.png" alt="Nova Vida Botafogo" class="logo-img" />
+      <picture>
+        <source media="(min-width: 901px)" srcset="img/logo-novavida.png" />
+        <img src="img/logo2.png" alt="Nova Vida Botafogo" class="logo-img" />
+      </picture>
       <div class="logo-sep"></div>
       <span class="logo-sub">Tom<br>Louvores</span>
     </div>
@@ -43,8 +46,8 @@
 <section class="hero-outer">
   <div class="hero">
     <div>
-      <div class="hero-tag">Botafogo · RJ</div>
-      <h1 class="hero-h1">LOUVORES DO<br><em>CULTO</em></h1>
+      <div class="hero-tag">Equipe de louvor</div>
+      <h1 class="hero-h1">Louvores do culto</h1>
       <p class="hero-sub">O que a equipe vai cantar nos próximos cultos.</p>
     </div>
     <!-- os números do repertório pertencem à outra página.
@@ -95,7 +98,7 @@
 <div class="overlay-bg" id="cultoOverlay" onclick="cultoFecharFora(event)">
   <div class="modal" id="cultoModal">
     <div class="modal-hd">
-      <h2 id="cultoModalTitulo">ADICIONAR LOUVOR</h2>
+      <h2 id="cultoModalTitulo">Adicionar louvor</h2>
       <button class="modal-close" onclick="fecharCultoModal()">✕</button>
     </div>
     <div class="modal-bd">
@@ -145,7 +148,7 @@
     </div>
     <div class="modal-ft">
       <button class="btn-cancel" onclick="fecharCultoModal()">Cancelar</button>
-      <button class="btn-save" id="btnAddLouvor" onclick="confirmarLouvorCulto()">ADICIONAR</button>
+      <button class="btn-save" id="btnAddLouvor" onclick="confirmarLouvorCulto()">Adicionar</button>
     </div>
   </div>
 </div>
@@ -154,7 +157,7 @@
 <div class="overlay-bg" id="viewOverlay" onclick="viewFecharFora(event)">
   <div class="modal view-modal" id="viewModal">
     <div class="modal-hd">
-      <h2 id="viewTitulo">MÚSICA</h2>
+      <h2 id="viewTitulo">Música</h2>
       <div class="view-hd-actions">
         <button class="view-edit-btn" id="viewEditBtn" onclick="editarDaLeitura()" title="Editar">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -180,7 +183,7 @@
 <div class="overlay-bg" id="overlay" onclick="fecharFora(event)">
   <div class="modal" id="modal">
     <div class="modal-hd">
-      <h2 id="modalTitulo">NOVA MÚSICA</h2>
+      <h2 id="modalTitulo">Nova música</h2>
       <button class="modal-close" onclick="fecharModal()">✕</button>
     </div>
     <div class="modal-bd">
@@ -231,7 +234,7 @@
     </div>
     <div class="modal-ft">
       <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
-      <button class="btn-save" id="btnSalvar" onclick="salvar()">SALVAR</button>
+      <button class="btn-save" id="btnSalvar" onclick="salvar()">Salvar</button>
     </div>
   </div>
 </div>
@@ -240,7 +243,7 @@
 <div id="loginOverlay" onclick="loginFecharFora(event)">
   <div class="login-box">
     <div>
-      <h2>ÁREA ADMIN</h2>
+      <h2>Área admin</h2>
       <p class="login-sub">Acesso restrito para edição do repertório.</p>
     </div>
     <div>
@@ -284,6 +287,7 @@
 <script src="js/busca-letra.js"></script>
 <script src="js/lixeira.js"></script>
 <script src="js/quebra.js"></script>
+<script src="js/leitor-palco.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/chat-aviso.js"></script>
 <script>

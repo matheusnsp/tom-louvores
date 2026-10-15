@@ -130,7 +130,7 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
     padding:6px 7px 6px 13px;
     box-shadow:0 8px 24px rgba(0,0,0,.45);
     backdrop-filter:blur(8px);
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
     font-size:10px;font-weight:800;
     letter-spacing:.12em;text-transform:uppercase;
     color:var(--gray);
@@ -150,7 +150,7 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
   .sn-selo button{
     background:var(--black5);border:1px solid var(--gray3);
     border-radius:999px;color:#e8e8e8;cursor:pointer;
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
     font-size:10px;font-weight:800;
     letter-spacing:.06em;text-transform:uppercase;
     padding:5px 11px;

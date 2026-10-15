@@ -110,9 +110,11 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
         eu só empurrava com padding, e a regra de largura máxima
         do style.css recentralizava tudo, abrindo um vão à
         esquerda e jogando os botões para o meio da tela. */
-    .lyra-hd,.lyra-barra,.lyra-corpo{transition:margin-left .24s ease,padding-left .24s ease}
+    .lyra-hd,.lyra-barra,.lyra-mapa,.lyra-prog,.lyra-corpo{transition:margin-left .24s ease,padding-left .24s ease}
     .lyra-box.op-aberto .lyra-hd,
     .lyra-box.op-aberto .lyra-barra,
+    .lyra-box.op-aberto .lyra-mapa,
+    .lyra-box.op-aberto .lyra-prog,
     .lyra-box.op-aberto .lyra-corpo{
       margin-left:var(--op-menu);margin-right:0;
       max-width:none;width:auto;
@@ -204,7 +206,7 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
   }
   .op-pega{flex:0 0 auto}
   .op-hd h4{
-    margin:0;font-family:'Inter',sans-serif;
+    margin:0;font-family:var(--font-ui);
     font-size:12px;font-weight:800;letter-spacing:.14em;
     text-transform:uppercase;color:var(--gray);
   }
@@ -252,12 +254,12 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
     color:var(--gray);
   }
   .op-nome{
-    font-family:'Inter',sans-serif;font-size:14px;font-weight:500;
+    font-family:var(--font-ui);font-size:14px;font-weight:500;
     color:#e8e8e8;flex:1;min-width:0;line-height:1.3;
   }
   .claro .op-nome{color:#20232b}
   .op-valor{
-    font-family:'Inter',sans-serif;font-size:12.5px;
+    font-family:var(--font-ui);font-size:12.5px;
     color:var(--gray);flex-shrink:0;
   }
   .op-controle{display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -267,7 +269,7 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
       uma terceira coisa ali não caberia. */
   .op-sub{
     display:none;
-    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:400;
+    font-family:var(--font-ui);font-size:12.5px;font-weight:400;
     color:var(--gray);line-height:1.35;
   }
 
@@ -374,7 +376,7 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
       display:block;order:98;flex:0 0 auto;
       margin-top:14px;padding-top:12px;
       border-top:1px solid var(--gray3);
-      font-family:'Inter',sans-serif;
+      font-family:var(--font-ui);
       font-size:9px;font-weight:700;color:var(--gray2);
       letter-spacing:.16em;text-transform:uppercase;
       text-align:center;
@@ -413,7 +415,7 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
        e os outros não ficam menores por terem nome curto */
     flex:1 1 0;min-width:82px;
     padding:9px 6px 8px;color:#d2d2d2;
-    font-family:'Inter',sans-serif;font-size:10px;font-weight:600;
+    font-family:var(--font-ui);font-size:10px;font-weight:600;
   }
   .op-barra button span{
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
@@ -629,7 +631,7 @@ function opLinhaCapo() {
   const sel  = c.querySelector("#opCapoSel");
   const usar = c.querySelector("#opCapoUsar");
   sel.style.cssText = "background:var(--black5);border:1px solid var(--gray3);color:#f0f0f0;" +
-                      "border-radius:8px;padding:6px 9px;font-family:'Inter',sans-serif;font-size:12.5px;cursor:pointer";
+                      "border-radius:8px;padding:6px 9px;font-family:var(--font-ui);font-size:12.5px;cursor:pointer";
 
   const sincronizar = () => {
     usar.checked  = acCapoUsar;
@@ -869,7 +871,7 @@ let opTomInicial = null;
 
   .op-rapido .op-pega{display:block}
   .op-rapido h4{
-    margin:2px 0 14px;font-family:'Inter',sans-serif;
+    margin:2px 0 14px;font-family:var(--font-ui);
     font-size:12px;font-weight:800;letter-spacing:.14em;
     text-transform:uppercase;color:var(--gray);
   }
@@ -879,7 +881,7 @@ let opTomInicial = null;
   .op-tom-acoes button{
     flex:1;background:var(--black5);border:1px solid var(--gray3);
     border-radius:11px;color:#eee;cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:14px;font-weight:700;
+    font-family:var(--font-ui);font-size:14px;font-weight:700;
     padding:12px 8px;
   }
   .op-tom-acoes .op-restaurar{flex:0 0 52px;font-size:16px;color:var(--gray)}
@@ -890,7 +892,7 @@ let opTomInicial = null;
   .op-tons button{
     background:var(--black5);border:1px solid var(--gray3);
     border-radius:11px;color:#ddd;cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:14px;font-weight:700;
+    font-family:var(--font-ui);font-size:14px;font-weight:700;
     padding:13px 4px;
   }
   .op-tons button.on{background:#fff;color:#111;border-color:#fff}
@@ -903,7 +905,7 @@ let opTomInicial = null;
     display:flex;align-items:center;gap:12px;
     background:var(--black5);border:1px solid var(--gray3);
     border-radius:12px;color:#e8e8e8;cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;
+    font-family:var(--font-ui);font-size:14.5px;font-weight:600;
     padding:14px 16px;text-align:left;
   }
   .op-escolha button.on{border-color:var(--cifra);color:var(--cifra)}
@@ -918,7 +920,7 @@ let opTomInicial = null;
   }
   .claro .op-rol button{background:var(--cifra-claro);color:#fff}
   .op-rol input{flex:1}
-  .op-rol-txt{font-family:'Inter',sans-serif;font-size:12.5px;color:var(--gray);margin-top:10px}`;
+  .op-rol-txt{font-family:var(--font-ui);font-size:12.5px;color:var(--gray);margin-top:10px}`;
   document.head.appendChild(st);
 })();
 

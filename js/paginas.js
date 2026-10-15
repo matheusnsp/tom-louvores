@@ -35,28 +35,28 @@ const PAGINA = document.body.dataset.pagina || "cultos";
     margin-left:28px;
     margin-right:auto;      /* encosta na logo e empurra o resto */
     padding-left:28px;
-    border-left:1px solid var(--black4);
+    border-left:1px solid var(--line);
     align-self:stretch;     /* o sublinhado cai na borda do header */
   }
   .nav-pag a{
     display:inline-flex;align-items:center;
-    font-family:'Inter',sans-serif;
-    font-size:12px;font-weight:700;
-    letter-spacing:0.1em;text-transform:uppercase;
-    color:var(--gray2);text-decoration:none;
-    border-bottom:2px solid transparent;
+    font-family:var(--font-ui);
+    font-size:13px;font-weight:600;
+    letter-spacing:1.6px;text-transform:uppercase;
+    color:rgba(246,245,241,0.78);text-decoration:none;
+    border-bottom:1px solid transparent;
     transition:color 0.15s,border-color 0.15s;
     white-space:nowrap;
   }
   .nav-pag a:hover{color:var(--white)}
-  .nav-pag a[aria-current]{color:var(--yellow);border-bottom-color:var(--yellow)}
+  .nav-pag a[aria-current]{color:var(--gold);border-bottom-color:var(--gold)}
 
   /* quantas sugestões esperam análise (só com login), logo
      depois do nome da aba */
   .nav-conta{
     display:inline-block;margin-left:7px;
     min-width:16px;height:16px;padding:0 4px;border-radius:8px;
-    background:var(--yellow);color:var(--black);
+    background:var(--gold);color:var(--black);
     font-size:9.5px;font-weight:800;line-height:16px;
     letter-spacing:0;text-align:center;
     pointer-events:none;

@@ -16,6 +16,31 @@ No ar em **https://louvores.invbotafogo.com.br**
 
 ---
 
+## 🎸 Leitor de cifras
+
+- **Mapa da música**: as partes entre colchetes (`[Intro]`, `[Refrão]`), os riffs (`Riff 2` numa linha de acordes) e rótulos como `Solo:` viram botões no topo do leitor. Um toque leva até ali e o botão fica marcado.
+- **Comentários**: linha que começa com `//` é comentário de quem escreveu a cifra. Aparece apagada e nunca vira botão. Ex.: `// no final sobe meio tom`.
+- **1 ou 2 colunas** (tablet e computador): em 2 colunas a cifra vira páginas do tamanho da tela. Vira com toque nas laterais, arrasto, pedal Bluetooth ou teclado (PageDown / espaço / ↓).
+
+---
+
+## 🎨 Identidade visual
+
+O site segue a identidade da INVB (a mesma do site principal):
+
+| Token (`css/style.css`) | Valor | Uso |
+|---|---|---|
+| `--gold` | `#E6B23E` | o dourado do V: tom, data, ação principal |
+| `--gold-hi` | `#F6D27A` | hover |
+| `--black` | `#0B0B0C` | fundo |
+| `--font-display` | Fraunces | títulos |
+| `--font-ui` | Montserrat | todo o resto |
+| `--font-tom` | Montserrat 800 | os tons (G, Bm, F#) |
+
+Para trocar a cor de destaque do site inteiro, mude só `--gold`, `--gold-hi` e `--gold-rgb` (o mesmo dourado em números, para as transparências). Os arquivos em `js/` usam esses mesmos tokens no CSS que injetam.
+
+---
+
 ## Páginas
 
 | Página | O que tem |
@@ -67,7 +92,7 @@ Acrescente uma linha em `CULTOS_FIX`, no `js/config.js` (tem um exemplo comentad
 ### Publicar uma mudança
 
 ```bash
-bash dev/checar.sh      # confere sintaxe e arquivos faltando
+bash dev/checar.sh      # confere sintaxe, arquivos faltando e se o CACHE foi trocado
 git add -A && git commit -m "o que mudou" && git push
 ```
 

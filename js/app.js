@@ -386,7 +386,7 @@ async function salvar() {
     toast("Erro ao salvar. Verifique permissões do Supabase.", true);
   } finally {
     btn.disabled = false;
-    btn.textContent = editandoId ? "SALVAR ALTERAÇÕES" : "SALVAR";
+    btn.textContent = editandoId ? "Salvar alterações" : "Salvar";
   }
 }
 
@@ -397,7 +397,7 @@ async function salvar() {
 //  A lixeira usa a mesma caixa para "apagar de vez", com outro texto.
 function confirmarExclusao(nome, opcoes = {}) {
   const o = {
-    titulo: "EXCLUIR MÚSICA?",
+    titulo: "Excluir música?",
     texto: "vai para a lixeira. Dá para restaurar depois.",
     botao: "Excluir música",
     ...opcoes,
@@ -754,7 +754,7 @@ function abrirView(m, expandirTom = true) {
   viewMusicaId = m.id;
   ajustarBotaoEdicaoView(!!m.id);
 
-  document.getElementById("viewTitulo").textContent = m.nome || "MÚSICA";
+  document.getElementById("viewTitulo").textContent = m.nome || "Música";
 
   // tons + ministrantes
   document.getElementById("viewTons").innerHTML = tonsParaHTML(m, expandirTom);
@@ -816,7 +816,7 @@ function abrirView(m, expandirTom = true) {
   const outrosBtns = links
     .filter(url => !ehYoutube(url) && !ehSpotify(url))
     .map(url =>
-      `<a class="view-yt-btn" style="background:rgba(96,165,250,0.08);border-color:rgba(96,165,250,0.3);color:#60A5FA" href="${esc(url)}" target="_blank" rel="noopener">🔗 Abrir link</a>`
+      `<a class="view-yt-btn" href="${esc(url)}" target="_blank" rel="noopener">🔗 Abrir link</a>`
     ).join("");
 
   linksWrap.innerHTML = cifraBtns + linhaMidia + outrosBtns;
@@ -882,7 +882,7 @@ function abrirModal(m = null) {
   editandoId  = m ? m.id : null;
   tomMinList  = m ? paresParaEdicao(m.tom) : [];
 
-  document.getElementById("modalTitulo").textContent = m ? "EDITAR MÚSICA" : "NOVA MÚSICA";
+  document.getElementById("modalTitulo").textContent = m ? "Editar música" : "Nova música";
   document.getElementById("fNome").value = m?.nome        || "";
 
   // separa os links da observação para os campos próprios
@@ -904,7 +904,7 @@ function abrirModal(m = null) {
   document.getElementById("fSpotify").value = spotifyUrl;
   document.getElementById("fTom").value  = "";
   document.getElementById("fMin").value  = "";
-  document.getElementById("btnSalvar").textContent = m ? "SALVAR ALTERAÇÕES" : "SALVAR";
+  document.getElementById("btnSalvar").textContent = m ? "Salvar alterações" : "Salvar";
 
   renderTomList();
   renderCifraList();
@@ -946,15 +946,34 @@ function toast(msg, err = false) {
   t._t = setTimeout(() => { t.className = "toast"; }, 3200);
 }
 
+// aviso com um botão (ex.: "Desfazer"), que fica um pouco mais na tela
+function toastAcao(msg, rotulo, acao, ms = 7000) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "toast-acao";
+  b.textContent = rotulo;
+  b.addEventListener("click", () => {
+    clearTimeout(t._t);
+    t.className = "toast";
+    acao();
+  }, { once: true });
+  t.appendChild(b);
+  t.className = "toast show com-acao";
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.className = "toast"; }, ms);
+}
+
 // as aspas também: o esc() vai parar dentro de href="" e title=""
 function esc(s = "") {
   return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
           .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
-// Tom para mostrar na tela. A Bebas Neue só tem maiúsculas, então
-// "Bm" aparecia como "BM" e o tom menor parecia maior. O "m" vai
-// numa fonte que tem minúscula.
+// Tom para mostrar na tela. O "m" do menor vai num <span> próprio:
+// nasceu quando a fonte dos tons (Bebas Neue) não tinha minúscula.
+// Com a Montserrat ele herda a fonte, mas o gancho fica para o CSS.
 function tomHTML(t = "") {
   return esc(t).replace(/m$/, '<span class="tom-m">m</span>');
 }
@@ -1225,6 +1244,19 @@ function serializarLouvores(dados) {
 // markup de uma linha de louvor (reutilizado nas duas seções: principal e ofertório)
 // recebe o índice ORIGINAL dentro de cultos[chave].louvores para remover/abrir corretamente
 function louvorRowHTML(chave, l, i) {
+  // vizinhos da MESMA seção: as setas só trocam de lugar dentro dela
+  const lista = (cultos[chave] && cultos[chave].louvores) || [];
+  const mesma = lista.map((x, j) => j).filter(j => secaoDoLouvor(lista[j]) === secaoDoLouvor(l));
+  const pos = mesma.indexOf(i);
+  const ordem = mesma.length > 1 ? `
+      <div class="culto-louvor-ordem">
+        <button title="Subir" aria-label="Subir ${esc(l.nome)}" ${pos <= 0 ? "disabled" : ""}
+          onclick="event.stopPropagation();moverLouvorCulto('${chave}',${i},-1)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+        <button title="Descer" aria-label="Descer ${esc(l.nome)}" ${pos >= mesma.length - 1 ? "disabled" : ""}
+          onclick="event.stopPropagation();moverLouvorCulto('${chave}',${i},1)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>` : "";
   return `
     <div class="culto-louvor">
       <div class="culto-louvor-info culto-louvor-click"
@@ -1233,8 +1265,8 @@ function louvorRowHTML(chave, l, i) {
         <div class="culto-louvor-txt">
           <div class="culto-louvor-nome">${esc(l.nome)}</div>
         </div>
-      </div>
-      <button class="culto-louvor-rm" title="Remover"
+      </div>${ordem}
+      <button class="culto-louvor-rm" title="Remover" aria-label="Remover ${esc(l.nome)}"
         onclick="event.stopPropagation();removerLouvorCulto('${chave}',${i})">✕</button>
     </div>`;
 }
@@ -1417,9 +1449,36 @@ async function definirEscalado(chave, valor) {
 async function removerLouvorCulto(chave, idx) {
   if (!isAdmin()) { toast("Faça login para editar.", true); return; }
   if (!cultos[chave]) return;
-  cultos[chave].louvores.splice(idx, 1);
+  const [tirado] = cultos[chave].louvores.splice(idx, 1);
   renderCultos();
-  await salvarCulto(chave);
+  const ok = await salvarCulto(chave);
+  if (!ok || !tirado) return;
+
+  // um toque torto no ✕ não custa o louvor: dá para voltar atrás
+  toastAcao(`"${tirado.nome}" removido`, "Desfazer", async () => {
+    const lista = cultos[chave].louvores;
+    lista.splice(Math.min(idx, lista.length), 0, tirado);
+    renderCultos();
+    if (await salvarCulto(chave)) toast("Louvor de volta ✓");
+  });
+}
+
+// troca o louvor de lugar com o vizinho da mesma seção
+async function moverLouvorCulto(chave, idx, dir) {
+  if (!isAdmin()) { toast("Faça login para editar.", true); return; }
+  const lista = cultos[chave] && cultos[chave].louvores;
+  if (!lista || !lista[idx]) return;
+  const secao = secaoDoLouvor(lista[idx]);
+  let j = idx + dir;
+  while (j >= 0 && j < lista.length && secaoDoLouvor(lista[j]) !== secao) j += dir;
+  if (j < 0 || j >= lista.length) return;
+
+  [lista[idx], lista[j]] = [lista[j], lista[idx]];
+  renderCultos();
+  if (!(await salvarCulto(chave))) {
+    [lista[idx], lista[j]] = [lista[j], lista[idx]];   // volta se não gravou
+    renderCultos();
+  }
 }
 
 // ── modal de adicionar louvor ─────────────────────────────────
@@ -1430,9 +1489,9 @@ function abrirCultoModal(chave, secao = "principal") {
   cultoSecaoAtual = SECAO_LABEL[secao] ? secao : "principal";
 
   const oc = calOcorrenciaPorChave(chave);
-  const tituloSecao = cultoSecaoAtual === "principal" ? "ADICIONAR" : SECAO_LABEL[cultoSecaoAtual].toUpperCase();
+  const tituloSecao = cultoSecaoAtual === "principal" ? "Adicionar" : SECAO_LABEL[cultoSecaoAtual];
   document.getElementById("cultoModalTitulo").textContent =
-    `${tituloSecao} · ${(oc ? oc.titulo : "CULTO").toUpperCase()}`;
+    `${tituloSecao} · ${oc ? oc.titulo : "Culto"}`;
 
   // reset campos
   document.getElementById("cBuscaMusica").value = "";
@@ -1598,7 +1657,7 @@ async function confirmarLouvorCulto() {
     toast("Erro ao adicionar louvor.", true);
   } finally {
     btn.disabled = false;
-    btn.textContent = "ADICIONAR";
+    btn.textContent = "Adicionar";
   }
 }
 

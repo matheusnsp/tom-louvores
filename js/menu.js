@@ -64,13 +64,13 @@ const MN_ICO = {
       position:relative;
       width:40px;height:40px;padding:0;
       background:transparent;
-      border:1px solid var(--black5);
-      border-radius:var(--r);
-      color:var(--white);cursor:pointer;
+      border:1px solid var(--line);
+      border-radius:50%;
+      color:var(--paper);cursor:pointer;
       transition:all 0.15s;
     }
-    #mnBtn:hover{background:var(--black3);border-color:var(--gray3)}
-    #mnBtn:active{background:var(--black3);border-color:var(--gray3)}
+    #mnBtn:hover{border-color:var(--gold);color:var(--gold)}
+    #mnBtn:active{border-color:var(--gold);color:var(--gold)}
     /* um ponto no canto avisa que a conexão caiu, sem abrir o menu */
     #mnBtn.mn-alerta::after{
       content:"";position:absolute;top:-2px;right:-2px;
@@ -115,8 +115,8 @@ const MN_ICO = {
     border-bottom:1px solid var(--black4);
   }
   .mn-hd h2{
-    margin:0;font-family:'Bebas Neue',sans-serif;
-    font-size:26px;letter-spacing:0.06em;color:var(--white);line-height:1;
+    margin:0;font-family:var(--font-display);font-weight:600;
+    font-size:26px;letter-spacing:-0.01em;color:var(--white);line-height:1;
   }
   .mn-x{
     width:30px;height:30px;flex-shrink:0;
@@ -143,7 +143,7 @@ const MN_ICO = {
     padding:12px 2px;min-height:62px;
     background:none;border:none;border-radius:var(--r);
     text-align:left;cursor:pointer;
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
   }
   .mn-linha:hover{background:rgba(255,255,255,.03)}
   .mn-linha:active{background:rgba(255,255,255,.04)}
@@ -158,10 +158,10 @@ const MN_ICO = {
     grid-column:1;grid-row:1 / span 2;
     width:38px;height:38px;
     display:flex;align-items:center;justify-content:center;
-    background:rgba(255,224,0,0.08);
-    border:1px solid rgba(255,224,0,0.2);
+    background:rgba(var(--gold-rgb),0.08);
+    border:1px solid rgba(var(--gold-rgb),0.2);
     border-radius:var(--r);
-    color:var(--yellow);
+    color:var(--gold);
   }
   /*  O nome usa a letra dos botões do cabeçalho — 13px, 800,
       maiúsculas e espaçada. É o que faz a lista parecer deste
@@ -209,7 +209,7 @@ const MN_ICO = {
   .mn-linha.mn-baixando::before{
     content:"";position:absolute;left:0;top:0;bottom:0;
     width:var(--mn-dl,0%);
-    background:rgba(255,224,0,0.14);
+    background:rgba(var(--gold-rgb),0.14);
     transition:width .25s ease;pointer-events:none;
   }
   .mn-linha.mn-baixando .mn-sub{font-variant-numeric:tabular-nums}
@@ -220,7 +220,7 @@ const MN_ICO = {
   .mn-rodape{
     margin-top:auto;padding-top:16px;
     border-top:1px solid var(--black4);
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
     font-size:9px;font-weight:700;color:var(--gray2);
     letter-spacing:0.16em;text-transform:uppercase;
     text-align:center;
@@ -266,7 +266,7 @@ function mnMontar() {
   g.setAttribute("aria-modal", "true");
   g.innerHTML = `
     <div class="mn-hd">
-      <h2>MENU</h2>
+      <h2>Menu</h2>
       <button class="mn-x" id="mnX" aria-label="Fechar">&#10005;</button>
     </div>`;
   document.body.appendChild(g);

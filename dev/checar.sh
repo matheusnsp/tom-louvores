@@ -119,15 +119,37 @@ done
 echo
 echo "── 8. service worker cobre os arquivos usados ───────────"
 if [ -f sw.js ]; then
+  # "done < <(...)" em vez de "| while": no pipe o laço roda num
+  # subshell e as falhas encontradas não chegavam à contagem final
   for f in *.html; do
-    grep -o 'src="[^"]*\.js"' "$f" | sed 's/src="//;s/"//' | while read -r js; do
+    while read -r js; do
       case "$js" in http*) continue ;; esac
       grep -q "\"\./$js\"" sw.js || falha "$js está na página mas fora do cache do sw.js"
-    done
+    done < <(grep -o 'src="[^"]*\.js"' "$f" | sed 's/src="//;s/"//')
   done
   ok "lista do sw.js conferida"
 else
   falha "sw.js não encontrado"
+fi
+
+echo
+echo "── 9. número do CACHE trocado ───────────────────────────"
+# Mudou html, css, js ou imagem desde o último commit e o CACHE do
+# sw.js continua o mesmo? Então quem já abriu o site seguiria vendo
+# a versão antiga. Só roda dentro de um repositório git.
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  mudou=$(git diff --name-only HEAD -- '*.html' '*.css' '*.js' 'img/*' manifest.json 2>/dev/null | grep -v '^dev/' | grep -v '^sw.js$')
+  if [ -n "$mudou" ]; then
+    if git diff HEAD -- sw.js | grep -q '^+const CACHE'; then
+      ok "arquivos mudaram e o CACHE foi trocado"
+    else
+      falha "arquivos mudaram mas o CACHE do sw.js continua igual — aumente o número"
+    fi
+  else
+    ok "nada mudou desde o último commit"
+  fi
+else
+  ok "fora do git: pulei esta conferência"
 fi
 
 echo
@@ -136,4 +158,6 @@ if [ "$falhas" -eq 0 ]; then
 else
   printf '\033[31m  %s verificação(ões) falharam\033[0m\n\n' "$falhas"
 fi
-exit 0
+# código de saída diferente de 0 quando algo falha: dá para usar
+# num hook de pre-commit ou no CI
+[ "$falhas" -eq 0 ]
