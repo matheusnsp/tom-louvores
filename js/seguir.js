@@ -198,6 +198,12 @@ async function snConectar() {
       snPintarSelo();
     });
 
+    //  O líder apertou um botão do mapa da música ("Refrão", "Riff 2"):
+    //  quem acompanha vê o mesmo botão e o mesmo título marcados.
+    snCanal.on("broadcast", { event: "marca" }, ({ payload }) => {
+      if (!snEhLider() && snLigado && typeof lpMarcarRemoto === "function") lpMarcarRemoto(payload);
+    });
+
     //  Quem acabou de ligar não espera o próximo movimento: pede o
     //  retrato de quem está transmitindo.
     snCanal.on("broadcast", { event: "pedir" }, () => {
@@ -346,6 +352,15 @@ function snEnviar(agora = false) {
       });
     }
   }, 200);
+}
+
+//  chamado pelo leitor-palco.js quando o líder aperta um botão do mapa
+function snEnviarMarca(rotulo) {
+  if (!snPronto || !snLigado || !snEhLider() || !lyraAtual?.song) return;
+  snCanal.send({
+    type: "broadcast", event: "marca",
+    payload: { slug: lyraAtual.song.slug, rotulo: rotulo || null },
+  });
 }
 
 // ── o que o seguidor faz com o que chega ────────────────────

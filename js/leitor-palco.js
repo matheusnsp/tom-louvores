@@ -514,8 +514,26 @@ function lpIrParaSecao(s) {
   lpEscolhidaEm = Date.now();
   lpSecoes.forEach(x => x.botao.classList.toggle("on", x === s));
   lpMarcarTitulo(s);
+  // quem está acompanhando esta tela vê o mesmo botão marcado
+  if (typeof snEnviarMarca === "function") snEnviarMarca(s.rotulo);
   if (lpPag.ligado) lpIrParaPagina(lpPaginaDe(alvo));
   else corpo.scrollTo({ top: Math.max(0, lpTopoNoCorpo(alvo, corpo) - 14), behavior: "smooth" });
+}
+
+// chega de quem transmite (seguir.js): marca o mesmo botão aqui.
+// A posição da rolagem já vem pelo acompanhamento; em páginas, vira
+// para a página da parte.
+function lpMarcarRemoto(p) {
+  if (!p || !lyraAtual || !lyraAtual.song || lyraAtual.song.slug !== p.slug) return;
+  const s = lpSecoes.find(x => x.rotulo === p.rotulo);
+  if (!s) return;
+  lpEscolhida = s;
+  lpEscolhidaEm = Date.now();
+  lpSecoes.forEach(x => x.botao.classList.toggle("on", x === s));
+  lpMarcarTitulo(s);
+  if (lpPag.ligado) lpIrParaPagina(lpPaginaDe(lpLinhaDe(s.el)));
+  const m = s.botao.parentElement;
+  if (m) m.scrollTo({ left: s.botao.offsetLeft - 16, behavior: "smooth" });
 }
 
 // a parte apertada está na tela?

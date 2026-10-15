@@ -1509,3 +1509,15 @@
    }
    body.arrastando{user-select:none;-webkit-user-select:none;cursor:grabbing}
    body.arrastando .culto-louvor-click{cursor:grabbing}
+
+   /* ============================================================
+      CABEÇALHO NO CELULAR — regras que valem no PRIMEIRO quadro
+      As mesmas regras existem no menu.js e no paginas.js, mas elas
+      só entram quando o JS roda; até lá o iPhone pintava o cabeçalho
+      de computador ("TOM LOUVORES", botão Entrar) por cima do menu.
+      ============================================================ */
+   @media (max-width:900px){
+     .header-right > *:not(#mnBtn){display:none !important}
+     .logo-sub,.logo-sep{display:none}
+     .header-inner{flex-wrap:nowrap;gap:12px;position:relative}
+   }
