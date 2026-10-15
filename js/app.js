@@ -1704,3 +1704,12 @@ if (document.readyState === "loading") {
 } else {
   iniciar();
 }
+// Sem zoom de pinça nem de toque duplo no iPhone (o Safari ignora o
+// user-scalable=no do viewport; estes dois eventos são o que resta).
+document.addEventListener("gesturestart", e => e.preventDefault(), { passive: false });
+let ultimoToque = 0;
+document.addEventListener("touchend", e => {
+  const agora = Date.now();
+  if (agora - ultimoToque < 300 && !e.target.closest("input, textarea, select, button, a")) e.preventDefault();
+  ultimoToque = agora;
+}, { passive: false });

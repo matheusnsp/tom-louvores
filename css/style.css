@@ -1276,9 +1276,10 @@
    }
    ::selection{background:rgba(var(--gold-rgb),0.35);color:var(--white)}
 
-   /* o zoom de pinça voltou para o site (a pedido de quem enxerga
-      pouco), mas no leitor de cifras, no palco, um toque torto não
-      pode ampliar a tela: lá o tamanho é pelo A− / A+ */
+   /* sem zoom de pinça: o tamanho da letra é pelo A− / A+ do leitor.
+      O Safari do iPhone ignora o user-scalable=no; o touch-action
+      abaixo é o que segura o zoom lá. */
+   html,body{touch-action:pan-x pan-y}
    #lyraOverlay{touch-action:pan-x pan-y}
 
    /* quem pediu ao celular menos movimento não vê nada piscando */
