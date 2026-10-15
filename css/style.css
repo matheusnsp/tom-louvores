@@ -1346,7 +1346,8 @@
    .lyra-prog[hidden]{display:none}
    .lyra-prog i{
      display:block;height:100%;background:var(--gold);
-     transform-origin:left;transform:scaleX(0);transition:transform .12s linear;
+     transform-origin:left;transform:scaleX(0);
+     will-change:transform;   /* sem transição: ela brigava com a rolagem no iPhone */
    }
 
    /* colunas: o texto vira linhas em bloco para o par acorde + letra

@@ -82,147 +82,131 @@ const MN_ICO = {
   /* ── fundo ── */
   .mn-fundo{
     position:fixed;inset:0;z-index:400;
-    background:rgba(0,0,0,.82);
+    background:rgba(0,0,0,.72);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
     opacity:0;pointer-events:none;transition:opacity .22s;
   }
   .mn-fundo.on{opacity:1;pointer-events:auto}
 
   /* ── gaveta ──
-     Entra pela direita, tela cheia de altura: é de onde o botão
-     do menu está, e o polegar volta nele para fechar. */
+     Entra pela direita, altura inteira: é de onde o botão do menu
+     está, e o polegar volta nele para fechar. */
   .mn-gaveta{
     position:fixed;top:0;right:0;bottom:0;z-index:410;
-    width:min(84vw, 340px);
-    background:var(--black2);
-    border-left:1px solid var(--black5);
-    box-shadow:-18px 0 40px rgba(0,0,0,.5);
+    width:min(86vw, 360px);
+    background:#0A0A0B;
+    border-left:1px solid var(--line);
+    box-shadow:-24px 0 60px rgba(0,0,0,.6);
     display:flex;flex-direction:column;
-    padding:calc(20px + env(safe-area-inset-top)) 22px
+    padding:calc(18px + env(safe-area-inset-top)) 20px
             calc(18px + env(safe-area-inset-bottom));
     transform:translateX(101%);
-    transition:transform .3s cubic-bezier(.22,1,.36,1);
+    transition:transform .32s cubic-bezier(.22,1,.36,1);
     overflow:auto;overscroll-behavior:contain;
   }
   .mn-gaveta.on{transform:none}
   body.mn-travado{overflow:hidden}
 
-  /*  Cabeçalho igual ao dos modais: Bebas 26px e o mesmo botão de
-      fechar, para o menu não parecer peça de outro app. */
+  /* cabeçalho: a marca da igreja e o botão de fechar */
   .mn-hd{
     display:flex;align-items:center;justify-content:space-between;
-    flex:0 0 auto;
-    padding-bottom:18px;margin-bottom:6px;
-    border-bottom:1px solid var(--black4);
+    flex:0 0 auto;padding:2px 0 18px;margin-bottom:8px;
+    border-bottom:1px solid var(--line);
   }
-  .mn-hd h2{
-    margin:0;font-family:var(--font-display);font-weight:600;
-    font-size:26px;letter-spacing:-0.01em;color:var(--white);line-height:1;
+  .mn-marca{display:flex;align-items:center;gap:12px}
+  .mn-marca img{height:40px;width:auto;display:block;object-fit:contain}
+  .mn-marca-txt{display:flex;flex-direction:column;gap:3px}
+  .mn-marca-txt b{
+    font-family:var(--font-ui);font-size:16px;font-weight:700;
+    color:var(--paper);line-height:1.1;
+  }
+  .mn-marca-txt span{
+    font-family:var(--font-ui);font-size:10px;font-weight:600;
+    letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);
   }
   .mn-x{
-    width:30px;height:30px;flex-shrink:0;
-    background:transparent;border:1px solid var(--black5);
-    border-radius:4px;color:var(--gray);
-    font-size:14px;cursor:pointer;
+    width:40px;height:40px;flex-shrink:0;
+    background:transparent;border:1px solid var(--line);
+    border-radius:50%;color:var(--paper);
+    font-size:15px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    transition:all 0.15s;
+    transition:all 0.2s;
   }
-  .mn-x:hover{background:var(--black4);color:var(--white)}
-  .mn-x:active{background:var(--black4);color:var(--white)}
+  .mn-x:hover,.mn-x:active{border-color:var(--gold);color:var(--gold)}
 
-  /* ── seções e linhas ── */
-  .mn-grupo{flex:0 0 auto}
-  .mn-grupo + .mn-grupo{
-    margin-top:10px;padding-top:10px;
-    border-top:1px solid var(--black4);
-  }
+  /* ── grupos ── */
+  .mn-grupo{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;padding:10px 0}
+  .mn-grupo + .mn-grupo{border-top:1px solid var(--fio)}
 
   .mn-linha{
     width:100%;
-    display:grid;grid-template-columns:38px 1fr;
-    align-items:center;column-gap:14px;row-gap:3px;
-    padding:12px 2px;min-height:62px;
-    background:none;border:none;border-radius:var(--r);
+    display:grid;grid-template-columns:44px 1fr;
+    align-items:center;column-gap:14px;row-gap:2px;
+    padding:10px 12px;min-height:64px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--fio);border-radius:16px;
     text-align:left;cursor:pointer;
     font-family:var(--font-ui);
+    transition:border-color .2s,background .2s;
   }
-  .mn-linha:hover{background:rgba(255,255,255,.03)}
-  .mn-linha:active{background:rgba(255,255,255,.04)}
+  .mn-linha:hover,.mn-linha:active{border-color:var(--line);background:rgba(var(--gold-rgb),0.05)}
   /* a linha da conexão é informação, não botão */
-  .mn-linha.mn-info{cursor:default}
-  .mn-linha.mn-info:hover,
-  .mn-linha.mn-info:active{background:none}
+  .mn-linha.mn-info{cursor:default;background:transparent;border-color:transparent;min-height:48px;padding:6px 12px}
+  .mn-linha.mn-info:hover,.mn-linha.mn-info:active{background:transparent;border-color:transparent}
 
-  /*  Quadrado do ícone no mesmo molde dos selos de tom: amarelo
-      sobre fundo amarelo translúcido, canto de 6px. */
   .mn-ico{
     grid-column:1;grid-row:1 / span 2;
-    width:38px;height:38px;
+    width:44px;height:44px;
     display:flex;align-items:center;justify-content:center;
-    background:rgba(var(--gold-rgb),0.08);
-    border:1px solid rgba(var(--gold-rgb),0.2);
-    border-radius:var(--r);
+    background:rgba(var(--gold-rgb),0.10);
+    border:1px solid var(--line);
+    border-radius:50%;
     color:var(--gold);
   }
-  /*  O nome usa a letra dos botões do cabeçalho — 13px, 800,
-      maiúsculas e espaçada. É o que faz a lista parecer deste
-      site e não de um menu qualquer. */
+  .mn-linha.mn-info .mn-ico{width:36px;height:36px}
   .mn-nome{
     grid-column:2;grid-row:1;
-    font-size:13px;font-weight:800;
-    letter-spacing:0.05em;text-transform:uppercase;
-    color:var(--white);line-height:1.2;
+    font-size:16px;font-weight:600;letter-spacing:0;
+    color:var(--paper);line-height:1.2;
   }
-  /*  A legenda fica em caixa normal: é frase, não rótulo. Duas
-      linhas de maiúscula seguidas não se leem. */
   .mn-sub{
     grid-column:2;grid-row:2;
-    font-size:11.5px;font-weight:400;color:var(--gray);
+    font-size:13px;font-weight:400;color:var(--dim);
     line-height:1.4;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
 
-  /*  Sair é a única linha que desfaz algo: usa o vermelho que o
-      site já reserva para apagar e desconectar. */
-  .mn-linha.mn-sair .mn-ico{
-    background:rgba(248,113,113,0.08);
-    border-color:rgba(248,113,113,0.3);
-    color:#F87171;
-  }
+  /* Entrar é a ação principal: pílula dourada cheia */
+  .mn-linha#mnEntrar{background:var(--gold);border-color:var(--gold)}
+  .mn-linha#mnEntrar .mn-ico{background:rgba(0,0,0,0.12);border-color:rgba(0,0,0,0.15);color:var(--on-gold)}
+  .mn-linha#mnEntrar .mn-nome{color:var(--on-gold)}
+  .mn-linha#mnEntrar .mn-sub{color:rgba(11,11,12,0.7)}
+
+  /* Sair é a única linha que desfaz algo */
+  .mn-linha.mn-sair .mn-ico{background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.35);color:#F87171}
   .mn-linha.mn-sair .mn-nome{color:#F87171}
 
   /* a conexão se anuncia com as cores da pastilha do cabeçalho */
-  .mn-linha.mn-ok .mn-ico{
-    background:rgba(74,222,128,0.08);
-    border-color:rgba(74,222,128,0.3);
-    color:#4ADE80;
-  }
-  .mn-linha.mn-erro .mn-ico{
-    background:rgba(248,113,113,0.08);
-    border-color:rgba(248,113,113,0.3);
-    color:#F87171;
-  }
+  .mn-linha.mn-ok .mn-ico{background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.35);color:#4ADE80}
+  .mn-linha.mn-erro .mn-ico{background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.35);color:#F87171}
 
-  /*  Enquanto baixa, a faixa avança por trás da linha: é o mesmo
-      recado que o botão do cabeçalho dava, no lugar onde o dedo
-      acabou de tocar. */
+  /* enquanto baixa, a faixa avança por trás da linha */
   .mn-linha.mn-baixando{position:relative;overflow:hidden}
   .mn-linha.mn-baixando::before{
     content:"";position:absolute;left:0;top:0;bottom:0;
     width:var(--mn-dl,0%);
-    background:rgba(var(--gold-rgb),0.14);
+    background:rgba(var(--gold-rgb),0.16);
     transition:width .25s ease;pointer-events:none;
   }
   .mn-linha.mn-baixando .mn-sub{font-variant-numeric:tabular-nums}
   .mn-linha > *{position:relative;z-index:1}
 
-  /*  Rodapé com a letra dos rótulos do site (9px, 700, espaçada),
-      em vez de monoespaçada — essa fica para as cifras. */
   .mn-rodape{
     margin-top:auto;padding-top:16px;
-    border-top:1px solid var(--black4);
+    border-top:1px solid var(--fio);
     font-family:var(--font-ui);
-    font-size:9px;font-weight:700;color:var(--gray2);
-    letter-spacing:0.16em;text-transform:uppercase;
+    font-size:11px;font-weight:600;color:var(--gray2);
+    letter-spacing:0.18em;text-transform:uppercase;
     text-align:center;
   }`;
   document.head.appendChild(st);
@@ -266,7 +250,10 @@ function mnMontar() {
   g.setAttribute("aria-modal", "true");
   g.innerHTML = `
     <div class="mn-hd">
-      <h2>Menu</h2>
+      <div class="mn-marca">
+        <img src="img/logo2.png" alt="Nova Vida Botafogo" />
+        <div class="mn-marca-txt"><b>Tom Louvores</b><span>Nova Vida Botafogo</span></div>
+      </div>
       <button class="mn-x" id="mnX" aria-label="Fechar">&#10005;</button>
     </div>`;
   document.body.appendChild(g);

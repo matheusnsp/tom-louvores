@@ -122,13 +122,21 @@ function lpMontar() {
     acoes.insertBefore(tela, fechar);
   }
 
-  corpo.addEventListener("scroll", lpAoRolar, { passive: true });
+  corpo.addEventListener("scroll", lpAgendarRolagem, { passive: true });
   corpo.addEventListener("click", lpToqueNaPagina);
   lpLigarArrastePaginas(corpo);
   new MutationObserver(lpAgendar).observe(corpo, { childList: true, subtree: true });
   window.addEventListener("resize", lpAgendar);
   lpAgendar();
   return true;
+}
+
+// a rolagem dispara dezenas de eventos por segundo; o trabalho
+// fica para o próximo quadro, uma vez só
+let lpQuadroRolagem = 0;
+function lpAgendarRolagem() {
+  if (lpQuadroRolagem) return;
+  lpQuadroRolagem = requestAnimationFrame(() => { lpQuadroRolagem = 0; lpAoRolar(); });
 }
 
 // junta várias mudanças seguidas num redesenho só
@@ -152,6 +160,7 @@ function lpAtualizar() {
 
   lpAplicarColunas();
   lpMontarMapa(pre);
+  lpInvalidarTopos();
   lpAoRolar();
 }
 
@@ -512,6 +521,7 @@ function lpIrParaSecao(s) {
   const alvo = lpLinhaDe(s.el);
   lpEscolhida = s;
   lpEscolhidaEm = Date.now();
+  lpAtualMarcado = s;
   lpSecoes.forEach(x => x.botao.classList.toggle("on", x === s));
   lpMarcarTitulo(s);
   // quem está acompanhando esta tela vê o mesmo botão marcado
@@ -529,6 +539,7 @@ function lpMarcarRemoto(p) {
   if (!s) return;
   lpEscolhida = s;
   lpEscolhidaEm = Date.now();
+  lpAtualMarcado = s;
   lpSecoes.forEach(x => x.botao.classList.toggle("on", x === s));
   lpMarcarTitulo(s);
   if (lpPag.ligado) lpIrParaPagina(lpPaginaDe(lpLinhaDe(s.el)));
@@ -540,11 +551,23 @@ function lpMarcarRemoto(p) {
 function lpEstaNaTela(s, corpo) {
   const el = lpLinhaDe(s.el);
   if (lpPag.ligado) return lpPaginaDe(el) === lpPag.atual;
-  const topo = lpTopoNoCorpo(el, corpo);
+  const i = lpSecoes.indexOf(s);
+  const topo = lpTopos && i >= 0 ? lpTopos[i] : lpTopoNoCorpo(el, corpo);
   return topo >= corpo.scrollTop - 8 && topo <= corpo.scrollTop + corpo.clientHeight - 24;
 }
 
 // ── rolagem: progresso e parte atual ────────────────────────
+// Topos das partes, medidos UMA vez por texto/tamanho. Medir no
+// meio da rolagem (getBoundingClientRect em cada parte, a cada
+// evento) era o que fazia o iPhone engasgar.
+let lpTopos = null;
+let lpAtualMarcado = null;
+function lpMedirTopos(corpo) {
+  const base = corpo.getBoundingClientRect().top - corpo.scrollTop;
+  lpTopos = lpSecoes.map(s => lpLinhaDe(s.el).getBoundingClientRect().top - base);
+}
+function lpInvalidarTopos() { lpTopos = null; lpAtualMarcado = null; }
+
 function lpAoRolar() {
   const corpo = document.getElementById("lyraCorpo");
   const barra = document.getElementById("lyraProg");
@@ -582,13 +605,16 @@ function lpAoRolar() {
         atual = nesta || antes || partes[0];
       } else {
         // a parte cujo título já passou do topo (com uma folga pequena)
+        if (!lpTopos || lpTopos.length !== lpSecoes.length) lpMedirTopos(corpo);
         const linha = corpo.scrollTop + 60;
         atual = partes[0];
-        for (const s of partes) if (lpTopoNoCorpo(lpLinhaDe(s.el), corpo) <= linha) atual = s;
+        lpSecoes.forEach((s, i) => { if (s.tipo === "secao" && lpTopos[i] <= linha) atual = s; });
       }
     }
   }
   if (!atual) { lpSecoes.forEach(s => s.botao.classList.remove("on")); return; }
+  if (lpAtualMarcado === atual) return;        // nada mudou: não mexe no DOM
+  lpAtualMarcado = atual;
   lpSecoes.forEach(s => s.botao.classList.toggle("on", s === atual));
   const m = atual.botao.parentElement;
   const b = atual.botao;
