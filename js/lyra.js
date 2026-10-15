@@ -121,13 +121,74 @@ function lyraKeySlug(tom) {
   return raiz.replace("#", "s").toLowerCase() + (menor ? "m" : "");
 }
 
-// como o Lyra escreve este tom nesta música (ou null)
+//  O tom pedido, se a música tem essa altura (ou null).
+//  Mantém a grafia escolhida na casa: pediu C#, abre em C# —
+//  mesmo que o Lyra chame essa altura de Db.
 function lyraTomDisponivel(tom, keys = []) {
   if (!tom) return null;
   const { raiz, menor } = lyraPartesTom(tom);
   const sufixo = menor ? "m" : "";
   const alvos = [raiz, LYRA_ENARMONIA[raiz]].filter(Boolean).map(r => r + sufixo);
-  return keys.find(k => alvos.includes(k)) || null;
+  const achado = keys.find(k => alvos.includes(k));
+  if (!achado) return null;
+  return (LYRA_SUST.includes(raiz) || LYRA_BEM.includes(raiz)) ? raiz + sufixo : achado;
+}
+
+//  Mesma altura e mesmo modo: "C#" e "Db", "D#m" e "Ebm".
+function lyraMesmoTom(a, b) {
+  if (!a || !b) return false;
+  const x = lyraPartesTom(a), y = lyraPartesTom(b);
+  return x.menor === y.menor && lyraPc(x.raiz) !== null && lyraPc(x.raiz) === lyraPc(y.raiz);
+}
+
+// ── Grafia: sustenidos ou bemóis ─────────────────────────────
+//  Quem manda, nesta ordem:
+//    1. o botão ♯/♭ do leitor (fica lembrado por música, neste aparelho);
+//    2. a grafia escolhida no Lyra (campo key_spelling da música);
+//    3. nada escolhido: o tom como foi cadastrado na casa (C# ou Db).
+const LYRA_GRAFIA_KEY = "lyra_grafia_v1";
+const lyraGrafiaLocal = (() => {
+  try { return JSON.parse(localStorage.getItem(LYRA_GRAFIA_KEY) || "{}") || {}; }
+  catch (e) { return {}; }
+})();
+
+function lyraGrafiaValida(g) {
+  return g === "sharp" || g === "flat" ? g : null;
+}
+
+function lyraGrafiaDe(slug, musica) {
+  return lyraGrafiaValida(slug && lyraGrafiaLocal[slug])
+      || lyraGrafiaValida(musica && musica.key_spelling);
+}
+
+//  "Db" + sharp → "C#"   |   "G#m" + flat → "Abm"   |   sem grafia: igual
+function lyraGrafar(tom, grafia) {
+  if (!tom || !grafia) return tom;
+  const { raiz, menor } = lyraPartesTom(tom);
+  const pc = lyraPc(raiz);
+  if (pc === null) return tom;
+  return (grafia === "flat" ? LYRA_BEM : LYRA_SUST)[pc] + (menor ? "m" : "");
+}
+
+//  Botão ♯/♭ do leitor: vale só para esta música, e fica lembrado.
+function lyraEscolherGrafia(grafia) {
+  if (!lyraAtual || !lyraAtual.song || !lyraGrafiaValida(grafia)) return;
+  const slug = lyraAtual.song.slug;
+  lyraGrafiaLocal[slug] = grafia;
+  try { localStorage.setItem(LYRA_GRAFIA_KEY, JSON.stringify(lyraGrafiaLocal)); } catch (e) {}
+  lyraAtual.grafia = grafia;
+  lyraAtual.tom = lyraGrafar(lyraAtual.tom, grafia);
+  lyraPreencherTons();
+  lyraRenderConteudo();
+}
+
+function lyraMarcarGrafia() {
+  const g = (lyraAtual && lyraAtual.grafia) || null;
+  document.querySelectorAll("[data-grafia]").forEach(b => {
+    const on = b.dataset.grafia === g;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
 }
 
 // ── Índice local: a tabela musicas_lyra ──────────────────────
@@ -472,6 +533,7 @@ function lyraMusicaParaTexto(m) {
   return JSON.stringify({
     lyrics: m.lyrics || "",
     base_key: m.base_key || "",
+    key_spelling: m.key_spelling || null,
     tons: Object.fromEntries(m.porTom),
   });
 }
@@ -481,6 +543,8 @@ function lyraMusicaDeTexto(txt) {
   return {
     lyrics: o.lyrics || "",
     base_key: o.base_key || "",
+    // undefined = guardada antes da grafia existir (é rebaixada quando houver rede)
+    key_spelling: "key_spelling" in o ? (o.key_spelling || null) : undefined,
     porTom: new Map(Object.entries(o.tons || {})),
   };
 }
@@ -850,13 +914,17 @@ function lyraTransporLinha(linha, semis, bemol) {
   return saida;
 }
 
-function lyraTransporTexto(texto, tomDe, tomPara) {
+//  grafia ("sharp" | "flat") força os acidentes; sem ela, segue a
+//  armadura do tom de destino.
+function lyraTransporTexto(texto, tomDe, tomPara, grafia = null) {
   const de   = lyraPc(lyraPartesTom(tomDe).raiz);
   const para = lyraPc(lyraPartesTom(tomPara).raiz);
   if (de === null || para === null) return null;
   const semis = (para - de + 12) % 12;
-  if (!semis) return texto;                  // mesmo tom: o original, sem mexer
-  const bemol = lyraUsaBemol(tomPara);
+  const bemol = grafia ? grafia === "flat" : lyraUsaBemol(tomPara);
+  //  mesmo tom e mesma grafia: o original, sem mexer.
+  //  Grafia escolhida ou trocada (Db → C#) reescreve os acidentes.
+  if (!semis && !grafia && bemol === lyraUsaBemol(tomDe)) return texto;
 
   return texto.split("\n").map(linha => {
     //  "Tom: F" também anda. Algumas cifras escrevem ali a relativa
@@ -930,16 +998,30 @@ async function lyraCarregarMusica(slug, forcar = false) {
 
   const carga = (async () => {
     const salva = forcar ? null : await lyraDoDisco(slug);
-    if (salva && salva.porTom.size) {
+    //  Cópia antiga, sem a grafia do Lyra: com rede, busca de novo
+    //  (uma vez); sem rede, usa a cópia mesmo.
+    const velha = salva && salva.key_spelling === undefined &&
+                  typeof navigator !== "undefined" && navigator.onLine;
+    if (salva && salva.porTom.size && !velha) {
       lyraRefazerTons(salva);            // o que foi salvo antes da correção também sai certo
       lyraCacheMusica.set(slug, salva);
       return salva;
     }
 
     const url = `${LYRA_API}/songs/${slug}?include=all_keys`;
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`Resposta ${r.status}`);
-    const d = await r.json();
+    let d;
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`Resposta ${r.status}`);
+      d = await r.json();
+    } catch (e) {
+      if (salva && salva.porTom.size) {      // a rede falhou: fica com a cópia antiga
+        lyraRefazerTons(salva);
+        lyraCacheMusica.set(slug, salva);
+        return salva;
+      }
+      throw e;
+    }
     lyraContarBytes(url);
     //  Toda música aberta passa por aqui, então o id do Lyra é
     //  colhido de graça — sem uma requisição só para isso.
@@ -954,7 +1036,10 @@ async function lyraCarregarMusica(slug, forcar = false) {
     // resposta sem all_keys: ao menos o tom base vem em "chords"
     if (!porTom.size && d.chords) porTom.set(lyraKeySlug(d.base_key || ""), d.chords);
 
-    const musica = lyraRefazerTons({ lyrics: d.lyrics || "", porTom, base_key: d.base_key || "" });
+    const musica = lyraRefazerTons({
+      lyrics: d.lyrics || "", porTom, base_key: d.base_key || "",
+      key_spelling: lyraGrafiaValida(d.key_spelling),
+    });
     lyraCacheMusica.set(slug, musica);
     // o que foi aberto uma vez fica guardado, sem depender do botão
     lyraGravarNoDisco(slug, musica).catch(() => {});
@@ -966,7 +1051,7 @@ async function lyraCarregarMusica(slug, forcar = false) {
   finally { lyraMusicaPendente.delete(slug); }
 }
 
-async function lyraCarregarCifra(slug, tomLyra) {
+async function lyraCarregarCifra(slug, tomLyra, grafia = null) {
   const musica = await lyraCarregarMusica(slug);
 
   //  Transpõe a partir do tom original, em vez de usar as versões
@@ -974,7 +1059,7 @@ async function lyraCarregarCifra(slug, tomLyra) {
   const base = musica.base_key;
   const original = base && musica.porTom.get(lyraKeySlug(base));
   if (original) {
-    const texto = lyraTransporTexto(original, base, tomLyra);
+    const texto = lyraTransporTexto(original, base, tomLyra, grafia);
     if (texto !== null) return texto;
   }
 
@@ -1191,6 +1276,10 @@ function lyraMontarEstrutura() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </span>
+            <span class="lyra-seg lyra-grafia" id="lyraGrafia" role="group" aria-label="Sustenidos ou bemóis">
+              <button type="button" data-grafia="sharp" aria-pressed="false" title="Sustenidos (C#, D#…)">&#9839;</button>
+              <button type="button" data-grafia="flat"  aria-pressed="false" title="Bemóis (Db, Eb…)">&#9837;</button>
+            </span>
           </span>
           <button class="lyra-btn" id="lyraTema" aria-label="Alternar fundo claro"></button>
         </div>
@@ -1222,6 +1311,9 @@ function lyraMontarEstrutura() {
       lyraAplicarModo();
       lyraRenderConteudo();
     }));
+
+  document.getElementById("lyraGrafia").querySelectorAll("[data-grafia]").forEach(b =>
+    b.addEventListener("click", () => lyraEscolherGrafia(b.dataset.grafia)));
 
   document.getElementById("lyraTomSel").addEventListener("change", e => {
     if (!lyraAtual) return;
@@ -1341,10 +1433,17 @@ function lyraPreencherTons() {
   const { song, tom } = lyraAtual;
   const sel = document.getElementById("lyraTomSel");
   if (!song) { sel.innerHTML = ""; return; }
+  //  Com grafia escolhida, a lista inteira segue ela (C#, D#… ou
+  //  Db, Eb…). Sem grafia, só o tom aberto aparece como foi pedido.
+  const grafia = lyraAtual.grafia || null;
+  if (grafia) lyraAtual.tom = lyraGrafar(tom, grafia);
+  const atual = lyraAtual.tom;
+  lyraMarcarGrafia();
   sel.innerHTML = (song.keys || [])
+    .map(k => (grafia ? lyraGrafar(k, grafia) : (lyraMesmoTom(k, atual) ? atual : k)))
     .map(k => `<option value="${lyraEsc(k)}">${lyraEsc(k)}</option>`)
     .join("");
-  sel.value = tom;
+  sel.value = atual;
 }
 
 async function lyraRenderConteudo() {
@@ -1366,9 +1465,21 @@ async function lyraRenderConteudo() {
   }</div>`;
 
   try {
+    //  a música traz a grafia do Lyra; o tom e a lista se ajustam a ela
+    const musica = await lyraCarregarMusica(song.slug);
+    if (meuToken !== lyraToken || !lyraAtual) return;
+    const grafia = lyraGrafiaDe(song.slug, musica);
+    if (grafia !== (lyraAtual.grafia || null)) {
+      lyraAtual.grafia = grafia;
+      lyraPreencherTons();
+    } else {
+      lyraMarcarGrafia();
+    }
+    const tomFinal = lyraAtual.tom;
+
     const texto = modo === "letra"
       ? await lyraCarregarLetra(song.slug)
-      : await lyraCarregarCifra(song.slug, tom);
+      : await lyraCarregarCifra(song.slug, tomFinal, grafia);
 
     if (meuToken !== lyraToken || !lyraAtual) return;
 
@@ -1376,7 +1487,7 @@ async function lyraRenderConteudo() {
       corpo.innerHTML = `<div class="lyra-msg">${
         modo === "letra"
           ? "Esta música não tem letra cadastrada."
-          : `Esta música não tem cifra em ${lyraEsc(tom)}.`
+          : `Esta música não tem cifra em ${lyraEsc(lyraAtual.tom)}.`
       }</div>`;
       return;
     }

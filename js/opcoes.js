@@ -539,7 +539,7 @@ function opMontar() {
   const rolagem = document.querySelector(".ac-rolar");
   const inst    = document.getElementById("acInstBtn");
   const tom     = document.getElementById("lyraGrupoTom");
-  const texto   = pega(".lyra-barra .lyra-seg:not(#lyraSeg)");
+  const texto   = pega(".lyra-barra .lyra-seg:not(#lyraSeg):not(#lyraGrafia)");
   const quebra  = document.getElementById("lyraQuebraBtn");
   const tema    = document.getElementById("lyraTema");
 
@@ -885,6 +885,8 @@ let opTomInicial = null;
     padding:12px 8px;
   }
   .op-tom-acoes .op-restaurar{flex:0 0 52px;font-size:16px;color:var(--gray)}
+  .op-tom-acoes [data-grafia]{flex:0 0 46px;font-size:17px}
+  .op-tom-acoes [data-grafia].on{background:var(--cifra);border-color:var(--cifra);color:#1a1a1a}
   .claro .op-tom-acoes button{background:#E4DFD8;border-color:rgba(0,0,0,.16);color:#242424}
 
   /* grade de tons */
@@ -970,6 +972,8 @@ function opRapidoTom(r) {
       <button class="op-restaurar" id="opTomRestaura" title="Voltar ao tom original">&#8634;</button>
       <button id="opTomMenos">&minus;½ tom</button>
       <button id="opTomMais">+½ tom</button>
+      <button data-grafia="sharp" title="Sustenidos (C#, D#…)">&#9839;</button>
+      <button data-grafia="flat" title="Bemóis (Db, Eb…)">&#9837;</button>
     </div>
     <div class="op-tons">${
       tons.map(t => `<button data-t="${t}"${t === atual ? ' class="on"' : ""}>${t}</button>`).join("")}</div>`;
@@ -987,6 +991,14 @@ function opRapidoTom(r) {
   r.querySelector("#opTomMenos").onclick = () => anda(-1);
   r.querySelector("#opTomMais").onclick  = () => anda(1);
   r.querySelector("#opTomRestaura").onclick = () => troca(opTomInicial);
+  r.querySelectorAll(".op-tom-acoes [data-grafia]").forEach(b =>
+    b.onclick = () => {
+      if (typeof lyraEscolherGrafia !== "function") return;
+      lyraEscolherGrafia(b.dataset.grafia);
+      opTomInicial = null;                      // os nomes mudaram: recomeça do tom atual
+      setTimeout(() => opRapidoTom(r), 260);
+    });
+  if (typeof lyraMarcarGrafia === "function") lyraMarcarGrafia();
   r.querySelectorAll(".op-tons button").forEach(b =>
     b.onclick = () => troca(b.dataset.t));
 }
