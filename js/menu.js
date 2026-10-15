@@ -419,6 +419,55 @@ function mnFechar() {
   document.body.classList.remove("mn-travado");
 }
 
+// ── arrastar para fechar ────────────────────────────────────
+//  A gaveta acompanha o dedo para a direita; soltou depois de um
+//  terço (ou com um puxão rápido), fecha; senão volta ao lugar.
+(function () {
+  let x0 = 0, y0 = 0, t0 = 0, dx = 0, ativo = false, decidido = false;
+  const gaveta = () => document.getElementById("mnGaveta");
+  const fundo  = () => document.getElementById("mnFundo");
+
+  document.addEventListener("touchstart", e => {
+    const g = gaveta();
+    if (!g || !g.classList.contains("on") || !g.contains(e.target)) return;
+    const t = e.touches[0];
+    x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); dx = 0;
+    ativo = true; decidido = false;
+  }, { passive: true });
+
+  document.addEventListener("touchmove", e => {
+    if (!ativo) return;
+    const t = e.touches[0];
+    const mx = t.clientX - x0, my = t.clientY - y0;
+    if (!decidido) {
+      if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+      // mais vertical que horizontal: é rolagem da lista, não arrasto
+      if (Math.abs(my) > Math.abs(mx)) { ativo = false; return; }
+      decidido = true;
+    }
+    dx = Math.max(0, mx);                 // só para a direita
+    const g = gaveta(), f = fundo();
+    g.style.transition = "none";
+    g.style.transform = `translateX(${dx}px)`;
+    if (f) { f.style.transition = "none"; f.style.opacity = String(Math.max(0, 1 - dx / g.offsetWidth)); }
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  const soltar = () => {
+    if (!ativo) return;
+    ativo = false;
+    const g = gaveta(), f = fundo();
+    if (!g) return;
+    g.style.transition = ""; g.style.transform = "";
+    if (f) { f.style.transition = ""; f.style.opacity = ""; }
+    if (!decidido) return;
+    const rapido = dx > 40 && Date.now() - t0 < 300;
+    if (dx > g.offsetWidth / 3 || rapido) mnFechar();
+  };
+  document.addEventListener("touchend", soltar, { passive: true });
+  document.addEventListener("touchcancel", soltar, { passive: true });
+})();
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && document.getElementById("mnGaveta")?.classList.contains("on")) {
     e.stopPropagation(); mnFechar();
