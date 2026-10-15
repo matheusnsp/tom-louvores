@@ -36,7 +36,7 @@ const CAL_JANELA_H = 6;
 // até quando procurar o próximo culto
 const CAL_HORIZONTE_D = 120;
 
-const CAL_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+const CAL_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];   // semana de segunda a domingo
 
 const CAL_ICONE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
@@ -489,8 +489,8 @@ function calRender() {
   document.getElementById("calMesLabel").textContent = calMaiuscula1(
     `${calMes.toLocaleDateString("pt-BR", { month: "long" })} ${calMes.getFullYear()}`);
 
-  // a grade começa no domingo da semana do dia 1
-  const inicio = calAddDias(calMes, -calMes.getDay());
+  // a grade começa na SEGUNDA da semana do dia 1 (getDay: dom=0)
+  const inicio = calAddDias(calMes, -((calMes.getDay() + 6) % 7));
   const fim    = calAddDias(inicio, 41);
 
   // um índice por dia, para não varrer as ocorrências 42 vezes
