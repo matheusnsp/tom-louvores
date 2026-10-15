@@ -216,10 +216,10 @@ function calGarantirPadroes() {
   .cal-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
   .cal-btn{
     display:inline-flex;align-items:center;gap:9px;
-    background:rgba(11,11,12,0.4);border:1px solid var(--line);
+    background:rgba(0,0,0,0.5);border:1px solid var(--line);
     color:var(--paper);font-family:var(--font-ui);
-    font-size:13px;font-weight:500;letter-spacing:0;
-    padding:9px 16px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
+    font-size:14px;font-weight:500;letter-spacing:0;
+    padding:10px 17px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
   }
   .cal-btn:hover{
     border-color:var(--gold);color:var(--gold);

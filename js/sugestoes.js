@@ -71,7 +71,8 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
 
   /* ── formulário ─────────────────────────────────────────── */
   .sug-form{
-    background:var(--black2);border:1px solid var(--black4);
+    background:rgba(16,16,18,0.80);border:1px solid rgba(255,255,255,0.14);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
     border-radius:var(--r);padding:24px 22px;
     display:flex;flex-direction:column;gap:16px;
     position:sticky;top:calc(var(--header-alt, 64px) + 20px);
@@ -80,9 +81,9 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
     font-family:var(--font-display);font-weight:600;
     font-size:30px;letter-spacing:-0.01em;line-height:1;color:var(--white);
   }
-  .sug-ajuda{font-size:13px;font-weight:300;color:var(--gray);line-height:1.55;margin-top:-8px}
+  .sug-ajuda{font-size:15px;font-weight:400;color:var(--gray);line-height:1.55;margin-top:-8px}
   .sug-campo .finput.sug-invalido{border-color:rgba(248,113,113,0.6)}
-  .sug-dica{font-size:12px;color:var(--gray);line-height:1.45;margin-top:8px}
+  .sug-dica{font-size:13px;color:var(--gray);line-height:1.45;margin-top:8px}
   .sug-dica:empty{display:none}
   .sug-dica b{color:var(--white);font-weight:600}
   .sug-erro{font-size:12.5px;line-height:1.45;color:#F87171}
@@ -109,7 +110,7 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
     text-transform:uppercase;color:var(--gold);
   }
   .sug-rotulo b{color:var(--gold-hi);font-weight:600}
-  .sug-nota{font-size:12px;color:var(--gray2);margin-left:auto}
+  .sug-nota{font-size:13px;color:var(--gray2);margin-left:auto}
 
   /* abas da equipe: o mesmo controle do "Agrupar" do repertório */
   .sug-abas{
@@ -135,10 +136,10 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
   }
   .sug-info{flex:1;min-width:0}
   .sug-nome{
-    font-size:16px;font-weight:600;color:var(--paper);
+    font-size:17px;font-weight:600;color:var(--paper);
     letter-spacing:0;line-height:1.3;overflow-wrap:anywhere;
   }
-  .sug-meta{font-size:13px;color:var(--dim);margin-top:4px;line-height:1.4}
+  .sug-meta{font-size:14px;color:var(--dim);margin-top:4px;line-height:1.4}
   .sug-meta b{color:var(--paper);font-weight:600}
   .sug-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
   .sug-chip{
@@ -151,9 +152,9 @@ const SUG_ICO_FORA = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none
   .sug-acoes{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
   .sug-btn{
     display:inline-flex;align-items:center;gap:6px;
-    font-family:var(--font-ui);font-size:13px;font-weight:500;
+    font-family:var(--font-ui);font-size:14px;font-weight:500;
     letter-spacing:0;white-space:nowrap;
-    color:var(--paper);background:rgba(11,11,12,0.4);text-decoration:none;
+    color:var(--paper);background:rgba(0,0,0,0.5);text-decoration:none;
     border:1px solid var(--line);border-radius:var(--pill);
     padding:8px 15px;cursor:pointer;
     transition:background 0.15s,border-color 0.15s,color 0.15s;

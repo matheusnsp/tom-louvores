@@ -24,7 +24,7 @@ let lyraClaro  = false;    // leitor no modo claro
 let lyraListaVisivel = []; // repertório como está filtrado na tela
 let lyraCtxCulto = null;   // culto de onde a música foi aberta, se foi
 
-const LYRA_FONTE_BASE = 15;   // px a 100%
+const LYRA_FONTE_BASE = 16;   // px a 100%
 
 // preferências de leitura sobrevivem entre sessões
 try {

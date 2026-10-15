@@ -5,7 +5,7 @@
   <!-- pintado antes de tudo: sem isso o navegador mostra um quadro
        branco entre uma página e outra, até o style.css chegar -->
   <meta name="color-scheme" content="dark" />
-  <style>html,body{background:#14110E}</style>
+  <style>html,body{background:#0A0A0B}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Cultos — Tom Louvores INVB</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="apple-touch-icon" href="img/logo3.png">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0B0B0C">
+  <meta name="theme-color" content="#0A0A0B">
 </head>
 <body class="read-only" data-pagina="cultos">
 
@@ -35,7 +35,7 @@
         <span class="dot"></span>
         <span id="statusTxt">Conectando</span>
       </div>
-      <button class="btn-add" id="btnLoginShow" onclick="abrirLogin()" style="display:none">🔒 Entrar</button>
+      <button class="btn-add btn-entrar" id="btnLoginShow" onclick="abrirLogin()" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Entrar</span></button>
       <button class="btn-add" id="btnNovaMusica" onclick="abrirModal()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
       <button class="btn-logout" id="btnLogout" onclick="logout()" style="display:none">Sair</button>
     </div>
@@ -243,6 +243,7 @@
 <div id="loginOverlay" onclick="loginFecharFora(event)">
   <div class="login-box">
     <div>
+      <div class="login-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
       <h2>Área admin</h2>
       <p class="login-sub">Acesso restrito para edição do repertório.</p>
     </div>
@@ -258,7 +259,7 @@
     <div class="login-error" id="loginError"></div>
     <div class="login-actions">
       <button class="btn-login-cancel" onclick="fecharLogin()">Cancelar</button>
-      <button class="btn-login-submit" onclick="tentarLogin()">ENTRAR</button>
+      <button class="btn-login-submit" onclick="tentarLogin()">Entrar</button>
     </div>
   </div>
 </div>

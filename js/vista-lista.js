@@ -34,7 +34,7 @@ let vistaLista   = [];
     display:flex;align-items:center;gap:14px;
     padding:10px 0 12px;
     border-bottom:1px solid var(--black4);
-    font-size:11px;font-weight:700;letter-spacing:0.1em;
+    font-size:12px;font-weight:700;letter-spacing:0.1em;
     text-transform:uppercase;color:var(--gray2);
   }
   .lst-count{color:var(--gray)}
@@ -47,14 +47,14 @@ let vistaLista   = [];
     .lst-bar{gap:8px}
     .lst-bar-lbl{display:none}
     .lst-count{font-size:10px}
-    .lst-seg button{padding:6px 10px;font-size:11px;letter-spacing:0}
+    .lst-seg button{padding:6px 11px;font-size:12px;letter-spacing:0}
   }
   .lst-seg{display:inline-flex;border:1px solid var(--fio);border-radius:var(--pill);overflow:hidden;padding:3px;gap:2px;background:rgba(255,255,255,0.02)}
   .lst-seg button{
     background:transparent;border:none;cursor:pointer;
     font-family:var(--font-ui);
-    font-size:12px;font-weight:600;letter-spacing:0;
-    color:var(--dim);padding:6px 14px;border-radius:var(--pill);transition:all 0.2s;
+    font-size:13px;font-weight:600;letter-spacing:0;
+    color:var(--dim);padding:7px 15px;border-radius:var(--pill);transition:all 0.2s;
   }
   .lst-seg button:hover{color:var(--white);background:var(--black3)}
   .lst-seg button.on{background:var(--gold);color:var(--on-gold)}
@@ -73,7 +73,7 @@ let vistaLista   = [];
        navegador (vistaAjustarTopo), porque a altura da barra muda
        com a largura da tela, com o notch e com o zoom da fonte. */
     top:var(--lst-topo, 118px);
-    background:var(--black);
+    background:transparent;
     display:flex;align-items:baseline;gap:14px;
     /* MARGEM, não padding: padding faz parte da caixa que gruda e
        viajava junto, virando um vão preto entre a busca e a letra */
@@ -97,6 +97,13 @@ let vistaLista   = [];
      o amarelo, que nesta tela pertence só ao tom. Antes as duas
      tinham o mesmo tamanho e a mesma cor, e a lista virava um
      bloco só. */
+  .lst-grupo::before{
+    content:"";position:absolute;z-index:-1;
+    left:calc(50% - 50vw);right:calc(50% - 50vw);top:-6px;bottom:0;
+    background:var(--veu);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    pointer-events:none;
+  }
   .lst-grupo b{
     font-family:var(--font-display);font-weight:600;
     font-size:30px;line-height:1;letter-spacing:-0.01em;font-weight:700;
@@ -137,7 +144,7 @@ let vistaLista   = [];
   }
   .lst-tom{
     font-family:var(--font-tom);font-weight:700;
-    font-size:13px;line-height:1;letter-spacing:0;
+    font-size:14px;line-height:1;letter-spacing:0;
     color:var(--gold-hi);
     background:rgba(var(--gold-rgb),0.08);
     border:1px solid rgba(var(--gold-rgb),0.2);
@@ -150,20 +157,20 @@ let vistaLista   = [];
     font-size:10px;font-weight:700;padding:5px 6px;
   }
   .lst-nome{
-    font-size:14px;font-weight:600;color:var(--white);
+    font-size:16px;font-weight:600;color:var(--white);
     letter-spacing:-0.01em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .lst-mins{display:flex;gap:5px;flex-shrink:0;min-width:150px;justify-content:flex-end;min-height:19px}
   .lst-min{
-    font-size:11px;font-weight:500;letter-spacing:0;
+    font-size:12px;font-weight:500;letter-spacing:0;
     color:var(--paper);background:rgba(255,255,255,0.04);
     border:1px solid var(--fio);
     padding:3px 10px;border-radius:var(--pill);white-space:nowrap;
   }
   .lst-min.todos{color:var(--dim);background:transparent}
   .lst-data{
-    font-size:12px;color:var(--gray2);text-align:right;
+    font-size:13px;color:var(--gray2);text-align:right;
     letter-spacing:0;white-space:nowrap;
   }
   .lst-del{
@@ -193,14 +200,14 @@ let vistaLista   = [];
   .lst-az button:disabled{opacity:0.25;cursor:default}
   .lst-az button:disabled:hover{color:var(--gray2);background:none}
 
-  .lst-vazio{padding:70px 0;text-align:center;color:var(--gray2);font-size:13px}
+  .lst-vazio{padding:70px 0;text-align:center;color:var(--gray2);font-size:15px}
 
   /* botão de alternar vista, na barra de filtros */
   .btn-vista{
     display:inline-flex;align-items:center;gap:7px;flex-shrink:0;
-    background:rgba(11,11,12,0.4);border:1px solid var(--line);
+    background:rgba(0,0,0,0.5);border:1px solid var(--line);
     color:var(--paper);font-family:var(--font-ui);
-    font-size:13px;font-weight:500;letter-spacing:0;
+    font-size:14px;font-weight:500;letter-spacing:0;
     padding:12px 18px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
   }
   .btn-vista:hover{border-color:var(--gold);color:var(--gold)}

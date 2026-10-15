@@ -28,30 +28,31 @@
       e Montserrat no resto. Para mudar a cor de destaque do site
       inteiro, mude só --gold, --gold-hi e --gold-rgb. */
    /* Identidade INVB — copiada do site principal (invbotafogo.com.br):
-      Montserrat em tudo, dourado do V, fundo marrom-escuro (#14110E),
+      Montserrat em tudo, dourado do V, fundo preto (#0A0A0B),
       fios dourados translúcidos e botões em pílula. Para mudar a cor
       de destaque do site inteiro, mude só --gold, --gold-hi e --gold-rgb. */
    :root{
-     --black:  #14110E;      /* fundo das páginas (o --brand-dark do site) */
+     --black:  #0A0A0B;      /* preto de verdade */
      --ink:    #0B0B0C;      /* header, rodapé, texto sobre o dourado */
-     --black2: #1A1714;      /* cards */
-     --black3: #221E1A;
-     --black4: #2C2823;
-     --black5: #39342E;
-     --gold:    #E6B23E;
+     --black2: #131315;      /* cards */
+     --black3: #1B1B1E;
+     --black4: #262629;
+     --black5: #343438;
+     --gold:    #F0B93A;      /* o dourado do V, um ponto mais aceso */
      --gold-hi: #F6D27A;
-     --gold-rgb: 230,178,62;
+     --gold-rgb: 240,185,58;
      --on-gold: #0B0B0C;
-     --line: rgba(230,178,62,0.26);   /* fio dourado */
-     --fio:  rgba(255,255,255,0.08);  /* fio neutro */
-     --dim:  rgba(246,245,241,0.62);  /* texto secundário */
-     --paper:  #F6F5F1;
-     --gray:   #A39B90;
-     --gray2:  #7C756C;
+     --line: rgba(240,185,58,0.38);   /* fio dourado */
+     --fio:  rgba(255,255,255,0.12);  /* fio neutro */
+     --dim:  rgba(255,255,255,0.78);  /* texto secundário */
+     --paper:  #FFFFFF;
+     --gray:   #B8B8BC;
+     --gray2:  #8A8A90;
      --gray3:  #433D36;
-     --white:  #F6F5F1;
+     --white:  #FFFFFF;
      --r: 12px;
      --pill: 999px;
+     --veu: rgba(10,10,11,0.94);   /* camadas que grudam, sobre a foto */
 
      --font-ui:      'Montserrat', system-ui, sans-serif;
      --font-display: 'Montserrat', system-ui, sans-serif;
@@ -61,7 +62,7 @@
      --chip-w: 116px;
 
      /* leitor de cifras: acordes no dourado da casa */
-     --cifra:       #F0C15A;
+     --cifra:       #FFC93C;
      --cifra-claro: #9A6A06;
    }
    
@@ -80,9 +81,8 @@
       HEADER
       ============================================================ */
    .header{
-     background:rgba(11,11,12,0.86);
-     -webkit-backdrop-filter:blur(14px) saturate(140%);
-     backdrop-filter:blur(14px) saturate(140%);
+     background:var(--veu);
+     -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
      border-bottom:1px solid var(--line);
      box-shadow:0 8px 24px rgba(0,0,0,0.35);
      position:sticky;top:0;z-index:100;
@@ -99,7 +99,7 @@
    @media(min-width:901px){.logo-img{height:42px}}
    .logo-sep{width:1px;height:28px;background:var(--line)}
    .logo-sub{
-     font-size:10px;font-weight:600;
+     font-size:11px;font-weight:600;
      color:var(--dim);letter-spacing:0.2em;
      text-transform:uppercase;line-height:1.35;
    }
@@ -107,9 +107,9 @@
    
    .status-pill{
      display:flex;align-items:center;gap:7px;
-     padding:7px 13px;
+     padding:8px 14px;
      border:1px solid var(--fio);
-     font-size:11px;font-weight:600;
+     font-size:12px;font-weight:600;
      color:var(--gray);letter-spacing:0.06em;
      text-transform:uppercase;
      background:rgba(255,255,255,0.03);
@@ -126,11 +126,11 @@
    
    .btn-add{
      display:flex;align-items:center;gap:8px;
-     padding:10px 20px;
+     padding:11px 22px;
      background:var(--gold);
      border:1px solid var(--gold);cursor:pointer;
      font-family:var(--font-ui);
-     font-size:13px;font-weight:600;
+     font-size:14px;font-weight:600;
      color:var(--on-gold);
      letter-spacing:0;
      transition:background 0.2s,border-color 0.2s,transform 0.15s;
@@ -141,12 +141,12 @@
    
    /* botão Sair e afins no header */
    .btn-logout{
-     padding:9px 16px;
+     padding:10px 18px;
      border:1px solid var(--line);
      border-radius:var(--pill);
-     background:rgba(11,11,12,0.4);
+     background:rgba(0,0,0,0.5);
      font-family:var(--font-ui);
-     font-size:13px;font-weight:500;
+     font-size:14px;font-weight:500;
      letter-spacing:0;
      cursor:pointer;color:var(--paper);
      transition:color 0.2s,border-color 0.2s,background 0.2s;
@@ -160,17 +160,24 @@
    /* ============================================================
       HERO
       ============================================================ */
-   .hero-outer{
-     background:url('../img/image.jpg') center 30% / cover no-repeat;
-     position:relative;
-   }
-   .hero-outer::before{
+   /* A foto fica fixa atrás da página inteira (como no site da
+      igreja), escurecida para o texto ler bem. É um elemento fixo e
+      não background-attachment: fixed, que o iPhone ignora. */
+   body::before{
      content:'';
-     position:absolute;inset:0;
-     /* a foto some no fundo da página, como no site principal */
-     background:linear-gradient(180deg, rgba(11,11,12,0.78) 0%, rgba(14,12,10,0.84) 60%, var(--black) 100%);
-     pointer-events:none;
+     position:fixed;inset:0;z-index:-1;
+     background:url('../img/image.jpg') center 30% / cover no-repeat;
+     filter:saturate(1.15);
    }
+   body::after{
+     content:'';
+     position:fixed;inset:0;z-index:-1;
+     background:linear-gradient(180deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.80) 45%, rgba(0,0,0,0.90) 100%);
+   }
+   body{background:transparent}
+   html{background:var(--black)}
+   .hero-outer{position:relative}
+   .hero-outer::before{display:none}
    .hero{
      max-width:1280px;margin:0 auto;
      padding:64px 36px 48px;
@@ -186,20 +193,20 @@
    .hero-tag{
      display:block;
      color:var(--gold);
-     font-size:12px;font-weight:400;
+     font-size:13px;font-weight:400;
      letter-spacing:3px;text-transform:uppercase;
      margin-bottom:14px;
    }
    .hero-h1{
      font-family:var(--font-display);
      font-weight:700;
-     font-size:clamp(2.1rem,5.4vw,3.4rem);
+     font-size:clamp(2.4rem,5.8vw,3.8rem);
      line-height:1.1;letter-spacing:-0.01em;
      color:var(--paper);
    }
    .hero-h1 em{color:inherit;font-style:normal}
    .hero-sub{
-     font-size:17px;font-weight:300;max-width:520px;
+     font-size:18px;font-weight:400;max-width:560px;
      color:var(--dim);margin-top:16px;line-height:1.65;
    }
    .hero-stats{
@@ -224,7 +231,7 @@
      color:var(--gold-hi);
    }
    .stat-l{
-     font-size:13px;font-weight:400;
+     font-size:14px;font-weight:400;
      color:var(--dim);letter-spacing:0;
    }
    
@@ -235,16 +242,10 @@
      max-width:1280px;margin:28px auto 0;padding:8px 36px;
      display:flex;gap:10px;align-items:center;
      position:sticky;top:64px;z-index:90;
-     background:var(--black);
      transition:box-shadow 0.2s,border-color 0.2s;
    }
-   .toolbar.stuck{box-shadow:0 6px 20px rgba(0,0,0,0.4)}
-   .toolbar.stuck::after{
-     content:'';
-     position:absolute;bottom:0;
-     left:36px;right:36px;   /* alinhado ao padding lateral da toolbar */
-     height:1px;background:var(--line);
-   }
+   .toolbar.stuck::before{box-shadow:0 6px 20px rgba(0,0,0,0.4)}
+   .toolbar.stuck::before{border-bottom:1px solid var(--line)}
    .search-row{flex:1;min-width:0;display:flex}
    .filtros-row{display:flex;gap:10px;align-items:center;flex-shrink:0}
    .search-wrap{flex:1;min-width:0;position:relative}
@@ -257,9 +258,9 @@
      background:rgba(255,255,255,0.03);
      border:1px solid var(--fio);
      color:var(--white);
-     padding:12px 38px 12px 40px;
+     padding:13px 38px 13px 42px;
      border-radius:var(--pill);
-     font-family:var(--font-ui);font-size:13px;
+     font-family:var(--font-ui);font-size:15px;
      outline:none;transition:border-color 0.2s;
    }
    .inp-search:focus{border-color:var(--gold)}
@@ -280,8 +281,8 @@
      background-color:rgba(255,255,255,0.03);
      border:1px solid var(--fio);
      color:var(--paper);
-     padding:12px 40px 12px 18px;border-radius:var(--pill);
-     font-family:var(--font-ui);font-size:13px;
+     padding:13px 40px 13px 18px;border-radius:var(--pill);
+     font-family:var(--font-ui);font-size:15px;
      outline:none;cursor:pointer;
      transition:border-color 0.2s;min-width:165px;
      /* seta própria, afastada da borda */
@@ -306,8 +307,9 @@
    }
    
    .card{
-     background:var(--black2);
-     border:1px solid var(--fio);
+     background:rgba(16,16,18,0.80);
+     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+     border:1px solid rgba(255,255,255,0.14);
      border-radius:14px;
      padding:22px 22px 18px;
      display:flex;flex-direction:column;gap:14px;
@@ -333,13 +335,13 @@
    .act-btn.del:hover{background:rgba(248,113,113,0.1);color:#F87171;border-color:rgba(248,113,113,0.3)}
    
    .card-nome{
-     font-size:16px;font-weight:600;line-height:1.3;
+     font-size:18px;font-weight:600;line-height:1.3;
      color:var(--paper);letter-spacing:0;
-     min-height:calc(16px * 1.3 * 2);
+     min-height:calc(18px * 1.3 * 2);
      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
    }
    .card-obs{
-     font-size:12px;color:var(--gray);line-height:1.6;font-weight:300;
+     font-size:13px;color:var(--gray);line-height:1.6;font-weight:300;
      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
    }
    
@@ -392,8 +394,8 @@
    .card-min-label{
      display:inline-flex;align-items:center;justify-content:center;
      width:var(--chip-w);          /* largura única: as linhas alinham */
-     padding:5px 10px;
-     font-size:11px;font-weight:500;
+     padding:5px 11px;
+     font-size:12px;font-weight:500;
      letter-spacing:0.02em;
      background:rgba(255,255,255,0.04);
      border:1px solid var(--fio);
@@ -423,7 +425,7 @@
    }
    .card-foot .card-tags{flex:1;min-width:0}
    .card-date{
-     font-size:10px;color:var(--gray2);font-weight:400;
+     font-size:12px;color:var(--gray2);font-weight:400;
      letter-spacing:0.04em;flex-shrink:0;white-space:nowrap;
    }
    
@@ -465,7 +467,7 @@
    }
    .overlay-bg.open{display:flex}
    .modal{
-     background:#17140F;
+     background:#111113;
      border:1px solid var(--line);
      width:100%;max-width:500px;
      border-radius:18px;overflow:hidden;
@@ -479,7 +481,7 @@
    }
    .modal-hd h2{
      font-family:var(--font-display);font-weight:700;
-     font-size:22px;letter-spacing:-0.01em;color:var(--paper);
+     font-size:24px;letter-spacing:-0.01em;color:var(--paper);
    }
    .modal-close{
      width:34px;height:34px;
@@ -500,16 +502,16 @@
    }
    
    .flabel{
-     font-size:11px;font-weight:600;color:var(--dim);
+     font-size:12px;font-weight:600;color:var(--dim);
      letter-spacing:0.14em;text-transform:uppercase;
      display:block;margin-bottom:8px;
    }
    .finput{
      width:100%;
      background:rgba(255,255,255,0.03);border:1px solid var(--fio);
-     color:var(--white);padding:12px 14px;
+     color:var(--white);padding:13px 15px;
      border-radius:var(--r);
-     font-family:var(--font-ui);font-size:13px;
+     font-family:var(--font-ui);font-size:15px;
      outline:none;transition:border-color 0.2s;
    }
    .finput:focus{border-color:var(--gold)}
@@ -604,7 +606,7 @@
       ============================================================ */
    .toast{
      position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
-     background:#17140F;border:1px solid var(--line);
+     background:#111113;border:1px solid var(--line);
      color:var(--paper);padding:12px 24px;
      font-size:13px;font-weight:500;
      border-radius:var(--pill);white-space:nowrap;
@@ -629,7 +631,7 @@
    }
    #loginOverlay.open{display:flex}
    .login-box{
-     background:#17140F;
+     background:#111113;
      border:1px solid var(--line);
      border-radius:18px;
      padding:36px 32px 28px;
@@ -704,7 +706,7 @@
       ============================================================ */
    .view-modal{max-width:540px}
    .view-modal .modal-hd h2{
-     font-size:24px;letter-spacing:-0.01em;color:var(--paper);
+     font-size:26px;letter-spacing:-0.01em;color:var(--paper);
      line-height:1.2;
    }
    .view-hd-actions{display:flex;align-items:center;gap:8px}
@@ -731,7 +733,7 @@
    
    .view-section .flabel{margin-bottom:10px;font-size:12px;font-weight:400;letter-spacing:3px;color:var(--gold)}
    .view-obs{
-     font-size:16px;line-height:1.75;color:var(--paper);font-weight:400;
+     font-size:17px;line-height:1.75;color:var(--paper);font-weight:400;
      white-space:pre-wrap;word-break:break-word;
      background:rgba(255,255,255,0.03);
      border:1px solid var(--fio);
@@ -749,7 +751,7 @@
    .view-yt-btn{
      display:flex;align-items:center;gap:10px;
      padding:13px 22px;
-     background:rgba(11,11,12,0.4);
+     background:rgba(0,0,0,0.5);
      border:1px solid var(--line);
      border-radius:var(--pill);
      color:var(--gold-hi);font-family:var(--font-ui);font-size:14px;font-weight:600;
@@ -796,8 +798,9 @@
    .cultos-grid.solo{grid-template-columns:1fr}
    
    .culto-col{
-     background:var(--black2);
-     border:1px solid var(--fio);
+     background:rgba(16,16,18,0.80);
+     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+     border:1px solid rgba(255,255,255,0.14);
      border-radius:14px;
      display:flex;flex-direction:column;
      overflow:hidden;min-height:160px;
@@ -811,23 +814,23 @@
    .culto-col-titulo-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
    .culto-col-titulo{
      font-family:var(--font-display);font-weight:700;
-     font-size:22px;letter-spacing:-0.01em;color:var(--paper);line-height:1.1;
+     font-size:24px;letter-spacing:-0.01em;color:var(--paper);line-height:1.1;
    }
    .culto-col-data{
      font-family:var(--font-ui);
-     font-size:13px;font-weight:600;letter-spacing:0;
+     font-size:14px;font-weight:600;letter-spacing:0;
      color:var(--gold-hi);line-height:1;
      display:inline-flex;align-items:center;justify-content:center;
      background:rgba(var(--gold-rgb),0.10);
      border:1px solid var(--line);
-     padding:6px 11px;border-radius:var(--pill);
+     padding:7px 12px;border-radius:var(--pill);
    }
    .culto-col-dia{
-     font-size:11px;font-weight:400;color:var(--gold);
+     font-size:12px;font-weight:400;color:var(--gold);
      letter-spacing:2.5px;text-transform:uppercase;margin-top:7px;
    }
    .culto-col-count{
-     font-size:12px;font-weight:500;color:var(--dim);
+     font-size:13px;font-weight:500;color:var(--dim);
      letter-spacing:0;flex-shrink:0;
      background:transparent;
      border:1px solid var(--fio);
@@ -849,20 +852,20 @@
    .culto-louvor:has(.culto-louvor-click:hover){border-color:var(--line)}
    .culto-louvor-badge{
      font-family:var(--font-tom);font-weight:700;
-     font-size:14px;letter-spacing:0;color:var(--gold-hi);
+     font-size:15px;letter-spacing:0;color:var(--gold-hi);
      background:rgba(var(--gold-rgb),0.10);
      border:1px solid var(--line);
-     padding:6px 8px;border-radius:8px;
+     padding:7px 9px;border-radius:8px;
      flex-shrink:0;min-width:42px;text-align:center;line-height:1;
    }
    .culto-louvor-txt{min-width:0}
    .culto-louvor-nome{
-     font-size:14px;font-weight:500;color:var(--paper);line-height:1.25;
+     font-size:16px;font-weight:500;color:var(--paper);line-height:1.25;
      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
    }
    @media (max-width:820px){
-     .culto-louvor-nome{font-size:15px}
-     .culto-louvor-badge{font-size:15px;min-width:46px}
+     .culto-louvor-nome{font-size:17px}
+     .culto-louvor-badge{font-size:16px;min-width:48px}
    }
    .culto-louvor-rm{
      width:24px;height:24px;flex-shrink:0;
@@ -874,7 +877,7 @@
      background:rgba(248,113,113,0.1);color:#F87171;border-color:rgba(248,113,113,0.3);
    }
    .culto-empty{
-     font-size:11px;color:var(--gray2);text-align:center;
+     font-size:13px;color:var(--gray2);text-align:center;
      padding:18px 8px;letter-spacing:0.04em;
    }
    .culto-add-btn{
@@ -882,7 +885,7 @@
      padding:10px;background:transparent;
      border:1px dashed var(--line);
      color:var(--gold-hi);font-family:var(--font-ui);
-     font-size:13px;font-weight:600;letter-spacing:0;
+     font-size:14px;font-weight:600;letter-spacing:0;
      border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
    }
    .culto-add-btn:hover{
@@ -900,7 +903,7 @@
      display:flex;flex-direction:column;gap:8px;
    }
    .culto-secao-label{
-     font-size:11px;font-weight:400;color:var(--gold);
+     font-size:12px;font-weight:400;color:var(--gold);
      letter-spacing:2.5px;text-transform:uppercase;
    }
    .culto-secao-bd{display:flex;flex-direction:column;gap:8px}
@@ -913,13 +916,13 @@
      border-top:1px solid var(--fio);
    }
    .culto-atualizado{
-     font-size:12px;font-weight:400;color:var(--gray2);
+     font-size:13px;font-weight:400;color:var(--gray2);
      letter-spacing:0;min-width:0;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
    }
    .culto-copy-btn{
      display:inline-flex;align-items:center;gap:7px;flex-shrink:0;
-     background:rgba(11,11,12,0.4);border:1px solid var(--line);
+     background:rgba(0,0,0,0.5);border:1px solid var(--line);
      color:var(--paper);font-family:var(--font-ui);
      font-size:13px;font-weight:500;letter-spacing:0;
      padding:7px 14px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
@@ -938,23 +941,23 @@
      background:transparent;
    }
    .culto-escala-label{
-     font-size:13px;font-weight:400;color:var(--dim);
+     font-size:14px;font-weight:400;color:var(--dim);
      letter-spacing:0;flex-shrink:0;
    }
    .culto-escala-sel{
      flex:1;min-width:0;
      background:var(--black3);border:1px solid var(--black5);
      color:var(--white);font-family:var(--font-ui);
-     font-size:12px;font-weight:600;
-     padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:border-color 0.15s;
+     font-size:14px;font-weight:600;
+     padding:8px 11px;border-radius:var(--r);cursor:pointer;transition:border-color 0.15s;
    }
    .culto-escala-sel:hover{border-color:var(--gray2)}
    .culto-escala-sel:focus{outline:none;border-color:var(--gold)}
    .culto-escala-nome{
      display:inline-flex;align-items:center;justify-content:center;
-     font-size:13px;font-weight:600;
+     font-size:14px;font-weight:600;
      letter-spacing:0;
-     padding:5px 14px;border-radius:var(--pill);
+     padding:6px 15px;border-radius:var(--pill);
      background:rgba(255,255,255,0.04);
      border:1px solid var(--fio);
      color:var(--paper);
@@ -1136,7 +1139,7 @@
      font-family:var(--font-ui);
    }
    .lyra-acordes,.lyra-secao{color:var(--cifra);font-weight:700}
-   .lyra-letra{color:#c6c6c6}
+   .lyra-letra{color:#EDEDED}
    .lyra-msg{
      padding:34px 18px;text-align:center;
      color:var(--gray);font-size:13px;font-weight:600;
@@ -1209,10 +1212,11 @@
      .search-row{
        position:sticky;top:calc(64px + env(safe-area-inset-top));z-index:90;
        padding:8px 0 10px;margin-top:28px;
-       background:var(--black);
+       background:rgba(10,10,11,0.88);
+       -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
        transition:box-shadow 0.2s,border-color 0.2s;
      }
-     .search-row.stuck{
+     .search-row.stuck::before{
        border-bottom:1px solid var(--line);
        box-shadow:0 6px 20px rgba(0,0,0,0.4);
      }
@@ -1293,8 +1297,8 @@
    /* ============================================================
       LEITOR — identidade INVB e recursos de palco (leitor-palco.js)
       ============================================================ */
-   #lyraOverlay{background:#0E0C0A}
-   .lyra-box{background:#0E0C0A}
+   #lyraOverlay{background:#070708}
+   .lyra-box{background:#070708}
    .lyra-hd h3{font-family:var(--font-ui);font-weight:700;letter-spacing:0;color:var(--paper)}
    .lyra-hd p{color:var(--dim)}
    .lyra-barra{border-color:var(--fio)}
@@ -1327,7 +1331,7 @@
    .lyra-mapa[hidden]{display:none}
    .lyra-mapa button{
      flex:0 0 auto;
-     font-family:var(--font-ui);font-size:12px;font-weight:600;
+     font-family:var(--font-ui);font-size:13px;font-weight:600;
      color:var(--dim);background:transparent;
      border:1px solid var(--fio);border-radius:var(--pill);
      padding:6px 12px;cursor:pointer;white-space:nowrap;
@@ -1430,7 +1434,7 @@
    .lyra-pags{
      position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:4;
      display:flex;align-items:center;gap:4px;padding:4px;
-     background:rgba(20,17,14,0.92);border:1px solid var(--line);border-radius:var(--pill);
+     background:rgba(10,10,11,0.94);border:1px solid var(--line);border-radius:var(--pill);
      box-shadow:0 10px 30px rgba(0,0,0,.45);
      -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
    }
@@ -1470,3 +1474,19 @@
    .lyra-pre .lyra-secao.lyra-alvo{box-shadow:0 0 0 4px var(--gold),-6px 0 0 4px var(--gold)}
    .claro .lyra-pre .lyra-alvo{background:var(--cifra-claro);color:#fff !important;box-shadow:0 0 0 4px var(--cifra-claro)}
    .claro .lyra-pre .lyra-secao.lyra-alvo{box-shadow:0 0 0 4px var(--cifra-claro),-6px 0 0 4px var(--cifra-claro)}
+
+   /* botão Entrar: ícone + texto, igual aos vizinhos */
+   .btn-entrar{gap:7px}
+   .btn-entrar svg{flex-shrink:0}
+
+   /* caixa de login */
+   .login-ico{
+     width:48px;height:48px;border-radius:50%;
+     display:flex;align-items:center;justify-content:center;
+     background:rgba(var(--gold-rgb),0.12);border:1px solid var(--line);
+     color:var(--gold);margin-bottom:6px;
+   }
+   .login-box p.login-sub{font-size:14px;color:var(--dim)}
+   .login-box label{font-size:12px}
+   .login-box input{font-size:15px;padding:13px 15px}
+   .btn-login-submit,.btn-login-cancel{padding:12px 22px;font-size:15px}

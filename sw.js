@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v34";
+const CACHE = "tom-louvores-v43";
 
 const APP = [
   "./",
@@ -51,6 +51,7 @@ const APP = [
   "./js/uso.js",
   "./js/busca-letra.js",
   "./js/lixeira.js",
+  "./js/leitor-palco.js",
 
   //  Sem estes, o app abria offline mas sem o fundo do topo e sem
   //  o ícone na tela de início do celular.
@@ -63,6 +64,7 @@ const APP = [
   "./img/image.jpg",
   "./img/logo2.png",
   "./img/logo3.png",
+  "./img/logo-novavida.png",
 ];
 
 self.addEventListener("install", e => {

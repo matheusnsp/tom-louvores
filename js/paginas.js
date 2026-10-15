@@ -41,7 +41,7 @@ const PAGINA = document.body.dataset.pagina || "cultos";
   .nav-pag a{
     display:inline-flex;align-items:center;
     font-family:var(--font-ui);
-    font-size:13px;font-weight:600;
+    font-size:14px;font-weight:600;
     letter-spacing:1.6px;text-transform:uppercase;
     color:rgba(246,245,241,0.78);text-decoration:none;
     border-bottom:1px solid transparent;
@@ -122,13 +122,15 @@ const PAGINA = document.body.dataset.pagina || "cultos";
   /* Cada camada fixa pinta uma faixa preta acima de si. Sem isso,
      qualquer diferença de um pixel entre a base do header e o topo
      da busca vira uma fresta por onde o texto passa rolando. */
-  .header,.toolbar,.search-row{background:var(--black)}
-
-  /* acima de 768px quem gruda é a .toolbar inteira */
-  .toolbar::before{
-    content:"";position:absolute;
-    left:0;right:0;bottom:100%;height:26px;
-    background:var(--black);
+  .header{background:var(--veu)}
+  /* a faixa da busca vai de ponta a ponta da tela, atrás do conteúdo */
+  .toolbar,.search-row{background:transparent}
+  .toolbar::before,.search-row::before{
+    content:"";position:absolute;z-index:-1;
+    left:calc(50% - 50vw);right:calc(50% - 50vw);
+    top:-26px;bottom:0;
+    background:var(--veu);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
     pointer-events:none;
   }
 
@@ -138,12 +140,6 @@ const PAGINA = document.body.dataset.pagina || "cultos";
        O número aqui é só a reserva até o JS medir de verdade;
        com o header em uma linha ele é a altura dela. */
     .search-row{top:var(--header-alt, 64px)}
-    .search-row::before{
-      content:"";position:absolute;
-      left:0;right:0;bottom:100%;height:26px;
-      background:var(--black);
-      pointer-events:none;
-    }
   }
   @media(max-width:480px){
     .search-row{top:var(--header-alt, 56px)}
