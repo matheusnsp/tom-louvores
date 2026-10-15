@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v43";
+const CACHE = "tom-louvores-v45";
 
 const APP = [
   "./",
@@ -52,6 +52,7 @@ const APP = [
   "./js/busca-letra.js",
   "./js/lixeira.js",
   "./js/leitor-palco.js",
+  "./js/arrastar.js",
 
   //  Sem estes, o app abria offline mas sem o fundo do topo e sem
   //  o ícone na tela de início do celular.

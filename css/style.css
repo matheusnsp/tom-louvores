@@ -13,11 +13,9 @@
    /* A fonte vem pelo <link> de cada página. Um @import aqui baixava
       a mesma fonte de novo e segurava a primeira pintura da tela. */
 
-   /* Troca de aba suave (Chrome e Safari recentes): a página nova
-      entra por cima da velha, sem o piscar em branco no meio. */
-   @media (prefers-reduced-motion: no-preference){
-     @view-transition{navigation:auto}
-   }
+   /* A troca de aba era animada (@view-transition). Com a foto no
+      fundo e as camadas translúcidas, o iPhone mostrava as duas
+      páginas sobrepostas e o cabeçalho piscando. Sem animação. */
 
    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
    
@@ -81,8 +79,7 @@
       HEADER
       ============================================================ */
    .header{
-     background:var(--veu);
-     -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+     background:#0A0A0B;   /* sólido: o blur no header piscava no iPhone */
      border-bottom:1px solid var(--line);
      box-shadow:0 8px 24px rgba(0,0,0,0.35);
      position:sticky;top:0;z-index:100;
@@ -1490,3 +1487,25 @@
    .login-box label{font-size:12px}
    .login-box input{font-size:15px;padding:13px 15px}
    .btn-login-submit,.btn-login-cancel{padding:12px 22px;font-size:15px}
+
+   /* ============================================================
+      ARRASTAR LOUVORES (arrastar.js)
+      ============================================================ */
+   body:not(.read-only) #cultosGrid .culto-louvor{touch-action:pan-y;cursor:grab}
+   .culto-louvor.seg-espera{transform:scale(0.985);transition:transform .2s}
+   .culto-louvor.arr-vazio{
+     border:1px dashed var(--gold);opacity:.45;
+     background:rgba(var(--gold-rgb),0.06);box-sizing:border-box;
+   }
+   .culto-louvor.arr-vazio > *{visibility:hidden}
+   .arr-ghost{
+     position:fixed;z-index:9999;pointer-events:none;
+     background:#1B1B1E;border-color:var(--gold);
+     box-shadow:0 18px 40px rgba(0,0,0,.6);transform:scale(1.03) rotate(-1deg);
+   }
+   .arr-ghost .culto-louvor-ordem,.arr-ghost .culto-louvor-rm{display:none}
+   .culto-col-bd.arr-alvo,.culto-secao-bd.arr-alvo{
+     outline:2px dashed var(--line);outline-offset:4px;border-radius:10px;
+   }
+   body.arrastando{user-select:none;-webkit-user-select:none;cursor:grabbing}
+   body.arrastando .culto-louvor-click{cursor:grabbing}
