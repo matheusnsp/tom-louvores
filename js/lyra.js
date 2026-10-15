@@ -669,6 +669,15 @@ function lyraMontarBotaoBaixar() {
       pointer-events:none;
     }
     .lyra-dl.baixando{border-color:var(--gold);color:var(--gold)}
+    /* parado, a barra mostra quanto já está guardado no aparelho */
+    .lyra-dl.parcial:not(.baixando)::before{
+      content:"";position:absolute;left:0;top:0;bottom:0;
+      width:var(--guardado,0%);
+      background:rgba(var(--gold-rgb),0.16);
+      transition:width .25s ease;
+      pointer-events:none;
+    }
+    .lyra-dl.parcial:not(.baixando){border-color:rgba(var(--gold-rgb),0.55)}
     .lyra-dl > *{position:relative;z-index:1}
     /* enquanto baixa, o texto aparece mesmo no celular */
     .lyra-dl.baixando .lyra-dl-txt{display:inline!important;font-variant-numeric:tabular-nums}
@@ -705,10 +714,18 @@ function lyraAtualizarBotaoBaixar(txt) {
   btn.style.display = "";        // sempre visível, mesmo antes do índice chegar
   btn.classList.toggle("pronto", tudo);
 
+  //  barra de carregamento junto com a porcentagem: preenche o
+  //  botão até a parte já guardada (some quando está tudo salvo)
+  const pctSalvo = total ? Math.floor((salvas / total) * 100) : 0;
+  btn.classList.toggle("parcial", !tudo && salvas > 0);
+  btn.style.setProperty("--guardado", pctSalvo + "%");
+
   pintar(
     tudo ? LYRA_ICO_OK : LYRA_ICO_BAIXAR,
     tudo    ? "Cifras salvas"
-    : salvas ? `Baixar cifras (${salvas}/${total})`
+    //  em porcentagem, para caber no header. Arredonda para baixo:
+    //  105 de 106 mostra 99%, nunca um 100% que não está completo.
+    : salvas ? `Baixar cifras · ${pctSalvo}%`
              : "Baixar cifras"
   );
 
@@ -716,6 +733,7 @@ function lyraAtualizarBotaoBaixar(txt) {
   btn.title = tudo
     ? `${salvas} músicas guardadas neste aparelho (${lyraKB(ocupado)}). Toque para atualizar.`
     : `Guardar todas as cifras neste aparelho, para abrir sem internet.` +
+      (salvas ? ` ${salvas} de ${total} já guardadas.` : "") +
       (ocupado ? ` Já guardadas: ${lyraKB(ocupado)}.` : "");
 }
 
@@ -740,7 +758,7 @@ async function lyraBaixarTudo() {
 
   for (let i = 0; i < slugs.length; i++) {
     const pct = Math.round((i / slugs.length) * 100);
-    lyraAtualizarBotaoBaixar(`${i + 1}/${slugs.length} · ${pct}%`);
+    lyraAtualizarBotaoBaixar(`Baixando · ${pct}%`);
     lyraProgresso(pct);
     try {
       lyraCacheMusica.delete(slugs[i]);
