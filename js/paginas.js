@@ -82,7 +82,7 @@ const PAGINA = document.body.dataset.pagina || "cultos";
   /* com login a fileira de botões é longa (e o "Baixar cifras"
      ganha o contador "81/86"): o "Conectado" fica só com a bolinha
      em qualquer computador comum */
-  @media(min-width:901px) and (max-width:1680px){
+  @media(min-width:901px){
     body:not(.read-only) #statusTxt{display:none}
     body:not(.read-only) .status-pill{padding:7px 9px;gap:0}
   }
@@ -93,26 +93,38 @@ const PAGINA = document.body.dataset.pagina || "cultos";
     .header-right{margin-left:24px;flex-wrap:nowrap}
     .header-right > *{white-space:nowrap;flex-shrink:0}
   }
-  /* até 1440px os botões ficam um pouco mais justos para caber */
-  @media(min-width:1280px) and (max-width:1440px){
+  /* a partir de 1280px os botões ficam um pouco mais justos, para
+     a fileira terminar na mesma linha dos cards (o miolo da página
+     tem no máximo 1208px, em qualquer tela grande) */
+  @media(min-width:1280px){
     .header-right{gap:8px}
     .header-right .btn-add{padding-left:16px;padding-right:16px}
     .header-right .btn-logout{padding-left:14px;padding-right:14px}
     .nav-pag{gap:18px}
   }
-  /* Com login, a fileira de botões só cabe numa linha se o nome
-     "Tom Louvores" sair do lado da logo até 1440px (fica o V). */
-  @media(min-width:901px) and (max-width:1440px){
+  /* Com login, a fileira de botões só cabe alinhada se o nome
+     "Tom Louvores" sair do lado da logo (fica a logo sozinha). */
+  @media(min-width:901px){
     body:not(.read-only) .logo-sub,
     body:not(.read-only) .logo-sep{display:none}
     body:not(.read-only) .nav-pag{border-left:none;padding-left:0}
   }
+  /* "Baixar cifras" com largura fixa: o texto muda (Baixar cifras,
+     Baixar cifras · 96%, Baixando · 63%, Cifras salvas) e o botão
+     não pode crescer e encolher empurrando os vizinhos. 182px é o
+     maior deles ("Baixar cifras · 99%"); os números têm a mesma
+     largura, para a porcentagem não tremer enquanto baixa. */
+  @media(min-width:901px){
+    #lyraBaixar{width:182px;justify-content:center;font-variant-numeric:tabular-nums}
+  }
+
   /* Notebook pequeno: "Baixar cifras" e "Cifras" ficam só com o
      ícone (o nome aparece ao passar o mouse). Enquanto baixa, o
      contador continua visível. */
   @media(min-width:901px) and (max-width:1180px){
     body:not(.read-only) #adminLyraBtn .admin-lbl{display:none}
     body:not(.read-only) #lyraBaixar:not(.baixando) .lyra-dl-txt{display:none}
+    body:not(.read-only) #lyraBaixar:not(.baixando){width:auto}
   }
   /* Em tela de notebook menor os botões quebravam em
      duas linhas ("Baixar cifras / (81/86)", "Nova / música"). Aqui
