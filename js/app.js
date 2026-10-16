@@ -852,7 +852,12 @@ function abrirViewCulto(chave, idx) {
   if (!l) return;
 
   // tenta achar a música original pra puxar observações completas
-  const original = l.musica_id ? musicas.find(m => m.id == l.musica_id) : null;
+  //  Pelo id e, se ele não existir mais (a música foi apagada e
+  //  cadastrada de novo, por exemplo), pelo nome. Sem isso o culto
+  //  abria uma cópia solta: sem lápis de editar e sem revisão.
+  const original =
+    (l.musica_id ? musicas.find(m => m.id == l.musica_id) : null) ||
+    musicas.find(m => normTexto(m.nome) === normTexto(l.nome)) || null;
 
   if (original) {
     // mostra a música, mas destaca o tom/ministrante específico deste culto no topo
