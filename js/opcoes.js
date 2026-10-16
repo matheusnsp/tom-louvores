@@ -1196,3 +1196,77 @@ lyraFecharLeitor = function (...a) {
     document.addEventListener("DOMContentLoaded", montar);
   else montar();
 })();
+// ============================================================
+//  ARRASTAR PARA BAIXO PARA FECHAR
+//  As folhas do celular (o menu de opções e as folhas rápidas de
+//  Tom, Rolagem e Instrumento) acompanham o dedo para baixo, como
+//  a gaveta do menu do site faz para o lado. Soltou depois de um
+//  quarto da altura, ou com um puxão rápido, fecha; senão volta.
+//
+//  O arrasto só começa quando não há o que rolar para cima: com a
+//  lista rolada, puxar para baixo é rolar de volta, não fechar.
+//  Pela pega e pelo título ele vale sempre.
+// ============================================================
+(function opArrastarFolhas() {
+  let folha = null, y0 = 0, x0 = 0, t0 = 0, dy = 0, decidido = false;
+  const fundo = () => document.getElementById("opFundo");
+
+  const folhaDe = alvo => {
+    if (!opEhCelular()) return null;
+    const f = alvo.closest?.("#opPainel.on, #opRapido.on");
+    return f || null;
+  };
+
+  document.addEventListener("touchstart", e => {
+    const f = folhaDe(e.target);
+    if (!f) return;
+    //  Mexendo num controle de arrastar (a velocidade da rolagem),
+    //  o dedo é do controle.
+    if (e.target.closest('input[type="range"]')) return;
+    const t = e.touches[0];
+    const peloTopo = !!e.target.closest(".op-topo, .op-pega, .op-rapido h4");
+    //  Uns poucos pixels de folga: o encaixe da rolagem deixa a
+    //  folha parada a 6px do topo logo ao abrir.
+    if (!peloTopo && f.scrollTop > 10) return;
+    folha = f; y0 = t.clientY; x0 = t.clientX; t0 = Date.now();
+    dy = 0; decidido = false;
+  }, { passive: true });
+
+  document.addEventListener("touchmove", e => {
+    if (!folha) return;
+    const t = e.touches[0];
+    const my = t.clientY - y0, mx = t.clientX - x0;
+    if (!decidido) {
+      if (Math.abs(my) < 8 && Math.abs(mx) < 8) return;
+      //  Para cima ou de lado: é rolagem ou outro gesto, não fechar.
+      if (my <= 0 || Math.abs(mx) > Math.abs(my)) { folha = null; return; }
+      decidido = true;
+    }
+    dy = Math.max(0, my);
+    folha.style.transition = "none";
+    folha.style.transform = `translateY(${dy}px)`;
+    const f = fundo();
+    if (f) { f.style.transition = "none"; f.style.opacity = String(Math.max(0, 1 - dy / folha.offsetHeight)); }
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  const soltar = () => {
+    if (!folha) return;
+    const f = folha; folha = null;
+    const fd = fundo();
+    if (!decidido) return;
+    const rapido = dy > 50 && Date.now() - t0 < 300;
+    const fecha = dy > f.offsetHeight / 4 || rapido;
+    f.style.transition = "";
+    if (fd) { fd.style.transition = ""; fd.style.opacity = ""; }
+    if (!fecha) { f.style.transform = ""; return; }   // volta ao lugar
+    //  Fecha a partir de onde o dedo largou, sem pular de volta ao
+    //  topo antes de descer.
+    f.style.transform = "translateY(101%)";
+    if (f.id === "opRapido") opRapidoFechar();
+    else opFechar();
+    setTimeout(() => { f.style.transform = ""; }, 400);
+  };
+  document.addEventListener("touchend", soltar, { passive: true });
+  document.addEventListener("touchcancel", soltar, { passive: true });
+})();
