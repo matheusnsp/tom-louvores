@@ -21,6 +21,13 @@ let blBase = null;       // o array "musicas" usado no último índice
 let blBuscando = null;
 const blTrechos = new Map();   // id → verso que bateu (da última busca)
 
+//  Procurar também na letra? A pessoa escolhe no botão "Letra" ao
+//  lado da busca, e a escolha fica guardada no aparelho. Começa
+//  ligado, como sempre foi.
+const BL_CHAVE = "tl_busca_letra";
+let blIncluir = true;
+try { blIncluir = localStorage.getItem(BL_CHAVE) !== "0"; } catch (e) {}
+
 (function blEstilo() {
   const st = document.createElement("style");
   st.textContent = `
@@ -29,6 +36,24 @@ const blTrechos = new Map();   // id → verso que bateu (da última busca)
     font-size:12px;font-weight:500;font-style:italic;color:var(--gray);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
+  .bl-letra{
+    flex-shrink:0;margin-left:8px;align-self:stretch;
+    display:inline-flex;align-items:center;gap:7px;
+    background:transparent;border:1px solid var(--black5);border-radius:999px;
+    color:var(--gray);font-family:var(--font-ui);
+    font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:0 14px;cursor:pointer;transition:all .15s;
+  }
+  .bl-letra:hover{border-color:var(--gray3);color:var(--white)}
+  .bl-letra .bl-caixa{
+    width:15px;height:15px;border-radius:4px;flex-shrink:0;
+    border:1.5px solid var(--gray2);display:grid;place-items:center;
+  }
+  .bl-letra.on{border-color:rgba(var(--gold-rgb),.5);color:var(--white)}
+  .bl-letra.on .bl-caixa{background:var(--gold);border-color:var(--gold)}
+  .bl-letra .bl-caixa svg{opacity:0}
+  .bl-letra.on .bl-caixa svg{opacity:1}
+  @media(max-width:600px){ .bl-letra{padding:0 12px} }
   .lst-trecho mark{background:rgba(var(--gold-rgb),.18);color:var(--white);font-style:normal;border-radius:2px;padding:0 1px}`;
   document.head.appendChild(st);
 })();
@@ -148,7 +173,7 @@ filtrar = function () {
   const termo = blNorm(b);
 
   blTrechos.clear();
-  const usarLetra = termo.length >= BL_MIN;
+  const usarLetra = blIncluir && termo.length >= BL_MIN;
   //  o repertório mudou (música nova, editada): refaz o casamento
   if (blRows && blBase !== musicas) blIndexar(blRows);
   if (usarLetra && !blLetras) {
@@ -182,9 +207,39 @@ vistaLinhaHTML = function (m) {
     `$1$2<span class="lst-trecho">“${t}”</span>$3`);
 };
 
-//  "Buscar música..." → diz que a letra também vale
-(function blPlaceholder() {
+//  O texto da busca diz o que está valendo.
+function blPlaceholder() {
   const inp = document.getElementById("busca");
   if (inp && typeof PAGINA !== "undefined" && PAGINA === "repertorio")
-    inp.placeholder = "Nome ou trecho da letra...";
+    inp.placeholder = blIncluir ? "Nome ou trecho da letra..." : "Nome da música...";
+}
+
+//  Botão "Letra" ao lado da busca: liga e desliga a busca na letra.
+(function blMontarBotao() {
+  const inp = document.getElementById("busca");
+  if (!inp || document.getElementById("blLetra")) return;
+  if (typeof PAGINA !== "undefined" && PAGINA !== "repertorio") return;
+  const wrap = inp.closest(".search-wrap");
+  if (!wrap) return;
+
+  const b = document.createElement("button");
+  b.type = "button";
+  b.id = "blLetra";
+  b.className = "bl-letra";
+  b.title = "Procurar também dentro das letras";
+  b.innerHTML = `<span class="bl-caixa"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span>Letra</span>`;
+  const pintar = () => {
+    b.classList.toggle("on", blIncluir);
+    b.setAttribute("aria-pressed", blIncluir ? "true" : "false");
+    blPlaceholder();
+  };
+  b.addEventListener("click", () => {
+    blIncluir = !blIncluir;
+    try { localStorage.setItem(BL_CHAVE, blIncluir ? "1" : "0"); } catch (e) {}
+    pintar();
+    if (!blIncluir) blTrechos.clear();
+    filtrar();
+  });
+  wrap.after(b);
+  pintar();
 })();
