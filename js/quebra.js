@@ -20,6 +20,11 @@
 
 let qbTexto   = null;   // a cifra como veio, antes dos cortes
 let qbColunas = 0;      // quantas colunas couberam no último desenho
+//  De que linha da cifra ORIGINAL veio cada linha da tela, quando a
+//  quebra cortou alguma coisa (null quando nada foi cortado). O
+//  seguir.js usa para achar o mesmo verso em aparelhos que cortaram
+//  em pontos diferentes.
+let qbMapa    = null;
 
 (function qbEstilo() {
   const st = document.createElement("style");
@@ -140,10 +145,12 @@ function qbRedistribuir(texto, n) {
     const prox = linhas[i + 1];
     if (cls === "lyra-acordes" && prox !== undefined && prox.trim() &&
         qbClasse(prox) === "lyra-letra") {
-      qbCortarPar(l, prox, n).forEach(([txt, c]) => itens.push({ txt, cls: c }));
+      //  o pedaço de acordes vem da linha i, o de letra da i+1
+      qbCortarPar(l, prox, n).forEach(([txt, c]) =>
+        itens.push({ txt, cls: c, src: c === "lyra-acordes" ? i : i + 1 }));
       i++;
     } else {
-      qbCortarSimples(l, n).forEach(txt => itens.push({ txt, cls }));
+      qbCortarSimples(l, n).forEach(txt => itens.push({ txt, cls, src: i }));
     }
   }
   return itens;
@@ -170,6 +177,7 @@ lyraCifraParaHTML = function (texto, ...resto) {
   qbColunas = emCifra && lyraQuebra ? qbMedirColunas() : 0;
 
   const itens = qbColunas ? qbRedistribuir(texto, qbColunas) : null;
+  if (emCifra) qbMapa = itens ? itens.map(x => x.src) : null;
   return itens ? qbHTML(itens) : qbCifraOriginal.call(this, texto, ...resto);
 };
 
