@@ -1282,6 +1282,15 @@
    html,body{touch-action:pan-x pan-y}
    #lyraOverlay{touch-action:pan-x pan-y}
 
+   /* O iPhone também dá zoom sozinho ao tocar num campo com letra
+      menor que 16px (o seletor de Ministrante do culto tinha 14px),
+      e a tela ficava ampliada e solta para os lados. Em tela de
+      toque, todo campo tem no mínimo 16px; o maximum-scale=1 do
+      <meta viewport> segura o resto. */
+   @media (hover:none) and (pointer:coarse){
+     input,select,textarea{font-size:16px !important}
+   }
+
    /* quem pediu ao celular menos movimento não vê nada piscando */
    @media (prefers-reduced-motion: reduce){
      *,*::before,*::after{
