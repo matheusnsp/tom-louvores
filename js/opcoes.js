@@ -319,11 +319,16 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
       background:none;border:none;border-radius:0;
       overflow:visible;margin:0;
     }
-    .op-painel .op-grupo + .op-grupo{
+    /*  Fio em cima de toda seção menos a primeira. "grupo + grupo"
+        falhava: o afinador, o metrônomo e o acompanhar entram
+        depois do rodapé no HTML, e a seção que vinha logo após o
+        rodapé ficava sem fio. */
+    .op-painel .op-grupo{
       margin-top:8px;padding-top:8px;
       border-top:1px solid var(--gray3);
     }
-    .claro .op-painel .op-grupo + .op-grupo{border-top-color:rgba(0,0,0,.12)}
+    .op-painel .op-topo + .op-grupo{margin-top:0;padding-top:0;border-top:none}
+    .claro .op-painel .op-grupo{border-top-color:rgba(0,0,0,.12)}
     /* dentro da seção os itens não têm fio entre si */
     .op-painel .op-linha + .op-linha{border-top:none}
 
@@ -351,9 +356,12 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
       font-size:15px;font-weight:600;color:#f0f0f0;
     }
     .claro .op-painel .op-nome{color:#1b1b1b}
+    /*  A legenda pode ir a duas linhas. Cortada com "..." ela
+        escondia justo o que explica a linha ("Transpõe a cifra
+        intei...", "Andar junto com quem mi..."). */
     .op-painel .op-sub{
-      display:block;grid-column:2;grid-row:2;
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+      grid-column:2;grid-row:2;overflow:hidden;
     }
     .op-painel .op-controle{grid-column:3;grid-row:1 / span 2}
     /* o nome do instrumento agora é a legenda: um lugar só */
@@ -393,38 +401,57 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
 
   #opAdminBtn{gap:6px}
 
-  /* ── barra flutuante do celular ── */
+  /* ── barra flutuante do celular ──
+     Uma pílula de vidro escuro, sem fios entre os botões: com
+     divisória ela parecia uma régua pousada em cima da cifra.
+     E cada botão diz o estado, não só o nome — o Tom mostra o tom
+     que está valendo, a Rolagem diz se está rolando, o Instrumento
+     diz qual. Antes era preciso abrir para saber. */
   .op-barra{
     position:absolute;left:50%;transform:translateX(-50%);
-    bottom:calc(16px + env(safe-area-inset-bottom));z-index:50;
-    display:none;align-items:stretch;
-    background:rgba(28,28,28,.94);
-    border:1px solid var(--gray3);
-    border-radius:16px;
-    box-shadow:0 10px 30px rgba(0,0,0,.45);
-    backdrop-filter:blur(8px);
-    overflow:hidden;
+    bottom:calc(14px + env(safe-area-inset-bottom));z-index:50;
+    display:none;align-items:stretch;gap:2px;
+    padding:5px;
+    background:rgba(20,20,20,.93);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:999px;
+    box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+    -webkit-backdrop-filter:blur(16px) saturate(1.4);
+    backdrop-filter:blur(16px) saturate(1.4);
   }
   @media (max-width: 820px), (pointer: coarse){.op-barra{display:flex}}
-  .claro .op-barra{background:rgba(250,247,242,.95);border-color:rgba(0,0,0,.14)}
+  .claro .op-barra{
+    background:rgba(250,247,242,.94);border-color:rgba(0,0,0,.10);
+    box-shadow:0 12px 30px rgba(0,0,0,.16);
+  }
 
   .op-barra button{
     background:none;border:none;cursor:pointer;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    /* largura igual para os quatro: o rótulo mais longo manda,
-       e os outros não ficam menores por terem nome curto */
-    flex:1 1 0;min-width:82px;
-    padding:9px 6px 8px;color:#d2d2d2;
-    font-family:var(--font-ui);font-size:10px;font-weight:600;
+    /* largura igual para os quatro: o rótulo mais longo manda */
+    flex:1 1 0;min-width:74px;height:52px;
+    padding:0 8px;border-radius:999px;color:#d6d6d6;
+    font-family:var(--font-ui);font-size:10.5px;font-weight:600;
+    transition:background .15s,color .15s;
+    -webkit-tap-highlight-color:transparent;
   }
+  .op-barra button:active{background:rgba(255,255,255,.08)}
+  .claro .op-barra button:active{background:rgba(0,0,0,.06)}
   .op-barra button span{
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
   }
-  .op-barra button + button{border-left:1px solid var(--gray3)}
   .claro .op-barra button{color:#3a3a3a}
-  .claro .op-barra button + button{border-left-color:rgba(0,0,0,.12)}
   .op-barra button.on{color:var(--cifra)}
   .claro .op-barra button.on{color:var(--cifra-claro)}
+  /* rolando: o botão acende inteiro, para ver de longe */
+  .op-barra button.on[data-ir="opLinhaRolagem"]{background:rgba(238,158,99,.14)}
+
+  /* o tom que está valendo, no lugar do ícone */
+  .op-barra .op-chave{
+    font-family:var(--font-ui);font-size:16px;font-weight:800;line-height:19px;
+    color:var(--cifra);letter-spacing:-.01em;
+  }
+  .claro .op-barra .op-chave{color:var(--cifra-claro)}
 
   /* ── topo enxuto no celular ──
      Só o essencial fica na barra: alternar cifra e letra. Tom,
@@ -475,6 +502,8 @@ const OP_ICO = {
   quebra:  `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h11a3 3 0 1 1 0 6h-3M4 18h4"/><path d="M9 15l-2.5 3L9 21"/></svg>`,
   tema:    `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`,
   capo:    `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M13 4v16M18 4v16M3 9h18"/></svg>`,
+  play:    `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.6v6.8l5.4-3.4z" fill="currentColor"/></svg>`,
+  pausa:   `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.8v6.4M14 8.8v6.4" stroke-width="2.2"/></svg>`,
   admin:   `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>`,
 };
 
@@ -545,12 +574,10 @@ function opMontar() {
 
   if (tom) tom.querySelector(".lyra-lbl")?.remove();
 
-  p.appendChild(opGrupo(
-    rolagem && opLinha(OP_ICO.rolagem, "Rolagem automática", rolagem,
-                       "opLinhaRolagem", "Desce a cifra sozinha"),
-    inst    && opLinhaInstrumento(inst),
-  ));
-
+  //  O tom vem primeiro: é o que se mexe antes de começar. Os
+  //  nomes são curtos de propósito — "Rolagem automática" e
+  //  "Tamanho do texto" quebravam em duas linhas e ficavam por
+  //  baixo do controle no painel do computador.
   p.appendChild(opGrupo(
     tom && opLinha(OP_ICO.tom, "Tom", tom,
                    "opLinhaTom", "Transpõe a cifra inteira"),
@@ -558,8 +585,14 @@ function opMontar() {
   ));
 
   p.appendChild(opGrupo(
-    texto  && opLinha(OP_ICO.texto,  "Tamanho do texto", texto,
-                      null, "Para ler de longe"),
+    rolagem && opLinha(OP_ICO.rolagem, "Rolagem", rolagem,
+                       "opLinhaRolagem", "Desce a cifra sozinha"),
+    inst    && opLinhaInstrumento(inst),
+  ));
+
+  p.appendChild(opGrupo(
+    texto  && opLinha(OP_ICO.texto,  "Tamanho", texto,
+                      null, "Da letra e dos acordes"),
     quebra && opLinha(OP_ICO.quebra, "Quebrar linhas longas", quebra,
                       null, "Evita rolar para o lado"),
     tema   && opLinha(OP_ICO.tema,   "Fundo", tema,
@@ -567,8 +600,12 @@ function opMontar() {
   ));
 
   //  Último grupo: sai do site. Fica no fim porque não muda nada
-  //  na tela — é uma saída, não um ajuste de leitura.
-  p.appendChild(opGrupo(opLinhaAdmin()));
+  //  na tela — é uma saída, não um ajuste de leitura. O "order"
+  //  segura ele lá embaixo mesmo com o afinador, o metrônomo e o
+  //  acompanhar entrando depois.
+  const fim = opGrupo(opLinhaAdmin());
+  fim.style.order = "97";
+  p.appendChild(fim);
 
   const rodape = document.createElement("div");
   rodape.className = "op-rodape";
@@ -724,8 +761,21 @@ const opPintarInstOriginal = acPintarInstrumento;
 acPintarInstrumento = function (...a) {
   const r = opPintarInstOriginal.apply(this, a);
   opSincronizarInstrumento();
+  opPintarBarra();
   return r;
 };
+
+//  Rolagem: começa pelo botão, para no fim da cifra ou num toque
+//  no texto. Todo caminho passa por estas duas funções.
+["acComecarRolagem", "acPararRolagem"].forEach(nome => {
+  const original = window[nome];
+  if (typeof original !== "function") return;
+  window[nome] = function (...a) {
+    const r = original.apply(this, a);
+    opPintarBarra();
+    return r;
+  };
+});
 
 //  O botão do fundo é do lyra.js. Em vez de duplicar o evento, o
 //  menu se pendura na função que já repinta o leitor.
@@ -759,13 +809,37 @@ function opMontarBarra() {
   b.className = "op-barra";
   b.id = "opBarra";
   b.innerHTML = `
-    <button data-ir="opLinhaTom">${OP_ICO.tom}<span>Tom</span></button>
-    <button data-ir="opLinhaRolagem" id="opBarraRolar">${OP_ICO.rolagem}<span>Rolagem</span></button>
-    <button data-ir="opLinhaInst">${OP_ICO.inst}<span>Instrumento</span></button>
+    <button data-ir="opLinhaTom"><b class="op-chave">–</b><span>Tom</span></button>
+    <button data-ir="opLinhaRolagem" id="opBarraRolar"><i class="op-bico">${OP_ICO.play}</i><span>Rolar</span></button>
+    <button data-ir="opLinhaInst">${OP_ICO.inst}<span class="op-inst-txt">Violão</span></button>
     <button>${OP_ICO.opcoes}<span>Opções</span></button>`;
   box.appendChild(b);
   b.querySelectorAll("button").forEach(x =>
     x.addEventListener("click", () => opAbrir(x.dataset.ir)));
+  opPintarBarra();
+}
+
+//  A barra mostra o estado de cada coisa. Ela é repintada quando o
+//  tom muda (a cifra é redesenhada), quando a rolagem começa ou
+//  para, e quando o instrumento muda.
+function opPintarBarra() {
+  const barra = document.getElementById("opBarra");
+  if (!barra) return;
+  const tom = (typeof lyraAtual !== "undefined" && lyraAtual?.tom)
+    || document.getElementById("lyraTomSel")?.value || "–";
+  const chave = barra.querySelector(".op-chave");
+  if (chave) chave.textContent = tom;
+
+  const rol = barra.querySelector('[data-ir="opLinhaRolagem"]');
+  if (rol) {
+    const rolando = typeof acRolando !== "undefined" && acRolando;
+    rol.classList.toggle("on", rolando);
+    rol.querySelector(".op-bico").innerHTML = rolando ? OP_ICO.pausa : OP_ICO.play;
+    rol.querySelector("span").textContent = rolando ? "Rolando" : "Rolar";
+  }
+
+  const inst = barra.querySelector(".op-inst-txt");
+  if (inst) inst.textContent = typeof acAba !== "undefined" && acAba === "teclado" ? "Teclado" : "Violão";
 }
 
 //  Em tela larga o menu cabe ao lado da cifra sem atrapalhar,
@@ -836,6 +910,7 @@ lyraRenderConteudo = async function (...a) {
   opMontar();
   //  A música mudou: o rótulo do "Editar esta cifra" acompanha.
   opSincronizarAdmin();
+  opPintarBarra();
   return r;
 };
 
@@ -1007,7 +1082,7 @@ function opRapidoTom(r) {
 function opRapidoRolagem(r) {
   r.innerHTML = `
     <div class="op-pega"></div>
-    <h4>Rolagem automática</h4>
+    <h4>Rolagem</h4>
     <div class="op-rol">
       <button id="opRolBtn">${acRolando ? "❚❚" : "▶"}</button>
       <input type="range" class="ac-vel" id="opRolVel" min="5" max="120" step="5" value="${acVel}"
@@ -1019,6 +1094,9 @@ function opRapidoRolagem(r) {
   btn.onclick = () => {
     acAlternarRolagem();
     btn.textContent = acRolando ? "❚❚" : "▶";
+    //  Começou a rolar: a folha desce sozinha e deixa a cifra à
+    //  vista. Quem quer ajustar a velocidade abre de novo.
+    if (acRolando) setTimeout(opRapidoFechar, 350);
   };
   r.querySelector("#opRolVel").oninput = e => {
     acVel = Number(e.target.value);

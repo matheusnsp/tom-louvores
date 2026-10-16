@@ -344,7 +344,7 @@ opMontar = function (...a) {
     b.addEventListener("click", mtAbrir);
     // entra no mesmo grupo do afinador, que já está no fim do menu
     const grupoAfinador = document.getElementById("opLinhaAfinador")?.parentElement;
-    const linha = opLinha(MT_ICO, "Metrônomo", b, "opLinhaMetronomo");
+    const linha = opLinha(MT_ICO, "Metrônomo", b, "opLinhaMetronomo", "Marca o andamento");
     if (grupoAfinador) grupoAfinador.appendChild(linha);
     else p.appendChild(opGrupo(linha));
   }

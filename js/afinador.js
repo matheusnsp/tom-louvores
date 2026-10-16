@@ -546,7 +546,7 @@ opMontar = function (...a) {
     b.textContent = "Abrir";
     b.style.cssText = "padding:0 14px;font-size:12.5px";
     b.addEventListener("click", afAbrir);
-    p.appendChild(opGrupo(opLinha(AF_ICO, "Afinador", b, "opLinhaAfinador")));
+    p.appendChild(opGrupo(opLinha(AF_ICO, "Afinador", b, "opLinhaAfinador", "Pelo microfone do aparelho")));
   }
   return r;
 };

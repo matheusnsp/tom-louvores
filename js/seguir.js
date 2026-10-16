@@ -885,7 +885,7 @@ function snPintarLinha(txt) {
   if (txt) { sub.textContent = txt; return; }
   sub.textContent = snEhLider()
     ? (snLigado ? "Sua tela está sendo transmitida" : "Deixar outros acompanharem")
-    : (snLigado ? "Acompanhando quem ministra"      : "Andar junto com quem ministra");
+    : (snLigado ? "Acompanhando quem ministra"      : "Segue a tela de quem ministra");
 }
 
 //  Traço 1.7, como os outros ícones do menu do leitor.
