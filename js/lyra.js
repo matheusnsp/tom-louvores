@@ -626,11 +626,29 @@ async function lyraAtualizarVersoes() {
     songs.forEach(s => {
       const song = s && porSlug.get(s.slug);
       if (song && s.updated_at) song.versao = s.updated_at;
+      if (s && s.slug && s.updated_at) lyraHerdarVersao(s.slug, s.updated_at);
     });
     const proximo = d.next_since || "";
     if (!d.has_more || !songs.length || !proximo || proximo === since) break;
     since = proximo;
   }
+}
+
+//  Cópias baixadas antes desta data do Lyra têm o carimbo da tabela
+//  musicas_lyra. Sem isto, o botão trata as 109 como se não existissem.
+//  A primeira vez só troca o carimbo. Edição feita depois disso baixa de novo.
+function lyraHerdarVersao(slug, versao) {
+  if (!slug || !versao) return;
+  let bruto = null;
+  try { bruto = localStorage.getItem(LYRA_DISCO_PREFIXO + slug); } catch (e) { return; }
+  if (!bruto) return;
+  let reg;
+  try { reg = JSON.parse(bruto); } catch (e) { return; }
+  if (!reg || reg.d == null || reg.lyra) return;
+  reg.v = versao;
+  reg.lyra = 1;
+  try { localStorage.setItem(LYRA_DISCO_PREFIXO + slug, JSON.stringify(reg)); }
+  catch (e) { /* sem espaço: a cópia continua, o botão pede de novo */ }
 }
 
 //  true se a cifra deste slug já está no aparelho e o banco não
@@ -671,9 +689,9 @@ async function lyraGravarNoDisco(slug, musica) {
   let reg;
   try {
     const z = await lyraComprimir(txt);
-    reg = z ? { z: 1, d: z, v } : { z: 0, d: txt, v };
+    reg = z ? { z: 1, d: z, v, lyra: 1 } : { z: 0, d: txt, v, lyra: 1 };
   } catch (e) {
-    reg = { z: 0, d: txt, v };
+    reg = { z: 0, d: txt, v, lyra: 1 };
   }
   // grava por cima do registro anterior deste mesmo slug
   localStorage.setItem(LYRA_DISCO_PREFIXO + slug, JSON.stringify(reg));
