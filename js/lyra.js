@@ -349,7 +349,7 @@ async function lyraCarregarIndice() {
           // o site transpõe sozinho, então todo tom fica disponível,
           // mesmo quando o Lyra só cadastrou o original
           keys: lyraDozeTons(r.base_key) || r.available_keys || [],
-          versao: r.updated_at || "",       // muda quando você edita a cifra
+          versao: r.updated_at || "",       // a data do Lyra substitui esta, se a rede responder
           has_chords: true,
         };
         [lyraNorm(r.title), lyraChaveCurta(r.title)].forEach(k => {
@@ -363,6 +363,9 @@ async function lyraCarregarIndice() {
       lyraCacheBusca.clear();
       try { localStorage.removeItem(LYRA_CACHE_KEY); } catch (e) {}
       lyraLimparOrfas();
+      //  A tabela musicas_lyra não muda quando a cifra é editada no Lyra.
+      //  A data verdadeira vem de /sync. Sem rede, fica a data da tabela.
+      try { await lyraAtualizarVersoes(); } catch (e) { /* sem rede: segue com a tabela */ }
       lyraAtualizarBotaoBaixar();
       console.info(`Cifras: ${data.length} músicas carregadas de ${LYRA_TABELA}.`);
       return idx;
@@ -602,6 +605,34 @@ function lyraVersaoDoSlug(slug) {
   return null;
 }
 
+//  A data que muda ao editar a cifra está no Lyra, não na tabela
+//  musicas_lyra. Uma lista só, sem o texto: o botão compara com o
+//  que já está no aparelho e baixa só o que for mais novo.
+async function lyraAtualizarVersoes() {
+  if (!lyraIndice) return;
+  const porSlug = new Map();
+  for (const song of lyraIndice.values()) {
+    if (song.slug && !porSlug.has(song.slug)) porSlug.set(song.slug, song);
+  }
+
+  let since = "";
+  for (let pagina = 0; pagina < 20; pagina++) {
+    const qs = new URLSearchParams({ limit: "500" });
+    if (since) qs.set("since", since);
+    const r = await lyraFetch(`${LYRA_API}/sync?${qs}`);
+    if (!r.ok) throw new Error(`Resposta ${r.status}`);
+    const d = await r.json();
+    const songs = d.songs || [];
+    songs.forEach(s => {
+      const song = s && porSlug.get(s.slug);
+      if (song && s.updated_at) song.versao = s.updated_at;
+    });
+    const proximo = d.next_since || "";
+    if (!d.has_more || !songs.length || !proximo || proximo === since) break;
+    since = proximo;
+  }
+}
+
 //  true se a cifra deste slug já está no aparelho e o banco não
 //  editou depois. Só lê o carimbo da versão, sem descomprimir o texto.
 function lyraCopiaAtual(slug) {
@@ -755,7 +786,8 @@ function lyraAtualizarBotaoBaixar(txt) {
   const slugs  = lyraSlugsDoIndice();
   const total  = slugs.length;
   const salvas = lyraListaBaixadas().filter(x => slugs.includes(x)).length;
-  const tudo   = total > 0 && salvas >= total;
+  const faltam = slugs.filter(s => !lyraCopiaAtual(s)).length;
+  const tudo   = total > 0 && salvas >= total && faltam === 0;
 
   btn.style.display = "";        // sempre visível, mesmo antes do índice chegar
   btn.classList.toggle("pronto", tudo);
@@ -769,6 +801,7 @@ function lyraAtualizarBotaoBaixar(txt) {
   pintar(
     tudo ? LYRA_ICO_OK : LYRA_ICO_BAIXAR,
     tudo    ? "Cifras salvas"
+    : faltam && salvas ? `Atualizar · ${faltam}`
     //  em porcentagem, para caber no header. Arredonda para baixo:
     //  105 de 106 mostra 99%, nunca um 100% que não está completo.
     : salvas ? `Baixar cifras · ${pctSalvo}%`
@@ -778,9 +811,11 @@ function lyraAtualizarBotaoBaixar(txt) {
   const ocupado = lyraEspacoUsado();
   btn.title = tudo
     ? `${salvas} músicas guardadas neste aparelho (${lyraKB(ocupado)}). Toque para atualizar.`
-    : `Guardar todas as cifras neste aparelho, para abrir sem internet.` +
-      (salvas ? ` ${salvas} de ${total} já guardadas.` : "") +
-      (ocupado ? ` Já guardadas: ${lyraKB(ocupado)}.` : "");
+    : faltam
+      ? `${faltam} ${faltam === 1 ? "cifra nova ou editada" : "cifras novas ou editadas"}. Toque para baixar só essas.`
+      : `Guardar todas as cifras neste aparelho, para abrir sem internet.` +
+        (salvas ? ` ${salvas} de ${total} já guardadas.` : "") +
+        (ocupado ? ` Já guardadas: ${lyraKB(ocupado)}.` : "");
 }
 
 async function lyraBaixarTudo() {
@@ -796,8 +831,14 @@ async function lyraBaixarTudo() {
   lyraLimparOrfas();
 
   const btn = document.getElementById("lyraBaixar");
+  //  Sem isto, a data da tabela musicas_lyra esconde a edição feita no Lyra.
+  try { await lyraAtualizarVersoes(); }
+  catch (e) {
+    if (lyraEhErroDeChave(e)) { toast(LYRA_MSG_CHAVE, true); return; }
+  }
+
   //  10 já salvas e 2 novas no banco: só as 2 entram na fila.
-  //  Cifra editada muda o updated_at e também entra. O resto fica.
+  //  Cifra editada muda o updated_at do Lyra e também entra. O resto fica.
   const pendentes = slugs.filter(slug => !lyraCopiaAtual(slug));
   const reaproveitadas = slugs.length - pendentes.length;
 
