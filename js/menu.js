@@ -77,6 +77,12 @@ const MN_ICO = {
       width:8px;height:8px;border-radius:50%;
       background:#F87171;border:2px solid var(--black);
     }
+    /* cifra nova ou editada: o mesmo aviso, em dourado */
+    #mnBtn.mn-aviso:not(.mn-alerta)::after{
+      content:"";position:absolute;top:-2px;right:-2px;
+      width:8px;height:8px;border-radius:50%;
+      background:var(--gold);border:2px solid var(--black);
+    }
   }
 
   /* ── fundo ── */
@@ -189,6 +195,8 @@ const MN_ICO = {
   /* a conexão se anuncia com as cores da pastilha do cabeçalho */
   .mn-linha.mn-ok .mn-ico{background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.35);color:#4ADE80}
   .mn-linha.mn-erro .mn-ico{background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.35);color:#F87171}
+  .mn-linha.mn-atualizar .mn-nome{color:var(--gold)}
+  .mn-linha.mn-atualizar .mn-ico{border-color:rgba(var(--gold-rgb),0.55);color:var(--gold)}
 
   /* enquanto baixa, a faixa avança por trás da linha */
   .mn-linha.mn-baixando{position:relative;overflow:hidden}
@@ -347,21 +355,30 @@ function mnSincronizar() {
   const dl = document.getElementById("lyraBaixar");
   const linhaDl = document.getElementById("mnBaixar");
   if (linhaDl) {
-    const rotulo   = dl?.querySelector(".lyra-dl-txt")?.textContent || "";
+    const rotulo   = dl?.querySelector(".lyra-dl-txt")?.textContent?.trim() || "";
     const pronto   = dl?.classList.contains("pronto");
     const baixando = dl?.classList.contains("baixando");
-    const conta    = rotulo.match(/\((\d+)\s*\/\s*(\d+)\)/);   // "(12/50)"
+    const atualizar = rotulo.match(/^Atualizar · (\d+)/);
+    const parcial   = rotulo.match(/(\d+)\s*%/);
 
     linhaDl.querySelector(".mn-nome").textContent =
-      pronto ? "Cifras salvas" : "Baixar cifras";
+      baixando ? "Baixando cifras"
+      : pronto ? "Cifras salvas"
+      : atualizar ? rotulo
+      : "Baixar cifras";
 
     linhaDl.querySelector(".mn-sub").textContent =
       baixando ? rotulo
       : pronto  ? "Abrem sem internet"
-      : conta   ? `${conta[1]} de ${conta[2]} neste aparelho`
+      : atualizar ? (atualizar[1] === "1"
+          ? "1 cifra nova ou editada"
+          : `${atualizar[1]} cifras novas ou editadas`)
+      : parcial ? `${parcial[1]}% neste aparelho`
                 : "Para abrir sem internet";
 
     linhaDl.classList.toggle("mn-baixando", !!baixando);
+    linhaDl.classList.toggle("mn-atualizar", !!atualizar && !baixando);
+    document.getElementById("mnBtn")?.classList.toggle("mn-aviso", !!atualizar && !baixando);
     if (baixando) {
       linhaDl.style.setProperty("--mn-dl", dl.style.getPropertyValue("--dl") || "0%");
     } else {
