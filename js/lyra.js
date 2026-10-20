@@ -33,6 +33,7 @@ async function lyraFetch(url) {
   const chave = lyraChaveApi();
   if (!chave) throw lyraErroAuth();
   const r = await fetch(url, {
+    cache: "no-store",
     headers: { Authorization: `Bearer ${chave}` },
   });
   if (r.status === 401) throw lyraErroAuth();
@@ -945,6 +946,26 @@ function lyraRecarregarDepoisDeBaixar() {
   }
   location.reload();
 }
+
+//  O app instalado fica com a página aberta. Sem isto, "Atualizar · 1"
+//  só aparecia depois de um recarregamento manual.
+let lyraVigiaEmCurso = false;
+async function lyraVigiarEdicoes() {
+  if (lyraVigiaEmCurso || lyraBaixando || !lyraIndice) return;
+  lyraVigiaEmCurso = true;
+  try {
+    await lyraAtualizarVersoes();
+    lyraAtualizarBotaoBaixar();
+  } catch (e) { /* sem rede: o botão fica como está */ }
+  finally { lyraVigiaEmCurso = false; }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) lyraVigiarEdicoes();
+});
+window.addEventListener("focus", () => lyraVigiarEdicoes());
+window.addEventListener("pageshow", () => lyraVigiarEdicoes());
+setInterval(lyraVigiarEdicoes, 20000);
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", lyraMontarBotaoBaixar);
