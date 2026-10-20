@@ -882,7 +882,7 @@ async function lyraBaixarTudo() {
   function lyraMarcarProgresso() {
     feitos++;
     const pct = Math.round((feitos / pendentes.length) * 100);
-    lyraAtualizarBotaoBaixar(`Baixando · ${feitos} de ${pendentes.length}`);
+    lyraAtualizarBotaoBaixar(`Baixando · ${pct}%`);
     lyraProgresso(Math.min(pct, 99));
   }
 
