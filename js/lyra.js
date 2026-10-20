@@ -796,7 +796,14 @@ function lyraAtualizarBotaoBaixar(txt) {
   const btn = document.getElementById("lyraBaixar");
   if (!btn) return;
 
+  //  Só mexe no HTML quando o texto muda. A conferência automática
+  //  chama isto o tempo todo; reescrever o mesmo rótulo fazia o botão piscar.
   const pintar = (ico, rotulo) => {
+    const marca = ico === LYRA_ICO_OK ? "ok" : "baixar";
+    const igual = btn.dataset.ico === marca &&
+      btn.querySelector(".lyra-dl-txt")?.textContent === rotulo;
+    if (igual) return;
+    btn.dataset.ico = marca;
     btn.innerHTML = `${ico}<span class="lyra-dl-txt">${rotulo}</span>`;
   };
 
@@ -808,14 +815,17 @@ function lyraAtualizarBotaoBaixar(txt) {
   const faltam = slugs.filter(s => !lyraCopiaAtual(s)).length;
   const tudo   = total > 0 && salvas >= total && faltam === 0;
 
-  btn.style.display = "";        // sempre visível, mesmo antes do índice chegar
-  btn.classList.toggle("pronto", tudo);
+  if (btn.style.display === "none") btn.style.display = "";
+  if (btn.classList.contains("pronto") !== tudo) btn.classList.toggle("pronto", tudo);
 
   //  barra de carregamento junto com a porcentagem: preenche o
   //  botão até a parte já guardada (some quando está tudo salvo)
   const pctSalvo = total ? Math.floor((salvas / total) * 100) : 0;
-  btn.classList.toggle("parcial", !tudo && salvas > 0);
-  btn.style.setProperty("--guardado", pctSalvo + "%");
+  const parcial = !tudo && salvas > 0;
+  if (btn.classList.contains("parcial") !== parcial) btn.classList.toggle("parcial", parcial);
+  const guarda = pctSalvo + "%";
+  if (btn.style.getPropertyValue("--guardado") !== guarda)
+    btn.style.setProperty("--guardado", guarda);
 
   pintar(
     tudo ? LYRA_ICO_OK : LYRA_ICO_BAIXAR,
@@ -828,13 +838,14 @@ function lyraAtualizarBotaoBaixar(txt) {
   );
 
   const ocupado = lyraEspacoUsado();
-  btn.title = tudo
+  const title = tudo
     ? `${salvas} músicas guardadas neste aparelho (${lyraKB(ocupado)}). Toque para atualizar.`
     : faltam
       ? `${faltam} ${faltam === 1 ? "cifra nova ou editada" : "cifras novas ou editadas"}. Toque para baixar só essas.`
       : `Guardar todas as cifras neste aparelho, para abrir sem internet.` +
         (salvas ? ` ${salvas} de ${total} já guardadas.` : "") +
         (ocupado ? ` Já guardadas: ${lyraKB(ocupado)}.` : "");
+  if (btn.title !== title) btn.title = title;
 }
 
 async function lyraBaixarTudo() {
