@@ -1,11 +1,43 @@
 // ============================================================
 //  TOM LOUVORES — integração com o Lyra
-//  API pública, somente leitura, sem chave.
+//  API somente leitura. Cada chamada leva
+//  Authorization: Bearer (CONFIG.LYRA_API_KEY).
 //  Cifra e letra abrem DENTRO do site, num leitor próprio.
 //  Carregue DEPOIS do app.js. Não altera nada do app.js.
 // ============================================================
 
 const LYRA_API = "https://database.invbotafogo.com.br/api/v1";
+const LYRA_MSG_CHAVE = "A chave da API do Lyra está ausente ou incorreta.";
+
+//  O valor mora em js/lyra-chave.js (não vai para o git). É o mesmo
+//  LYRA_API_KEY do servidor do banco de músicas.
+function lyraChaveApi() {
+  const bruta = typeof CONFIG !== "undefined" ? CONFIG.LYRA_API_KEY : "";
+  return typeof bruta === "string" ? bruta.trim() : "";
+}
+
+function lyraErroAuth() {
+  const e = new Error(LYRA_MSG_CHAVE);
+  e.lyraAuth = true;
+  e.status = 401;
+  return e;
+}
+
+function lyraEhErroDeChave(e) {
+  return !!(e && (e.lyraAuth || e.status === 401));
+}
+
+//  Único caminho até a API do Lyra. Sem a chave, nem tenta a rede:
+//  401 (ou chave vazia) não pode parecer falta de conexão.
+async function lyraFetch(url) {
+  const chave = lyraChaveApi();
+  if (!chave) throw lyraErroAuth();
+  const r = await fetch(url, {
+    headers: { Authorization: `Bearer ${chave}` },
+  });
+  if (r.status === 401) throw lyraErroAuth();
+  return r;
+}
 
 const lyraCacheBusca  = new Map();  // nome normalizado → música do Lyra (ou null)
 const lyraPendentes   = new Map();  // nome normalizado → busca em andamento
@@ -252,7 +284,7 @@ async function lyraGarantirId(slug) {
 
   const busca = (async () => {
     try {
-      const r = await fetch(`${LYRA_API}/songs/${slug}`);
+      const r = await lyraFetch(`${LYRA_API}/songs/${slug}`);
       if (!r.ok) return null;
       const d = await r.json();
       //  Os três nomes prováveis do campo. Se a resposta não
@@ -391,7 +423,7 @@ async function lyraBuscar(nome) {
     let achada = null;
     try {
       const url = `${LYRA_API}/songs?q=${encodeURIComponent(nome)}&limit=8`;
-      const r = await fetch(url);
+      const r = await lyraFetch(url);
       if (r.ok) {
         const data = await r.json();
         const res  = data.results || [];
@@ -405,6 +437,7 @@ async function lyraBuscar(nome) {
         return null;                    // erro do servidor não vira cache
       }
     } catch (e) {
+      if (lyraEhErroDeChave(e)) throw e;
       console.warn("Cifras indisponíveis:", e);
       return null;                      // sem rede: tenta de novo depois
     }
@@ -754,7 +787,7 @@ async function lyraBaixarTudo() {
   lyraBytesBaixados = 0;
   if (btn) btn.disabled = true;
 
-  let ok = 0, falhas = 0, cheio = false;
+  let ok = 0, falhas = 0, cheio = false, semChave = false;
 
   for (let i = 0; i < slugs.length; i++) {
     const pct = Math.round((i / slugs.length) * 100);
@@ -767,6 +800,7 @@ async function lyraBaixarTudo() {
       await lyraGravarNoDisco(slugs[i], musica);
       ok++;
     } catch (e) {
+      if (lyraEhErroDeChave(e)) { semChave = true; break; }
       if (e && (e.name === "QuotaExceededError" || /quota|exceeded/i.test(e.message || ""))) {
         cheio = true;
         break;
@@ -784,7 +818,8 @@ async function lyraBaixarTudo() {
 
   const baixado = lyraBytesBaixados ? ` · ${lyraKB(lyraBytesBaixados)} baixados` : "";
 
-  if (cheio)       toast(`Armazenamento cheio. ${ok} de ${slugs.length} salvas.`, true);
+  if (semChave)    toast(LYRA_MSG_CHAVE, true);
+  else if (cheio)  toast(`Armazenamento cheio. ${ok} de ${slugs.length} salvas.`, true);
   else if (falhas) toast(`${ok} salvas, ${falhas} sem conexão.`, true);
   else             toast(`${ok} ${ok === 1 ? "cifra guardada" : "cifras guardadas"} ✓${baixado}`);
 
@@ -792,7 +827,7 @@ async function lyraBaixarTudo() {
   //  ser guardado. A espera de 1,6s deixa a mensagem ser lida — e
   //  com o leitor aberto a recarga é adiada, senão a cifra que a
   //  pessoa está lendo sumiria da tela no meio do louvor.
-  if (!cheio && !falhas) setTimeout(lyraRecarregarDepoisDeBaixar, 1600);
+  if (!cheio && !falhas && !semChave) setTimeout(lyraRecarregarDepoisDeBaixar, 1600);
 }
 
 function lyraRecarregarDepoisDeBaixar() {
@@ -1029,10 +1064,11 @@ async function lyraCarregarMusica(slug, forcar = false) {
     const url = `${LYRA_API}/songs/${slug}?include=all_keys`;
     let d;
     try {
-      const r = await fetch(url);
+      const r = await lyraFetch(url);
       if (!r.ok) throw new Error(`Resposta ${r.status}`);
       d = await r.json();
     } catch (e) {
+      if (lyraEhErroDeChave(e)) throw e;     // 401 não é falta de rede
       if (salva && salva.porTom.size) {      // a rede falhou: fica com a cópia antiga
         lyraRefazerTons(salva);
         lyraCacheMusica.set(slug, salva);
@@ -1085,7 +1121,7 @@ async function lyraCarregarCifra(slug, tomLyra, grafia = null) {
   const chave = lyraKeySlug(tomLyra);
   if (musica.porTom.has(chave)) return musica.porTom.get(chave);
 
-  const r = await fetch(`${LYRA_API}/songs/${slug}/chords/${chave}`);
+  const r = await lyraFetch(`${LYRA_API}/songs/${slug}/chords/${chave}`);
   if (!r.ok) return "";
   const d = await r.json();
   const texto = d.chords || "";
@@ -1240,6 +1276,10 @@ async function lyraIrPara(direcao) {
 
     // adianta a busca dos vizinhos, para a próxima seta ser instantânea
     lyraPreCarregar(itens.slice(Math.max(0, i - 1), i + 3).map(x => x.nome));
+  } catch (e) {
+    if (meuNav !== lyraNavToken) return;
+    if (lyraEhErroDeChave(e))
+      corpo.innerHTML = `<div class="lyra-msg">${LYRA_MSG_CHAVE}</div>`;
   } finally {
     clearTimeout(avisar);
     if (meuNav === lyraNavToken) {
@@ -1520,7 +1560,9 @@ async function lyraRenderConteudo() {
   } catch (e) {
     if (meuToken !== lyraToken || !lyraAtual) return;
     console.warn("Falha ao carregar:", e);
-    corpo.innerHTML = `<div class="lyra-msg">Não deu para carregar.
+    corpo.innerHTML = lyraEhErroDeChave(e)
+      ? `<div class="lyra-msg">${LYRA_MSG_CHAVE}</div>`
+      : `<div class="lyra-msg">Não deu para carregar.
       Verifique a conexão e tente de novo.</div>`;
   }
 }
@@ -1614,6 +1656,10 @@ function lyraRenderNaView(m, nav) {
     if (meuToken !== lyraTokenView) { manuais.forEach(a => a.style.display = ""); return; }
     if (song && song.has_chords) lyraTrocarPelosBotoes(wrap, m, song, nav);
     else manuais.forEach(a => a.style.display = "");
+  }).catch(e => {
+    if (meuToken !== lyraTokenView) return;
+    manuais.forEach(a => a.style.display = "");
+    if (lyraEhErroDeChave(e) && typeof toast === "function") toast(LYRA_MSG_CHAVE, true);
   });
 }
 
