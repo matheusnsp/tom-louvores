@@ -863,6 +863,9 @@ async function lyraBaixarTudo() {
   if (!pendentes.length) {
     lyraAtualizarBotaoBaixar();
     toast(`${reaproveitadas} ${reaproveitadas === 1 ? "cifra já estava" : "cifras já estavam"} neste aparelho.`);
+    //  No app instalado a página não recarrega sozinha. Este toque
+    //  traz o código novo, mesmo sem nenhuma cifra para baixar.
+    setTimeout(lyraRecarregarDepoisDeBaixar, 1600);
     return;
   }
 
