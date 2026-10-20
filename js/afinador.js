@@ -179,7 +179,7 @@ let afSuave = null;                       // leitura amaciada, para o ponteiro n
   }
 
   .af-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-  .af-hd h4{margin:0;font-family:'Inter',sans-serif;font-size:12px;font-weight:800;
+  .af-hd h4{margin:0;font-family:var(--font-ui);font-size:12px;font-weight:800;
     letter-spacing:.14em;text-transform:uppercase;color:var(--gray)}
   .af-x{background:none;border:none;color:var(--gray);font-size:17px;cursor:pointer;padding:2px 6px}
 
@@ -187,12 +187,12 @@ let afSuave = null;                       // leitura amaciada, para o ponteiro n
   .af-sel{
     background:var(--black5);border:1px solid var(--gray3);color:#e6e6e6;
     border-radius:10px;padding:7px 10px;cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;
+    font-family:var(--font-ui);font-size:12.5px;font-weight:600;
   }
   .claro .af-sel{background:#E4DFD8;border-color:rgba(0,0,0,.16);color:#242424}
   .af-abas{display:inline-flex;border:1px solid var(--gray3);border-radius:10px;overflow:hidden}
   .af-abas button{background:none;border:none;cursor:pointer;color:#c8c8c8;
-    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;padding:8px 18px}
+    font-family:var(--font-ui);font-size:12.5px;font-weight:700;padding:8px 18px}
   .af-abas button.on{background:var(--cifra);color:#1a1a1a}
   .claro .af-abas button.on{background:var(--cifra-claro);color:#fff}
 
@@ -207,8 +207,8 @@ let afSuave = null;                       // leitura amaciada, para o ponteiro n
   /* fita de notas: a atual grande no meio, as vizinhas apagadas */
   .af-fita{display:flex;align-items:baseline;justify-content:center;gap:14px;min-height:58px}
   .af-fita span{
-    font-family:'Bebas Neue',sans-serif;color:var(--gray2);opacity:.45;
-    font-size:26px;line-height:1;letter-spacing:.02em;
+    font-family:var(--font-display);font-weight:600;color:var(--gray2);opacity:.45;
+    font-size:26px;line-height:1;letter-spacing:-0.01em;
   }
   .af-fita span sup{font-size:11px;opacity:.8;margin-left:1px}
   .af-fita span.atual{
@@ -218,20 +218,20 @@ let afSuave = null;                       // leitura amaciada, para o ponteiro n
   .claro .af-fita span.atual{color:#1a1a1a}
   .claro .af-mostrador.certo .af-fita span.atual{color:#2F8C0F}
 
-  .af-hz{text-align:center;font-family:'Inter',sans-serif;font-size:12.5px;
+  .af-hz{text-align:center;font-family:var(--font-ui);font-size:12.5px;
     color:var(--gray2);font-variant-numeric:tabular-nums;min-height:17px;margin-bottom:2px}
 
   /* ponteiro */
   .af-gauge{width:100%;height:auto;display:block}
   .af-tick{stroke:var(--gray3);stroke-width:1.6;stroke-linecap:round}
   .af-tick.forte{stroke:var(--gray2);stroke-width:2.2}
-  .af-sinal{fill:var(--gray2);font-family:'Inter',sans-serif;font-size:13px;font-weight:700}
+  .af-sinal{fill:var(--gray2);font-family:var(--font-ui);font-size:13px;font-weight:700}
   .af-agulha{stroke:#c9c9c9;stroke-width:2.6;stroke-linecap:round;
     transition:transform .1s linear,stroke .18s}
   .af-mostrador.certo .af-agulha{stroke:#8FE84A;stroke-width:3.2}
   .af-pivo{fill:none;stroke:var(--gray3);stroke-width:2}
   .af-mostrador.certo .af-pivo{stroke:#8FE84A}
-  .af-cents{text-align:center;font-family:'Inter',sans-serif;font-size:12.5px;
+  .af-cents{text-align:center;font-family:var(--font-ui);font-size:12.5px;
     font-weight:700;color:var(--gray);min-height:17px;font-variant-numeric:tabular-nums}
   .af-cents.certo{color:#8FE84A}
 
@@ -241,7 +241,7 @@ let afSuave = null;                       // leitura amaciada, para o ponteiro n
   .af-cordas button{
     display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.15;
     background:var(--black5);border:1px solid var(--gray3);border-radius:11px;
-    color:#ddd;cursor:pointer;font-family:'Inter',sans-serif;
+    color:#ddd;cursor:pointer;font-family:var(--font-ui);
     font-size:15px;font-weight:800;padding:11px 4px;
   }
   .af-cordas button small{
@@ -255,11 +255,11 @@ let afSuave = null;                       // leitura amaciada, para o ponteiro n
   .af-mic{
     width:100%;margin-top:14px;padding:14px;border-radius:12px;cursor:pointer;
     background:var(--cifra);border:none;color:#1a1a1a;
-    font-family:'Inter',sans-serif;font-size:14px;font-weight:800;
+    font-family:var(--font-ui);font-size:14px;font-weight:800;
   }
   .af-mic.ativo{background:none;border:1px solid var(--gray3);color:#ddd}
   .claro .af-mic{background:var(--cifra-claro);color:#fff}
-  .af-aviso{font-family:'Inter',sans-serif;font-size:12px;color:var(--gray);
+  .af-aviso{font-family:var(--font-ui);font-size:12px;color:var(--gray);
     text-align:center;margin-top:10px;line-height:1.45}`;
   document.head.appendChild(st);
 })();
@@ -546,7 +546,7 @@ opMontar = function (...a) {
     b.textContent = "Abrir";
     b.style.cssText = "padding:0 14px;font-size:12.5px";
     b.addEventListener("click", afAbrir);
-    p.appendChild(opGrupo(opLinha(AF_ICO, "Afinador", b, "opLinhaAfinador")));
+    p.appendChild(opGrupo(opLinha(AF_ICO, "Afinador", b, "opLinhaAfinador", "Pelo microfone do aparelho")));
   }
   return r;
 };

@@ -15,15 +15,22 @@ let editandoId = null;
 let tomMinList = [];   // [{ tom, mins: [nomes...] }]
 let cifraList  = [];   // URLs de cifra do modal de edição
 
-const CHIP_CLASS = {
-  "Raphaela":    "chip-Raphaela",
-  "Daniela":     "chip-Daniela",
-  "Cris":        "chip-Cris",
-  "Mirian":      "chip-Mirian",
-  "Pr. Humberto":"chip-Humberto",
-};
+// A lista de ministrantes fica no config.js. Daqui sai a classe de
+// cor de cada um ("Pr. Humberto" → chip-Humberto) e as opções dos
+// <select> de ministrante das páginas.
+const CHIP_CLASS = Object.fromEntries(MINISTRANTES.map(n => [n,
+  "chip-" + n.replace(/^Pr\.?\s+/i, "").normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]/g, "")]));
 
-const MINISTRANTES = ["Raphaela", "Daniela", "Cris", "Mirian", "Pr. Humberto"];
+(function preencherMinistrantes() {
+  ["filtroMin", "cNovoMin", "fMin"].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    MINISTRANTES.forEach(n => sel.add(new Option(n, n)));
+  });
+  const total = document.getElementById("totalMins");
+  if (total) total.textContent = MINISTRANTES.length;
+})();
 
 // ============================================================
 //  AUTH — Login / Logout
@@ -190,7 +197,7 @@ function tonsParaHTML(m, expandir = true) {
   const pares = deserializarPares(m.tom);
 
   if (!pares.length) {
-    return `<div class="card-ton-row"><span class="card-badge">${esc(m.tom || "—")}</span></div>`;
+    return `<div class="card-ton-row"><span class="card-badge">${tomHTML(m.tom || "—")}</span></div>`;
   }
 
   return pares.map(p => {
@@ -202,7 +209,7 @@ function tonsParaHTML(m, expandir = true) {
 
     return `
       <div class="card-ton-row">
-        <span class="card-badge">${esc(p.tom)}</span>
+        <span class="card-badge">${tomHTML(p.tom)}</span>
         <span class="ton-row-right">${chipsHTML}</span>
       </div>`;
   }).join("");
@@ -228,6 +235,34 @@ async function req(path, opts = {}) {
   return t ? JSON.parse(t) : null;
 }
 
+// ============================================================
+//  CÓPIA NO APARELHO — trocar de aba sem esperar o banco
+//  Cada aba é uma página nova, e cada uma esperava o banco
+//  responder (meio segundo no Wi-Fi, bem mais no 4G da igreja)
+//  para mostrar qualquer coisa. Agora a última resposta fica
+//  guardada no aparelho: a página desenha com ela na hora e, se o
+//  banco trouxer algo diferente, redesenha.
+//  Só leituras públicas (repertório, cultos, sugestões) — nada
+//  que não apareça para qualquer visitante.
+// ============================================================
+
+const COPIA_PREFIXO = "tl_copia:";
+
+function copiaLer(chave) {
+  try {
+    const s = localStorage.getItem(COPIA_PREFIXO + chave);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
+function copiaGuardar(chave, dados) {
+  try { localStorage.setItem(COPIA_PREFIXO + chave, JSON.stringify(dados)); }
+  catch { /* aparelho sem espaço ou modo privado: segue sem cópia */ }
+}
+
+let musicasDoBanco = false;   // já chegou o repertório do banco nesta página?
+let cultosDoBanco  = false;
+
 // ordena alfabeticamente (A→Z), desempatando pela data mais recente
 function ordenarMusicas() {
   const col = new Intl.Collator("pt-BR", { sensitivity: "base", numeric: true });
@@ -239,17 +274,47 @@ function ordenarMusicas() {
   });
 }
 
+//  Música na lixeira (excluida_em preenchido) some de todo o site,
+//  mas continua no banco até alguém apagar de vez — ver lixeira.js.
+let musicasLixeira = [];
+
+function mostrarMusicas(lista) {
+  musicasLixeira = lista.filter(m => m.excluida_em);
+  musicas = lista.filter(m => !m.excluida_em);
+  if (typeof lixAtualizar === "function") lixAtualizar();
+  ordenarMusicas();
+  atualizarStats();
+  atualizarFiltroTons();
+  render(musicas);
+}
+
 async function carregar() {
+  const caminho = `${TABLE}?order=criado_em.desc`;
+
+  //  Abertura da página: desenha com a cópia enquanto o banco responde.
+  let copia = null;
+  if (!musicasDoBanco) {
+    const c = copiaLer(caminho);
+    if (Array.isArray(c) && c.length) {
+      copia = JSON.stringify(c);
+      mostrarMusicas(c);
+    }
+  }
+
   try {
-    musicas = await req(`${TABLE}?order=criado_em.desc`) || [];
-    ordenarMusicas();
-    atualizarStats();
-    atualizarFiltroTons();
-    render(musicas);
+    const novas = await req(caminho) || [];
+    musicasDoBanco = true;
+    copiaGuardar(caminho, novas);
+    //  Igual à cópia: nada a redesenhar (e a rolagem fica onde está).
+    if (copia === null || JSON.stringify(novas) !== copia) mostrarMusicas(novas);
     setStatus(true);
   } catch (e) {
     console.error(e);
     setStatus(false);
+    if (copia !== null) {
+      toast("Sem conexão: mostrando a última versão guardada.", true);
+      return;
+    }
     toast("Erro ao conectar com o banco.", true);
     document.getElementById("stLoading").style.display = "none";
     document.getElementById("stEmpty").style.display   = "flex";
@@ -321,19 +386,89 @@ async function salvar() {
     toast("Erro ao salvar. Verifique permissões do Supabase.", true);
   } finally {
     btn.disabled = false;
-    btn.textContent = editandoId ? "SALVAR ALTERAÇÕES" : "SALVAR";
+    btn.textContent = editandoId ? "Salvar alterações" : "Salvar";
   }
+}
+
+//  Confirmação antes de excluir. O confirm() do navegador some
+//  num toque distraído (e no app instalado nem parece parte do
+//  site); aqui a pessoa vê QUAL música vai sair e precisa tocar
+//  no botão vermelho. O foco começa no "Cancelar".
+//  A lixeira usa a mesma caixa para "apagar de vez", com outro texto.
+function confirmarExclusao(nome, opcoes = {}) {
+  const o = {
+    titulo: "Excluir música?",
+    texto: "vai para a lixeira. Dá para restaurar depois.",
+    botao: "Excluir música",
+    ...opcoes,
+  };
+  return new Promise(resolve => {
+    let ov = document.getElementById("excluirOverlay");
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.id = "excluirOverlay";
+      ov.className = "confirma-overlay";
+      ov.innerHTML = `
+        <div class="login-box confirma-box" role="alertdialog" aria-modal="true"
+             aria-labelledby="excluirTitulo" aria-describedby="excluirTexto">
+          <div>
+            <h2 id="excluirTitulo"></h2>
+            <p class="login-sub" id="excluirTexto"></p>
+          </div>
+          <div class="login-actions">
+            <button type="button" class="btn-login-cancel" data-r="nao">Cancelar</button>
+            <button type="button" class="btn-excluir" data-r="sim"></button>
+          </div>
+        </div>`;
+      document.body.appendChild(ov);
+    }
+    const antes = document.activeElement;
+    ov.querySelector("#excluirTitulo").textContent = o.titulo;
+    ov.querySelector("#excluirTexto").innerHTML = `<b>${esc(nome || "Esta música")}</b> ${esc(o.texto)}`;
+    ov.querySelector("[data-r='sim']").textContent = o.botao;
+
+    const fechar = r => {
+      ov.classList.remove("open");
+      ov.removeEventListener("click", clique);
+      document.removeEventListener("keydown", tecla, true);
+      if (antes && antes.focus) antes.focus();
+      resolve(r);
+    };
+    const clique = e => {
+      const b = e.target.closest("[data-r]");
+      if (b) fechar(b.dataset.r === "sim");
+      else if (e.target === ov) fechar(false);     // toque fora da caixa
+    };
+    const tecla = e => {
+      if (e.key === "Escape") { e.stopPropagation(); fechar(false); }
+    };
+    ov.addEventListener("click", clique);
+    document.addEventListener("keydown", tecla, true);
+    ov.classList.add("open");
+    ov.querySelector("[data-r='nao']").focus();
+  });
 }
 
 async function excluir(id) {
   if (!isAdmin()) { toast("Faça login para excluir.", true); return; }
-  if (!confirm("Excluir esta música?")) return;
+  const m = musicas.find(x => String(x.id) === String(id));
+  if (!(await confirmarExclusao(m && m.nome))) return;
+  //  Não apaga: marca a data e a música vai para a lixeira.
   try {
-    await req(`${TABLE}?id=eq.${id}`, { method: "DELETE" });
-    toast("Música removida.");
+    await req(`${TABLE}?id=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ excluida_em: new Date().toISOString() }),
+    });
+    toast("Música foi para a lixeira.");
     await carregar();
-  } catch {
-    toast("Erro ao excluir.", true);
+  } catch (e) {
+    console.error(e);
+    //  Sem a coluna no banco (SQL da lixeira não rodado): não exclui
+    //  de jeito nenhum, em vez de apagar sem volta como antes.
+    if (/excluida_em/.test(String(e && e.message)))
+      toast("Falta ativar a lixeira no Supabase (supabase/lixeira.sql).", true);
+    else
+      toast("Erro ao excluir.", true);
   }
 }
 
@@ -393,7 +528,7 @@ function renderTomList() {
 
     div.innerHTML = `
       <div class="tom-list-info" style="flex-wrap:wrap;gap:6px;align-items:center;">
-        <span class="tom-list-badge">${esc(p.tom)}</span>
+        <span class="tom-list-badge">${tomHTML(p.tom)}</span>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">${chipsHTML}</div>
       </div>`;
     container.appendChild(div);
@@ -619,7 +754,7 @@ function abrirView(m, expandirTom = true) {
   viewMusicaId = m.id;
   ajustarBotaoEdicaoView(!!m.id);
 
-  document.getElementById("viewTitulo").textContent = m.nome || "MÚSICA";
+  document.getElementById("viewTitulo").textContent = m.nome || "Música";
 
   // tons + ministrantes
   document.getElementById("viewTons").innerHTML = tonsParaHTML(m, expandirTom);
@@ -681,7 +816,7 @@ function abrirView(m, expandirTom = true) {
   const outrosBtns = links
     .filter(url => !ehYoutube(url) && !ehSpotify(url))
     .map(url =>
-      `<a class="view-yt-btn" style="background:rgba(96,165,250,0.08);border-color:rgba(96,165,250,0.3);color:#60A5FA" href="${esc(url)}" target="_blank" rel="noopener">🔗 Abrir link</a>`
+      `<a class="view-yt-btn" href="${esc(url)}" target="_blank" rel="noopener">🔗 Abrir link</a>`
     ).join("");
 
   linksWrap.innerHTML = cifraBtns + linhaMidia + outrosBtns;
@@ -717,7 +852,12 @@ function abrirViewCulto(chave, idx) {
   if (!l) return;
 
   // tenta achar a música original pra puxar observações completas
-  const original = l.musica_id ? musicas.find(m => m.id == l.musica_id) : null;
+  //  Pelo id e, se ele não existir mais (a música foi apagada e
+  //  cadastrada de novo, por exemplo), pelo nome. Sem isso o culto
+  //  abria uma cópia solta: sem lápis de editar e sem revisão.
+  const original =
+    (l.musica_id ? musicas.find(m => m.id == l.musica_id) : null) ||
+    musicas.find(m => normTexto(m.nome) === normTexto(l.nome)) || null;
 
   if (original) {
     // mostra a música, mas destaca o tom/ministrante específico deste culto no topo
@@ -747,7 +887,7 @@ function abrirModal(m = null) {
   editandoId  = m ? m.id : null;
   tomMinList  = m ? paresParaEdicao(m.tom) : [];
 
-  document.getElementById("modalTitulo").textContent = m ? "EDITAR MÚSICA" : "NOVA MÚSICA";
+  document.getElementById("modalTitulo").textContent = m ? "Editar música" : "Nova música";
   document.getElementById("fNome").value = m?.nome        || "";
 
   // separa os links da observação para os campos próprios
@@ -769,7 +909,7 @@ function abrirModal(m = null) {
   document.getElementById("fSpotify").value = spotifyUrl;
   document.getElementById("fTom").value  = "";
   document.getElementById("fMin").value  = "";
-  document.getElementById("btnSalvar").textContent = m ? "SALVAR ALTERAÇÕES" : "SALVAR";
+  document.getElementById("btnSalvar").textContent = m ? "Salvar alterações" : "Salvar";
 
   renderTomList();
   renderCifraList();
@@ -811,8 +951,36 @@ function toast(msg, err = false) {
   t._t = setTimeout(() => { t.className = "toast"; }, 3200);
 }
 
+// aviso com um botão (ex.: "Desfazer"), que fica um pouco mais na tela
+function toastAcao(msg, rotulo, acao, ms = 7000) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "toast-acao";
+  b.textContent = rotulo;
+  b.addEventListener("click", () => {
+    clearTimeout(t._t);
+    t.className = "toast";
+    acao();
+  }, { once: true });
+  t.appendChild(b);
+  t.className = "toast show com-acao";
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.className = "toast"; }, ms);
+}
+
+// as aspas também: o esc() vai parar dentro de href="" e title=""
 function esc(s = "") {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+          .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// Tom para mostrar na tela. O "m" do menor vai num <span> próprio:
+// nasceu quando a fonte dos tons (Bebas Neue) não tinha minúscula.
+// Com a Montserrat ele herda a fonte, mas o gancho fica para o CSS.
+function tomHTML(t = "") {
+  return esc(t).replace(/m$/, '<span class="tom-m">m</span>');
 }
 
 document.addEventListener("keydown", e => {
@@ -998,46 +1166,66 @@ async function copiarCulto(chave) {
 }
 
 
-async function carregarCultos() {
+function montarCultos(rows) {
   cultos = {};
+  rows.forEach(r => {
+    const raw = typeof r.louvores === "string"
+      ? (() => { try { return JSON.parse(r.louvores); } catch { return []; } })()
+      : (r.louvores || []);
+    // formato antigo: array de louvores. formato novo: { ministrante, ministrante_data, itens: [...] }
+    let lista = [], ministrante = "", ministranteData = null;
+    if (Array.isArray(raw)) {
+      lista = raw;
+    } else if (raw && typeof raw === "object") {
+      lista = Array.isArray(raw.itens) ? raw.itens : [];
+      ministrante = raw.ministrante || "";
+      ministranteData = raw.ministrante_data || null;
+    }
+    // linha sem data é de antes da migração: adota a data do
+    // último louvor que ela guarda
+    const data = r.data
+      || lista.map(l => l.data).filter(Boolean).sort().pop()
+      || isoDia(new Date());
+
+    cultos[`${r.tipo}@${data}`] = {
+      id: r.id,
+      tipo: r.tipo,
+      data,
+      nome: r.nome || null,
+      hora: r.hora || null,
+      cancelado: !!r.cancelado,
+      louvores: lista,
+      ministrante,
+      ministrante_data: ministranteData,
+      atualizado_em: r.atualizado_em || null,
+    };
+  });
+}
+
+async function carregarCultos() {
+  //  Abertura da página: desenha com a cópia enquanto o banco responde.
+  let copia = null;
+  if (!cultosDoBanco) {
+    const c = copiaLer(CULTOS_TABLE);
+    if (Array.isArray(c)) {
+      copia = JSON.stringify(c);
+      montarCultos(c);
+      renderCultos();
+    }
+  }
+
   try {
     const rows = await req(`${CULTOS_TABLE}`) || [];
-    rows.forEach(r => {
-      const raw = typeof r.louvores === "string"
-        ? (() => { try { return JSON.parse(r.louvores); } catch { return []; } })()
-        : (r.louvores || []);
-      // formato antigo: array de louvores. formato novo: { ministrante, ministrante_data, itens: [...] }
-      let lista = [], ministrante = "", ministranteData = null;
-      if (Array.isArray(raw)) {
-        lista = raw;
-      } else if (raw && typeof raw === "object") {
-        lista = Array.isArray(raw.itens) ? raw.itens : [];
-        ministrante = raw.ministrante || "";
-        ministranteData = raw.ministrante_data || null;
-      }
-      // linha sem data é de antes da migração: adota a data do
-      // último louvor que ela guarda
-      const data = r.data
-        || lista.map(l => l.data).filter(Boolean).sort().pop()
-        || isoDia(new Date());
-
-      cultos[`${r.tipo}@${data}`] = {
-        id: r.id,
-        tipo: r.tipo,
-        data,
-        nome: r.nome || null,
-        hora: r.hora || null,
-        cancelado: !!r.cancelado,
-        louvores: lista,
-        ministrante,
-        ministrante_data: ministranteData,
-        atualizado_em: r.atualizado_em || null,
-      };
-    });
+    cultosDoBanco = true;
+    copiaGuardar(CULTOS_TABLE, rows);
+    if (copia !== null && JSON.stringify(rows) === copia) return;
+    montarCultos(rows);
   } catch (e) {
     // tabela sem as colunas novas ou fora do ar: a tela abre vazia
-    // em vez de travar
+    // em vez de travar (ou fica a cópia, se havia uma)
     console.error("Cultos:", e);
+    if (copia !== null) return;
+    cultos = {};
   }
   renderCultos();
 }
@@ -1061,16 +1249,29 @@ function serializarLouvores(dados) {
 // markup de uma linha de louvor (reutilizado nas duas seções: principal e ofertório)
 // recebe o índice ORIGINAL dentro de cultos[chave].louvores para remover/abrir corretamente
 function louvorRowHTML(chave, l, i) {
+  // vizinhos da MESMA seção: as setas só trocam de lugar dentro dela
+  const lista = (cultos[chave] && cultos[chave].louvores) || [];
+  const mesma = lista.map((x, j) => j).filter(j => secaoDoLouvor(lista[j]) === secaoDoLouvor(l));
+  const pos = mesma.indexOf(i);
+  const ordem = mesma.length > 1 ? `
+      <div class="culto-louvor-ordem">
+        <button title="Subir" aria-label="Subir ${esc(l.nome)}" ${pos <= 0 ? "disabled" : ""}
+          onclick="event.stopPropagation();moverLouvorCulto('${chave}',${i},-1)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+        <button title="Descer" aria-label="Descer ${esc(l.nome)}" ${pos >= mesma.length - 1 ? "disabled" : ""}
+          onclick="event.stopPropagation();moverLouvorCulto('${chave}',${i},1)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>` : "";
   return `
     <div class="culto-louvor">
       <div class="culto-louvor-info culto-louvor-click"
            onclick="abrirViewCulto('${chave}',${i})" title="Ver detalhes">
-        <span class="culto-louvor-badge">${esc(l.tom || "—")}</span>
+        <span class="culto-louvor-badge">${tomHTML(l.tom || "—")}</span>
         <div class="culto-louvor-txt">
           <div class="culto-louvor-nome">${esc(l.nome)}</div>
         </div>
-      </div>
-      <button class="culto-louvor-rm" title="Remover"
+      </div>${ordem}
+      <button class="culto-louvor-rm" title="Remover" aria-label="Remover ${esc(l.nome)}"
         onclick="event.stopPropagation();removerLouvorCulto('${chave}',${i})">✕</button>
     </div>`;
 }
@@ -1253,9 +1454,36 @@ async function definirEscalado(chave, valor) {
 async function removerLouvorCulto(chave, idx) {
   if (!isAdmin()) { toast("Faça login para editar.", true); return; }
   if (!cultos[chave]) return;
-  cultos[chave].louvores.splice(idx, 1);
+  const [tirado] = cultos[chave].louvores.splice(idx, 1);
   renderCultos();
-  await salvarCulto(chave);
+  const ok = await salvarCulto(chave);
+  if (!ok || !tirado) return;
+
+  // um toque torto no ✕ não custa o louvor: dá para voltar atrás
+  toastAcao(`"${tirado.nome}" removido`, "Desfazer", async () => {
+    const lista = cultos[chave].louvores;
+    lista.splice(Math.min(idx, lista.length), 0, tirado);
+    renderCultos();
+    if (await salvarCulto(chave)) toast("Louvor de volta ✓");
+  });
+}
+
+// troca o louvor de lugar com o vizinho da mesma seção
+async function moverLouvorCulto(chave, idx, dir) {
+  if (!isAdmin()) { toast("Faça login para editar.", true); return; }
+  const lista = cultos[chave] && cultos[chave].louvores;
+  if (!lista || !lista[idx]) return;
+  const secao = secaoDoLouvor(lista[idx]);
+  let j = idx + dir;
+  while (j >= 0 && j < lista.length && secaoDoLouvor(lista[j]) !== secao) j += dir;
+  if (j < 0 || j >= lista.length) return;
+
+  [lista[idx], lista[j]] = [lista[j], lista[idx]];
+  renderCultos();
+  if (!(await salvarCulto(chave))) {
+    [lista[idx], lista[j]] = [lista[j], lista[idx]];   // volta se não gravou
+    renderCultos();
+  }
 }
 
 // ── modal de adicionar louvor ─────────────────────────────────
@@ -1266,9 +1494,9 @@ function abrirCultoModal(chave, secao = "principal") {
   cultoSecaoAtual = SECAO_LABEL[secao] ? secao : "principal";
 
   const oc = calOcorrenciaPorChave(chave);
-  const tituloSecao = cultoSecaoAtual === "principal" ? "ADICIONAR" : SECAO_LABEL[cultoSecaoAtual].toUpperCase();
+  const tituloSecao = cultoSecaoAtual === "principal" ? "Adicionar" : SECAO_LABEL[cultoSecaoAtual];
   document.getElementById("cultoModalTitulo").textContent =
-    `${tituloSecao} · ${(oc ? oc.titulo : "CULTO").toUpperCase()}`;
+    `${tituloSecao} · ${oc ? oc.titulo : "Culto"}`;
 
   // reset campos
   document.getElementById("cBuscaMusica").value = "";
@@ -1434,7 +1662,7 @@ async function confirmarLouvorCulto() {
     toast("Erro ao adicionar louvor.", true);
   } finally {
     btn.disabled = false;
-    btn.textContent = "ADICIONAR";
+    btn.textContent = "Adicionar";
   }
 }
 
@@ -1481,3 +1709,12 @@ if (document.readyState === "loading") {
 } else {
   iniciar();
 }
+// Sem zoom de pinça nem de toque duplo no iPhone (o Safari ignora o
+// user-scalable=no do viewport; estes dois eventos são o que resta).
+document.addEventListener("gesturestart", e => e.preventDefault(), { passive: false });
+let ultimoToque = 0;
+document.addEventListener("touchend", e => {
+  const agora = Date.now();
+  if (agora - ultimoToque < 300 && !e.target.closest("input, textarea, select, button, a")) e.preventDefault();
+  ultimoToque = agora;
+}, { passive: false });

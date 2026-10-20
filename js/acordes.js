@@ -421,7 +421,7 @@ let acAba  = localStorage.getItem("tl_aba_acorde") || "violao";
 
   .ac-abas{display:inline-flex;border:1px solid var(--gray3);border-radius:10px;overflow:hidden;margin-bottom:12px}
   .ac-abas button{
-    background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;
+    background:none;border:none;cursor:pointer;font-family:var(--font-ui);
     font-size:12px;font-weight:700;color:#c8c8c8;padding:7px 14px;
   }
   .ac-abas button.on{background:var(--cifra);color:#1a1a1a}
@@ -437,7 +437,7 @@ let acAba  = localStorage.getItem("tl_aba_acorde") || "violao";
   .ac-forma-de{opacity:.6;font-weight:600}
   .ac-capo select{
     background:var(--black5);border:1px solid var(--gray3);color:#f0f0f0;
-    border-radius:8px;padding:6px 10px;font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;
+    border-radius:8px;padding:6px 10px;font-family:var(--font-ui);font-size:12px;cursor:pointer;
   }
   .claro .ac-capo select{background:#E4DFD8;border-color:rgba(0,0,0,.16);color:#242424}
 
@@ -447,7 +447,7 @@ let acAba  = localStorage.getItem("tl_aba_acorde") || "violao";
   .ac-ouvir{
     display:inline-flex;align-items:center;justify-content:center;gap:7px;
     background:none;border:1px solid var(--gray3);border-radius:8px;
-    color:#d8d8d8;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;
+    color:#d8d8d8;font-family:var(--font-ui);font-size:12.5px;font-weight:700;
     padding:8px 16px;cursor:pointer;transition:all .15s;
   }
   .ac-ouvir:hover{border-color:var(--cifra);color:var(--cifra)}
@@ -474,8 +474,8 @@ let acAba  = localStorage.getItem("tl_aba_acorde") || "violao";
   .claro .ac-pestana{fill:var(--cifra-claro)}
   .ac-solta{fill:none;stroke:#d0d0d0;stroke-width:1.4}
   .claro .ac-solta{stroke:#555}
-  .ac-x{fill:#9a9a9a;font-size:9px;text-anchor:middle;font-family:'Inter',sans-serif}
-  .ac-casa{fill:#9a9a9a;font-size:8px;text-anchor:end;font-family:'Inter',sans-serif}
+  .ac-x{fill:#9a9a9a;font-size:9px;text-anchor:middle;font-family:var(--font-ui)}
+  .ac-casa{fill:#9a9a9a;font-size:8px;text-anchor:end;font-family:var(--font-ui)}
   .claro .ac-x,.claro .ac-casa{fill:#666}
 
   /* teclado no tom do leitor: teclas escuras, bolinha branca */
@@ -863,7 +863,7 @@ let acBalaoAc  = null;
   .ac-balao.on{display:block}
   .claro .ac-balao{background:#FBF8F3;border-color:rgba(0,0,0,.16);box-shadow:0 12px 30px rgba(0,0,0,.18)}
   .ac-balao-nome{
-    font-family:'Inter',sans-serif;font-size:14px;font-weight:800;
+    font-family:var(--font-ui);font-size:14px;font-weight:800;
     color:var(--cifra);margin-bottom:4px;letter-spacing:.02em;
   }
   .claro .ac-balao-nome{color:var(--cifra-claro)}
@@ -886,17 +886,17 @@ let acBalaoAc  = null;
   .ac-balao-pe{
     display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;
   }
-  .ac-balao-casa{font-family:'Inter',sans-serif;font-size:10px;color:var(--gray)}
+  .ac-balao-casa{font-family:var(--font-ui);font-size:10px;color:var(--gray)}
   .ac-variar{
     background:none;border:1px solid var(--gray3);border-radius:7px;
-    color:#c8c8c8;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:700;
+    color:#c8c8c8;font-family:var(--font-ui);font-size:10.5px;font-weight:700;
     padding:3px 9px;cursor:pointer;
   }
   .ac-variar:hover{border-color:var(--cifra);color:var(--cifra)}
   .ac-variar:disabled{opacity:.38;cursor:default}
   .ac-variar:disabled:hover{border-color:var(--gray3);color:#c8c8c8}
   .claro .ac-variar{color:#5f5f5f;border-color:rgba(0,0,0,.2)}
-  .ac-num{font-size:7.4px;text-anchor:middle;fill:#1a1a1a;font-family:'Inter',sans-serif;font-weight:800}`;
+  .ac-num{font-size:7.4px;text-anchor:middle;fill:#1a1a1a;font-family:var(--font-ui);font-weight:800}`;
   document.head.appendChild(st);
 })();
 

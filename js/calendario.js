@@ -36,7 +36,7 @@ const CAL_JANELA_H = 6;
 // até quando procurar o próximo culto
 const CAL_HORIZONTE_D = 120;
 
-const CAL_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+const CAL_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];   // semana de segunda a domingo
 
 const CAL_ICONE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
@@ -216,18 +216,18 @@ function calGarantirPadroes() {
   .cal-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
   .cal-btn{
     display:inline-flex;align-items:center;gap:9px;
-    background:transparent;border:1px solid var(--black5);
-    color:var(--gray);font-family:'Inter',sans-serif;
-    font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
-    padding:9px 15px;border-radius:var(--r);cursor:pointer;transition:all 0.15s;
+    background:rgba(0,0,0,0.5);border:1px solid var(--line);
+    color:var(--paper);font-family:var(--font-ui);
+    font-size:14px;font-weight:500;letter-spacing:0;
+    padding:10px 17px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
   }
   .cal-btn:hover{
-    border-color:var(--yellow);color:var(--yellow);
-    background:rgba(255,224,0,0.04);
+    border-color:var(--gold);color:var(--gold);
+    background:rgba(var(--gold-rgb),0.04);
   }
   .cal-btn svg{width:15px;height:15px;flex-shrink:0}
-  .cal-btn-data{color:var(--yellow);font-weight:800;letter-spacing:0.02em}
-  .cal-btn:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .cal-btn-data{color:var(--gold-hi);font-weight:600;letter-spacing:0}
+  .cal-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
   /* ---- modal ---- */
   #calModal{max-width:460px}
@@ -244,7 +244,7 @@ function calGarantirPadroes() {
   }
   .cal-nav:hover{background:var(--black4);color:var(--white)}
   .cal-nav:focus-visible,.cal-dia:focus-visible,
-  .cal-acao:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .cal-acao:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
   /* minmax(0,1fr), não 1fr: com 1fr (= minmax(auto,1fr)) qualquer
      min-width herdado por um dia estica a coluna toda. */
@@ -261,7 +261,7 @@ function calGarantirPadroes() {
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:4px;padding:0;
     background:transparent;border:1px solid transparent;border-radius:4px;
-    font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
+    font-family:var(--font-ui);font-size:14px;font-weight:600;
     color:#C4C4C4;cursor:pointer;transition:all 0.15s;
   }
   .cal-dia:hover{background:var(--black3);border-color:var(--black5)}
@@ -269,13 +269,13 @@ function calGarantirPadroes() {
   .cal-dia.fora:hover{background:transparent;border-color:transparent}
   .cal-dia.hoje{color:var(--white);font-weight:800;border-color:var(--black5)}
   .cal-dia.cal-sel{
-    background:rgba(255,224,0,0.08);
-    border-color:rgba(255,224,0,0.35);
-    color:var(--yellow);font-weight:800;
+    background:rgba(var(--gold-rgb),0.08);
+    border-color:rgba(var(--gold-rgb),0.35);
+    color:var(--gold);font-weight:800;
   }
   .cal-pontos{display:flex;gap:3px;height:4px;align-items:center}
   .cal-pt{width:4px;height:4px;border-radius:50%;background:var(--gray3)}
-  .cal-pt.tem{background:var(--yellow)}
+  .cal-pt.tem{background:var(--gold)}
   .cal-pt.ev{background:#F59E0B}
   .cal-pt.cancel{background:transparent;box-shadow:inset 0 0 0 1px var(--gray2)}
 
@@ -296,7 +296,7 @@ function calGarantirPadroes() {
   }
   .cal-oc-nome{
     flex:1;min-width:0;
-    font-size:12px;font-weight:700;color:var(--yellow);
+    font-size:12px;font-weight:700;color:var(--gold);
     letter-spacing:0.06em;text-transform:uppercase;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
@@ -311,11 +311,11 @@ function calGarantirPadroes() {
     font-size:9px;font-weight:800;letter-spacing:0.08em;
     text-transform:uppercase;padding:4px 8px;border-radius:4px;line-height:1;
   }
-  .cal-tag.agora{background:var(--yellow);color:var(--black)}
+  .cal-tag.agora{background:var(--gold);color:var(--black)}
   .cal-tag.prox{
-    background:rgba(255,224,0,0.08);
-    border:1px solid rgba(255,224,0,0.25);
-    color:var(--yellow);padding:3px 7px;
+    background:rgba(var(--gold-rgb),0.08);
+    border:1px solid rgba(var(--gold-rgb),0.25);
+    color:var(--gold);padding:3px 7px;
   }
   .cal-tag.ev{
     background:rgba(245,158,11,0.08);
@@ -325,7 +325,7 @@ function calGarantirPadroes() {
   .cal-acao{
     flex:none;
     background:transparent;border:1px solid var(--black5);
-    color:var(--gray2);font-family:'Inter',sans-serif;
+    color:var(--gray2);font-family:var(--font-ui);
     font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
     padding:5px 9px;border-radius:4px;cursor:pointer;
     white-space:nowrap;transition:all 0.15s;
@@ -339,12 +339,12 @@ function calGarantirPadroes() {
   .cal-form-row{display:grid;grid-template-columns:104px 1fr auto;gap:8px}
   .cal-form .finput{min-width:0}
   .cal-ok{
-    background:var(--yellow);border:none;
-    color:var(--black);font-family:'Inter',sans-serif;
+    background:var(--gold);border:none;
+    color:var(--black);font-family:var(--font-ui);
     font-size:11px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;
     border-radius:var(--r);cursor:pointer;padding:0 14px;transition:background 0.15s;
   }
-  .cal-ok:hover{background:var(--yellow2)}
+  .cal-ok:hover{background:var(--gold-hi)}
 
   /* as colunas preenchem a faixa: com um ou dois cultos no dia,
      repeat(3,1fr) deixava um buraco do lado */
@@ -489,8 +489,8 @@ function calRender() {
   document.getElementById("calMesLabel").textContent = calMaiuscula1(
     `${calMes.toLocaleDateString("pt-BR", { month: "long" })} ${calMes.getFullYear()}`);
 
-  // a grade começa no domingo da semana do dia 1
-  const inicio = calAddDias(calMes, -calMes.getDay());
+  // a grade começa na SEGUNDA da semana do dia 1 (getDay: dom=0)
+  const inicio = calAddDias(calMes, -((calMes.getDay() + 6) % 7));
   const fim    = calAddDias(inicio, 41);
 
   // um índice por dia, para não varrer as ocorrências 42 vezes

@@ -12,10 +12,14 @@
 //    · a biblioteca é carregada só quando alguém liga a função,
 //      para não pesar em quem abre o app offline
 //
-//  A posição vai como FRAÇÃO da cifra (0 a 1), nunca em pixels.
-//  Cada aparelho tem seu tamanho de letra, sua quebra de linha e
-//  sua tela: o mesmo scrollTop cai em versos diferentes. Fração
-//  de 0,5 é o meio da música em qualquer aparelho.
+//  A posição vai como LINHA DA CIFRA, nunca em pixels nem em
+//  fração da altura. Cada aparelho tem seu tamanho de letra, sua
+//  quebra de linha e sua tela. Pixel cai em verso diferente, e a
+//  fração também: no celular a quebra corta as linhas longas em
+//  duas ou três, no computador não, e a metade da altura deixa de
+//  ser o mesmo verso — era por isso que as telas não ficavam
+//  iguais. "Linha 23 e 40% dela" é o mesmo verso em qualquer tela,
+//  em uma coluna ou em páginas.
 //
 //  ── as três coisas que tiram o atraso ──
 //
@@ -47,12 +51,12 @@
 const SN_SALA   = "tom-louvores-leitor";
 const SN_ENVIOS = 100;      // no mínimo 100ms entre mensagens (~10/s)
 const SN_PULSO  = 3000;     // um retrato completo a cada 3s
-const SN_MINIMO = 0.0012;   // movimento pequeno demais não vira mensagem
+const SN_MINIMO = 0.02;     // menos que isso de linha não vira mensagem
 //  Estes quatro são ajustáveis em tempo real pelo console, com
 //  snAjuste() — ver o fim do arquivo. É o jeito de achar o ponto
 //  sem recarregar nada.
 let SN_COLA   = 0.28;     // quanto do erro é corrigido por quadro
-let SN_PULO   = 0.30;     // erro maior que isso: vai direto, sem deslizar
+let SN_PULO   = 12;       // erro maior que isso (linhas): vai direto, sem deslizar
 const SN_ECO  = 5000;     // mede a latência a cada 5s
 const SN_TETO = 400;      // latência acima disso não é compensada
 
@@ -99,13 +103,16 @@ let snRelogio = null;       // mede a latência de tempo em tempo
 let snUltEnvio = 0;
 let snUltPos   = null;
 let snUltT     = 0;
-let snVel      = 0;         // fração por milissegundo
+let snVel      = 0;         // linhas por milissegundo
 
 // seguidor: para onde ir, desde quando, e quanto a rede atrasa
 let snAlvo     = null;      // { pos, vel, em }
 let snQuadro   = null;      // requestAnimationFrame em curso
 let snUltFrame = 0;         // instante do quadro anterior
 let snMax      = 0;         // altura rolável, medida de vez em quando
+let snTopos    = null;      // topo (px) de cada linha da cifra original
+let snFundo    = 0;         // onde termina a última linha (px)
+let snPre      = null;      // o <pre> medido — se trocar, remede
 let snLatencia = 0;         // metade do ida-e-volta, em ms
 let snEcoEm    = 0;
 let snNav      = null;      // fila de louvores que o líder mandou
@@ -130,7 +137,7 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
     padding:6px 7px 6px 13px;
     box-shadow:0 8px 24px rgba(0,0,0,.45);
     backdrop-filter:blur(8px);
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
     font-size:10px;font-weight:800;
     letter-spacing:.12em;text-transform:uppercase;
     color:var(--gray);
@@ -150,7 +157,7 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
   .sn-selo button{
     background:var(--black5);border:1px solid var(--gray3);
     border-radius:999px;color:#e8e8e8;cursor:pointer;
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
     font-size:10px;font-weight:800;
     letter-spacing:.06em;text-transform:uppercase;
     padding:5px 11px;
@@ -196,6 +203,12 @@ async function snConectar() {
       snVisto = Date.now();
       if (!snEhLider() && snLigado) snReceber(payload);
       snPintarSelo();
+    });
+
+    //  O líder apertou um botão do mapa da música ("Refrão", "Riff 2"):
+    //  quem acompanha vê o mesmo botão e o mesmo título marcados.
+    snCanal.on("broadcast", { event: "marca" }, ({ payload }) => {
+      if (!snEhLider() && snLigado && typeof lpMarcarRemoto === "function") lpMarcarRemoto(payload);
     });
 
     //  Quem acabou de ligar não espera o próximo movimento: pede o
@@ -252,37 +265,174 @@ function snMedirLatencia() {
   });
 }
 
-// ── medir a altura rolável ──────────────────────────────────
-//  Ler scrollHeight obriga o navegador a recalcular a página. Num
+// ── medir as linhas ─────────────────────────────────────────
+//  Ler a geometria obriga o navegador a recalcular a página. Num
 //  laço de 60 quadros por segundo isso sozinho engasga a rolagem,
 //  então a medida é guardada e só refeita quando a cifra muda.
+//
+//  O que se guarda é o topo de cada linha da cifra ORIGINAL. Uma
+//  linha que a quebra cortou em três pedaços ocupa a altura dos
+//  três; uma que não foi cortada, a de uma. Com isso a conversão
+//  linha ↔ pixel é feita por partes, e cada aparelho acha o mesmo
+//  verso pela própria geometria.
+
+//  As linhas da tela, na ordem (soltas ou dentro dos blocos do
+//  leitor-palco.js).
+function snLinhasDaTela(pre) {
+  return pre ? [...pre.querySelectorAll(":scope > span:not(.lp-bloco), :scope > .lp-bloco > span")] : [];
+}
+
+//  De que linha original veio cada linha da tela. Sem quebra, é a
+//  mesma. Com quebra, o quebra.js anotou.
+function snOrigens(qtd, pre) {
+  const usaMapa = typeof qbMapa !== "undefined" && qbMapa &&
+    !pre.classList.contains("letra") && lyraAtual?.modo === "cifra" &&
+    qbMapa.length === qtd;
+  return usaMapa ? qbMapa : null;
+}
+
 function snMedir() {
   const c = document.getElementById("lyraCorpo");
   snMax = c ? Math.max(0, c.scrollHeight - c.clientHeight) : 0;
+  snTopos = null; snFundo = 0; snPre = null;
+  if (!c) return;
+
+  const pre = c.querySelector(".lyra-pre");
+  const linhas = snLinhasDaTela(pre);
+  if (!linhas.length) return;
+
+  const origens = snOrigens(linhas.length, pre);
+  const base = c.getBoundingClientRect().top - c.scrollTop;
+  const topos = [];
+  let fundo = 0;
+  linhas.forEach((el, i) => {
+    const r = el.getBoundingClientRect();
+    const o = origens ? origens[i] : i;
+    const t = r.top - base;
+    if (topos[o] === undefined || t < topos[o]) topos[o] = t;
+    fundo = Math.max(fundo, r.bottom - base);
+  });
+
+  //  Linha original que não virou nada na tela (raro): herda o topo
+  //  da seguinte, para a conversão nunca ter buraco.
+  for (let i = topos.length - 1; i >= 0; i--) {
+    if (topos[i] === undefined) topos[i] = i + 1 < topos.length ? topos[i + 1] : fundo;
+  }
+  snTopos = topos; snFundo = fundo; snPre = pre;
+}
+
+//  A medida envelheceu? A cifra foi redesenhada (troca de música,
+//  tom, quebra) e o <pre> medido saiu da tela.
+function snMedidaVelha() {
+  return !snTopos || !snPre || !snPre.isConnected;
+}
+
+//  linha (com fração) → pixel do topo dela no corpo
+function snLinhaParaPx(l) {
+  if (!snTopos || !snTopos.length) return 0;
+  const n = snTopos.length;
+  if (l <= 0) return snTopos[0];
+  if (l >= n) return snFundo;
+  const i = Math.floor(l);
+  const ini = snTopos[i];
+  const fim = i + 1 < n ? snTopos[i + 1] : snFundo;
+  return ini + (fim - ini) * (l - i);
+}
+
+//  pixel → linha (com fração). Busca binária: são centenas de linhas
+//  e isto roda a cada quadro.
+function snPxParaLinha(y) {
+  if (!snTopos || !snTopos.length) return 0;
+  const n = snTopos.length;
+  if (y <= snTopos[0]) return 0;
+  if (y >= snFundo) return n;
+  let lo = 0, hi = n - 1;
+  while (lo < hi) {
+    const m = (lo + hi + 1) >> 1;
+    if (snTopos[m] <= y) lo = m; else hi = m - 1;
+  }
+  const ini = snTopos[lo];
+  const fim = lo + 1 < n ? snTopos[lo + 1] : snFundo;
+  return lo + (fim > ini ? (y - ini) / (fim - ini) : 0);
+}
+
+//  Em páginas (2 colunas) nada rola na vertical: a posição é a
+//  primeira linha da página aberta, e quem segue vira para a página
+//  que contém aquela linha.
+function snEmPaginas() {
+  return typeof lpPag !== "undefined" && lpPag && lpPag.ligado;
+}
+
+function snPaginaDaLinha(l) {
+  const pre = document.querySelector("#lyraCorpo .lyra-pre");
+  const linhas = snLinhasDaTela(pre);
+  if (!linhas.length || typeof lpPaginaDe !== "function") return 0;
+  const origens = snOrigens(linhas.length, pre);
+  const alvo = Math.floor(l);
+  let el = linhas[linhas.length - 1];
+  for (let i = 0; i < linhas.length; i++) {
+    if ((origens ? origens[i] : i) >= alvo) { el = linhas[i]; break; }
+  }
+  return lpPaginaDe(el);
+}
+
+function snLinhaDaPagina() {
+  const pre = document.querySelector("#lyraCorpo .lyra-pre");
+  const linhas = snLinhasDaTela(pre);
+  if (!linhas.length || typeof lpPaginaDe !== "function") return 0;
+  const origens = snOrigens(linhas.length, pre);
+  for (let i = 0; i < linhas.length; i++) {
+    if (lpPaginaDe(linhas[i]) >= lpPag.atual) return origens ? origens[i] : i;
+  }
+  return 0;
 }
 
 window.addEventListener("resize", () => { snMedir(); });
 
-//  A altura também é remedida de vez em quando. Ela muda depois de
-//  a cifra aparecer — a fonte monoespaçada termina de carregar, a
-//  quebra de linha é ligada, o teclado do aparelho sobe e desce —
-//  e uma altura velha faz a mesma fração cair em outro verso. Era
-//  um dos suspeitos do pulo "em algumas partes da música": não
-//  eram partes, era a medida envelhecendo.
-//
-//  Duas vezes por segundo é barato. O que não pode é ler
-//  scrollHeight dentro do laço de 60 quadros.
+//  Mudou o tamanho do texto (zoom, fonte terminando de carregar,
+//  quebra ligada, colunas): remede na hora, sem esperar o relógio.
+let snObs = null;
+function snObservar() {
+  const c = document.getElementById("lyraCorpo");
+  if (!c || snObs || typeof ResizeObserver === "undefined") return;
+  let espera = null;
+  snObs = new ResizeObserver(() => {
+    clearTimeout(espera);
+    espera = setTimeout(snMedir, 60);
+  });
+  snObs.observe(c);
+  const vigiar = () => {
+    const pre = c.querySelector(".lyra-pre");
+    if (pre && !pre.dataset.snObs) { pre.dataset.snObs = "1"; snObs.observe(pre); }
+  };
+  vigiar();
+  //  o <pre> é trocado a cada música; observa o novo quando surgir
+  new MutationObserver(vigiar).observe(c, { childList: true });
+}
+
+//  E de vez em quando, por garantia. Duas vezes por segundo seria
+//  barato; o que não pode é medir dentro do laço de 60 quadros.
 setInterval(() => {
-  if (!snLigado || snEhLider() || snSolto) return;
+  if (!snLigado || (!snEhLider() && snSolto)) return;
   if (!document.getElementById("lyraOverlay")?.classList.contains("open")) return;
   snMedir();
 }, 2000);
 
 // ── o que é transmitido ─────────────────────────────────────
+//  A posição é a linha que está no topo da tela.
 function snPosAtual() {
   const c = document.getElementById("lyraCorpo");
-  if (!c || snMax <= 0) return 0;
-  return Math.min(1, Math.max(0, c.scrollTop / snMax));
+  if (!c) return 0;
+  if (snMedidaVelha()) snMedir();
+  if (snEmPaginas()) return snLinhaDaPagina();
+  return snPxParaLinha(c.scrollTop);
+}
+
+//  Fração da altura, só para aparelhos com a versão antiga do site
+//  que ainda estejam acompanhando.
+function snFracaoAtual() {
+  const c = document.getElementById("lyraCorpo");
+  return c && snMax > 0 ? Math.min(1, Math.max(0, c.scrollTop / snMax)) : 0;
 }
 
 function snEnviar(agora = false) {
@@ -302,7 +452,9 @@ function snEnviar(agora = false) {
   //  dedo começa a arrastar; o resto amacia o tranco. Pausa longa
   //  zera: é movimento novo.
   const dt = t - snUltT;
-  if (snUltPos !== null && dt > 0 && dt < 700) {
+  if (snEmPaginas()) {
+    snVel = 0;                 // página vira inteira: não há deslize
+  } else if (snUltPos !== null && dt > 0 && dt < 700) {
     const bruta = (pos - snUltPos) / dt;
     snVel = snVel * 0.35 + bruta * 0.65;
   } else {
@@ -315,8 +467,9 @@ function snEnviar(agora = false) {
     slug: lyraAtual.song.slug,
     tom:  lyraAtual.tom,
     modo: lyraAtual.modo,
-    pos:  +pos.toFixed(4),
-    vel:  +snVel.toFixed(7),
+    l:    +pos.toFixed(3),
+    vel:  +snVel.toFixed(6),
+    pos:  +snFracaoAtual().toFixed(4),   // versão antiga do site
   };
 
   //  A fila do culto vai só nos retratos completos, não nas
@@ -341,11 +494,21 @@ function snEnviar(agora = false) {
         type: "broadcast", event: "tela",
         payload: {
           slug: lyraAtual.song.slug, tom: lyraAtual.tom,
-          modo: lyraAtual.modo, pos: +snPosAtual().toFixed(4), vel: 0,
+          modo: lyraAtual.modo, l: +snPosAtual().toFixed(3),
+          pos: +snFracaoAtual().toFixed(4), vel: 0,
         },
       });
     }
   }, 200);
+}
+
+//  chamado pelo leitor-palco.js quando o líder aperta um botão do mapa
+function snEnviarMarca(rotulo) {
+  if (!snPronto || !snLigado || !snEhLider() || !lyraAtual?.song) return;
+  snCanal.send({
+    type: "broadcast", event: "marca",
+    payload: { slug: lyraAtual.song.slug, rotulo: rotulo || null },
+  });
 }
 
 // ── o que o seguidor faz com o que chega ────────────────────
@@ -406,7 +569,17 @@ async function snReceber(p) {
 //  aparelhos, que nunca batem. O caminho de ida entra pela
 //  latência medida, que é a mesma conta sem depender de relógio.
 function snMirar(p) {
-  snAlvo = { pos: p.pos || 0, vel: p.vel || 0, em: performance.now() };
+  if (snMedidaVelha()) snMedir();
+  let pos, vel = p.vel || 0;
+  if (typeof p.l === "number") {
+    pos = p.l;
+  } else {
+    //  Mensagem da versão antiga: fração da altura. Não é exata,
+    //  mas é melhor que nada até o líder atualizar a página.
+    pos = snPxParaLinha((p.pos || 0) * snMax);
+    vel = 0;
+  }
+  snAlvo = { pos, vel, em: performance.now() };
   snRodarQuadros();
 }
 
@@ -425,7 +598,10 @@ function snRodarQuadros() {
 
     const c = document.getElementById("lyraCorpo");
     const aberto = document.getElementById("lyraOverlay")?.classList.contains("open");
-    if (!c || !aberto || snMax <= 0) return;
+    if (!c || !aberto) return;
+    if (snMedidaVelha()) snMedir();
+    if (!snTopos) return;
+    const nLinhas = snTopos.length;
 
     const dtQuadro = Math.min(50, agora - snUltFrame);   // aba escondida volta
     snUltFrame = agora;                                  // com um salto enorme
@@ -437,28 +613,45 @@ function snRodarQuadros() {
     //  inventar é o que fazia a tela passar do ponto e voltar.
     const adiante = Math.min(SN_ADIANTE, Math.max(0,
       (agora - snAlvo.em) + snLatencia - SN_ATRASO));
-    const alvo = Math.min(1, Math.max(0, snAlvo.pos + snAlvo.vel * adiante));
+    const alvo = Math.min(nLinhas, Math.max(0, snAlvo.pos + snAlvo.vel * adiante));
 
-    const atual = c.scrollTop / snMax;
+    //  Em páginas: vira para a página que tem a linha, e pronto.
+    if (snEmPaginas()) {
+      const pag = snPaginaDaLinha(alvo);
+      if (pag !== lpPag.atual && typeof lpIrParaPagina === "function") {
+        snIgnorar = true;
+        lpIrParaPagina(pag, true);
+        if (typeof lpPintarPaginas === "function") lpPintarPaginas();
+        setTimeout(() => { snIgnorar = false; }, 600);
+      }
+      if (snAlvo.vel !== 0) snQuadro = requestAnimationFrame(passo);
+      return;
+    }
+
+    const atual = snPxParaLinha(c.scrollTop);
     const erro  = alvo - atual;
 
     snIgnorar = true;
     if (Math.abs(erro) > SN_PULO) {
-      c.scrollTop = alvo * snMax;            // longe demais: corta caminho
+      c.scrollTop = snLinhaParaPx(alvo);         // longe demais: corta caminho
     } else {
       //  Duas parcelas: a velocidade do líder (é ela que elimina o
       //  atraso em regime — sem esta linha a tela ficaria sempre
-      //  uns pixels atrás, porque puxar para um alvo em movimento
+      //  um tico atrás, porque puxar para um alvo em movimento
       //  nunca o alcança) e um pedaço do erro, que só conserta o
       //  desvio e é o que mantém o movimento macio.
       const avanco = snAlvo.vel * dtQuadro + erro * SN_COLA;
-      if (Math.abs(avanco) > 0.00003) c.scrollTop = (atual + avanco) * snMax;
+      if (Math.abs(avanco) > 0.001) c.scrollTop = snLinhaParaPx(atual + avanco);
     }
     snIgnorar = false;
 
     //  Parado e no lugar: encerra o laço. Sem isto ele ficaria
     //  gastando bateria a noite inteira brigando por meio pixel.
-    const quieto = snAlvo.vel === 0 && Math.abs(erro) < 0.0004;
+    //  Também encerra quando a tela daqui não tem mais para onde
+    //  ir (tela maior que a do líder, no fim da música).
+    const max = c.scrollHeight - c.clientHeight;
+    const travado = (erro > 0 && c.scrollTop >= max - 1) || (erro < 0 && c.scrollTop <= 0);
+    const quieto = snAlvo.vel === 0 && (Math.abs(erro) < 0.01 || travado);
     if (!quieto) snQuadro = requestAnimationFrame(passo);
   };
 
@@ -692,7 +885,7 @@ function snPintarLinha(txt) {
   if (txt) { sub.textContent = txt; return; }
   sub.textContent = snEhLider()
     ? (snLigado ? "Sua tela está sendo transmitida" : "Deixar outros acompanharem")
-    : (snLigado ? "Acompanhando quem ministra"      : "Andar junto com quem ministra");
+    : (snLigado ? "Acompanhando quem ministra"      : "Segue a tela de quem ministra");
 }
 
 //  Traço 1.7, como os outros ícones do menu do leitor.
@@ -736,6 +929,7 @@ lyraRenderConteudo = async function (...a) {
   snMontarLinha();
   snLigarSoltar();
   snPintarSelo();
+  snObservar();
   //  O texto entra no DOM aqui, mas a altura final só existe
   //  depois que o navegador desenha.
   requestAnimationFrame(() => {
@@ -743,6 +937,7 @@ lyraRenderConteudo = async function (...a) {
     if (snAlvo) snRodarQuadros();
   });
   snUltPos = null;             // música nova: velocidade recomeça
+  snMedir();
   snEnviar(true);
   return r;
 };

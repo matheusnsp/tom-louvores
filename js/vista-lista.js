@@ -34,7 +34,7 @@ let vistaLista   = [];
     display:flex;align-items:center;gap:14px;
     padding:10px 0 12px;
     border-bottom:1px solid var(--black4);
-    font-size:11px;font-weight:700;letter-spacing:0.1em;
+    font-size:12px;font-weight:700;letter-spacing:0.1em;
     text-transform:uppercase;color:var(--gray2);
   }
   .lst-count{color:var(--gray)}
@@ -47,17 +47,17 @@ let vistaLista   = [];
     .lst-bar{gap:8px}
     .lst-bar-lbl{display:none}
     .lst-count{font-size:10px}
-    .lst-seg button{padding:6px 8px;font-size:9px;letter-spacing:0.06em}
+    .lst-seg button{padding:6px 11px;font-size:12px;letter-spacing:0}
   }
-  .lst-seg{display:inline-flex;border:1px solid var(--black5);border-radius:var(--r);overflow:hidden}
+  .lst-seg{display:inline-flex;border:1px solid var(--fio);border-radius:var(--pill);overflow:hidden;padding:3px;gap:2px;background:rgba(255,255,255,0.02)}
   .lst-seg button{
     background:transparent;border:none;cursor:pointer;
-    font-family:'Inter',sans-serif;
-    font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-    color:var(--gray2);padding:7px 12px;transition:all 0.15s;
+    font-family:var(--font-ui);
+    font-size:13px;font-weight:600;letter-spacing:0;
+    color:var(--dim);padding:7px 15px;border-radius:var(--pill);transition:all 0.2s;
   }
   .lst-seg button:hover{color:var(--white);background:var(--black3)}
-  .lst-seg button.on{background:var(--yellow);color:var(--black)}
+  .lst-seg button.on{background:var(--gold);color:var(--on-gold)}
 
   /* âncora do pulo: um ponto de altura zero ANTES do cabeçalho.
      Ela nunca gruda, então medir a posição dela sempre dá certo. */
@@ -73,7 +73,7 @@ let vistaLista   = [];
        navegador (vistaAjustarTopo), porque a altura da barra muda
        com a largura da tela, com o notch e com o zoom da fonte. */
     top:var(--lst-topo, 118px);
-    background:var(--black);
+    background:transparent;
     display:flex;align-items:baseline;gap:14px;
     /* MARGEM, não padding: padding faz parte da caixa que gruda e
        viajava junto, virando um vão preto entre a busca e a letra */
@@ -97,9 +97,16 @@ let vistaLista   = [];
      o amarelo, que nesta tela pertence só ao tom. Antes as duas
      tinham o mesmo tamanho e a mesma cor, e a lista virava um
      bloco só. */
+  .lst-grupo::before{
+    content:"";position:absolute;z-index:-1;
+    left:calc(50% - 50vw);right:calc(50% - 50vw);top:-6px;bottom:0;
+    background:var(--veu);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    pointer-events:none;
+  }
   .lst-grupo b{
-    font-family:'Bebas Neue',sans-serif;
-    font-size:36px;line-height:0.8;letter-spacing:0.04em;
+    font-family:var(--font-display);font-weight:600;
+    font-size:30px;line-height:1;letter-spacing:-0.01em;font-weight:700;
     color:var(--white);
   }
   .lst-grupo span{
@@ -126,7 +133,7 @@ let vistaLista   = [];
   }
   .lst-row + .lst-row{box-shadow:inset 0 1px 0 var(--black4)}
   .lst-row:hover{background:var(--black2)}
-  .lst-row:focus-visible{border-color:var(--yellow);background:var(--black2)}
+  .lst-row:focus-visible{border-color:var(--gold);background:var(--black2)}
 
   /* dois tons por linha: com 3 ou 4 tons a coluna cresce para
      baixo em vez de empurrar o nome para a direita */
@@ -136,35 +143,35 @@ let vistaLista   = [];
     min-width:0;
   }
   .lst-tom{
-    font-family:'Bebas Neue',sans-serif;
-    font-size:16px;line-height:1;letter-spacing:0.04em;
-    color:var(--yellow);
-    background:rgba(255,224,0,0.08);
-    border:1px solid rgba(255,224,0,0.2);
+    font-family:var(--font-tom);font-weight:700;
+    font-size:14px;line-height:1;letter-spacing:0;
+    color:var(--gold-hi);
+    background:rgba(var(--gold-rgb),0.08);
+    border:1px solid rgba(var(--gold-rgb),0.2);
     padding:4px 7px;border-radius:4px;
     min-width:34px;text-align:center;
   }
   .lst-tom.mais{
     color:var(--gray2);background:transparent;
-    border-color:var(--black5);font-family:'Inter',sans-serif;
+    border-color:var(--black5);font-family:var(--font-ui);
     font-size:10px;font-weight:700;padding:5px 6px;
   }
   .lst-nome{
-    font-size:14px;font-weight:600;color:var(--white);
+    font-size:16px;font-weight:600;color:var(--white);
     letter-spacing:-0.01em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .lst-mins{display:flex;gap:5px;flex-shrink:0;min-width:150px;justify-content:flex-end;min-height:19px}
   .lst-min{
-    font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-    color:#B4B4B4;background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.08);
-    padding:3px 8px;border-radius:3px;white-space:nowrap;
+    font-size:12px;font-weight:500;letter-spacing:0;
+    color:var(--paper);background:rgba(255,255,255,0.04);
+    border:1px solid var(--fio);
+    padding:3px 10px;border-radius:var(--pill);white-space:nowrap;
   }
-  .lst-min.todos{color:#8A8A8A}
+  .lst-min.todos{color:var(--dim);background:transparent}
   .lst-data{
-    font-size:10px;color:var(--gray2);text-align:right;
-    letter-spacing:0.04em;white-space:nowrap;
+    font-size:13px;color:var(--gray2);text-align:right;
+    letter-spacing:0;white-space:nowrap;
   }
   .lst-del{
     width:22px;height:22px;
@@ -184,47 +191,49 @@ let vistaLista   = [];
   }
   .lst-az button{
     background:none;border:none;cursor:pointer;
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-ui);
     font-size:9px;font-weight:700;color:var(--gray2);
     width:18px;height:15px;border-radius:3px;
     transition:all 0.12s;
   }
-  .lst-az button:hover{color:var(--black);background:var(--yellow)}
+  .lst-az button:hover{color:var(--black);background:var(--gold)}
   .lst-az button:disabled{opacity:0.25;cursor:default}
   .lst-az button:disabled:hover{color:var(--gray2);background:none}
 
-  .lst-vazio{padding:70px 0;text-align:center;color:var(--gray2);font-size:13px}
+  .lst-vazio{padding:70px 0;text-align:center;color:var(--gray2);font-size:15px}
 
   /* botão de alternar vista, na barra de filtros */
   .btn-vista{
     display:inline-flex;align-items:center;gap:7px;flex-shrink:0;
-    background:var(--black2);border:1px solid var(--black5);
-    color:var(--gray);font-family:'Inter',sans-serif;
-    font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
-    padding:11px 14px;border-radius:var(--r);cursor:pointer;transition:all 0.15s;
+    background:rgba(0,0,0,0.5);border:1px solid var(--line);
+    color:var(--paper);font-family:var(--font-ui);
+    font-size:14px;font-weight:500;letter-spacing:0;
+    padding:12px 18px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
   }
-  .btn-vista:hover{border-color:var(--gray3);color:var(--white)}
+  .btn-vista:hover{border-color:var(--gold);color:var(--gold)}
 
   @media(max-width:820px){
     .lst-row{
       /* aqui também com largura fixa: com "auto" cada linha
          media a própria coluna e os nomes começavam em pontos
          diferentes, de 89px a 203px */
-      grid-template-columns:100px minmax(0,1fr) auto;
-      grid-template-areas:"tons nome del" "tons mins mins";
-      row-gap:6px;
+      grid-template-columns:92px minmax(0,1fr) auto;
+      grid-template-areas:"tons nome del" "tons mins del";
+      column-gap:10px;row-gap:4px;
+      padding:7px 10px;
     }
     .lst-tons{grid-area:tons;min-width:0}
-    .lst-mins{min-width:0;justify-content:flex-start}
-    /* o nome pode usar duas linhas, mas o espaço das duas é sempre
-       reservado: assim uma música de nome curto ocupa a mesma
-       altura de uma de nome longo, e a lista fica com um ritmo só */
-    .lst-nome{
-      grid-area:nome;white-space:normal;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-      overflow:hidden;line-height:1.3;min-height:calc(1.3em * 2);
-    }
+    .lst-tom{font-size:19px;padding:4px 6px;min-width:36px}
+    .lst-mins{min-width:0;justify-content:flex-start;min-height:0}
+    /* nome numa linha só, com reticências: a linha fica baixa e
+       todas têm a mesma altura */
+    .lst-nome{grid-area:nome;line-height:1.3;font-size:16px}
+    .lst-min{font-size:10px}
     .lst-mins{grid-area:mins}
+    /* "Todos" é o caso comum: no celular não ocupa uma linha
+       inteira só para dizer isso. Vale o que o filtro mostra. */
+    .lst-row.lst-todos{grid-template-areas:"tons nome del";row-gap:0}
+    .lst-row.lst-todos .lst-mins{display:none}
     .lst-del {grid-area:del;opacity:1}
     .lst-data{display:none}
     .lst-wrap{padding:0 20px}
@@ -232,7 +241,7 @@ let vistaLista   = [];
     .lst-grupo b{font-size:30px}
     .lst-az{right:2px}
     .btn-vista span{display:none}
-    .btn-vista{padding:11px 12px}
+    .btn-vista{padding:12px 14px}
   }`;
   document.head.appendChild(st);
 })();
@@ -316,7 +325,7 @@ function vistaLinhaHTML(m) {
   const mins = vistaMins(m);
 
   const tonsHTML = (tons.length ? tons.slice(0, 3) : ["—"])
-    .map(t => `<span class="lst-tom">${esc(t)}</span>`).join("")
+    .map(t => `<span class="lst-tom">${tomHTML(t)}</span>`).join("")
     + (tons.length > 3 ? `<span class="lst-tom mais">+${tons.length - 3}</span>` : "");
 
   const minsHTML = mins === null
@@ -328,7 +337,7 @@ function vistaLinhaHTML(m) {
     : "";
 
   return `
-    <div class="lst-row" data-id="${m.id}" tabindex="0" role="button">
+    <div class="lst-row${mins === null ? " lst-todos" : ""}" data-id="${m.id}" tabindex="0" role="button">
       <div class="lst-tons">${tonsHTML}</div>
       <div class="lst-nome">${esc(m.nome)}</div>
       <div class="lst-mins">${minsHTML}</div>
@@ -371,13 +380,14 @@ function vistaRenderLista(lista) {
         <button data-g="letra"${vistaAgrupar === "letra" ? ' class="on"' : ""}>A–Z</button>
         <button data-g="tom"${vistaAgrupar === "tom" ? ' class="on"' : ""}>Tom</button>
         <button data-g="recente"${vistaAgrupar === "recente" ? ' class="on"' : ""}>Recentes</button>
+        <button data-g="uso"${vistaAgrupar === "uso" ? ' class="on"' : ""}>Uso</button>
       </span>
     </div>`;
 
   const corpo = grupos.map(([nome, itens]) => `
     <span class="lst-ancora" id="lstG-${encodeURIComponent(nome)}" aria-hidden="true"></span>
     <div class="lst-grupo">
-      <b>${esc(nome)}</b>
+      <b>${vistaAgrupar === "tom" ? tomHTML(nome) : esc(nome)}</b>
       <span>${itens.length}</span>
       <i></i>
     </div>

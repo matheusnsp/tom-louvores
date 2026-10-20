@@ -51,14 +51,14 @@ const avVisivel = () => document.visibilityState === "visible";
       position:absolute;top:-7px;right:-7px;z-index:2;
       min-width:18px;height:18px;padding:0 5px;
       display:flex;align-items:center;justify-content:center;
-      background:var(--yellow);color:#0A0A0A;
+      background:var(--gold);color:#0A0A0A;
       border:2px solid var(--black);border-radius:9px;
-      font:800 10px/1 'Inter',sans-serif;font-variant-numeric:tabular-nums;
+      font:800 10px/1 var(--font-ui);font-variant-numeric:tabular-nums;
       pointer-events:none;
       animation:av-pula .35s cubic-bezier(.34,1.56,.64,1);
     }
     @keyframes av-pula{from{transform:scale(.3)}to{transform:none}}
-    #mnChat.av-tem .mn-sub{color:var(--yellow);font-weight:600}
+    #mnChat.av-tem .mn-sub{color:var(--gold);font-weight:600}
 
     /* balão: mesmo molde das linhas do MENU — ícone amarelo em
        quadrado, nome em maiúsculas, frase em cinza */
@@ -68,7 +68,7 @@ const avVisivel = () => document.visibilityState === "visible";
       width:min(calc(100vw - 24px), 400px);
       display:flex;align-items:stretch;
       background:var(--black2);
-      border:1px solid var(--black5);border-left:3px solid var(--yellow);
+      border:1px solid var(--black5);border-left:3px solid var(--gold);
       border-radius:var(--r);
       box-shadow:0 18px 40px rgba(0,0,0,.55);
       transform:translate(-50%, calc(-100% - 30px));opacity:0;visibility:hidden;
@@ -84,14 +84,14 @@ const avVisivel = () => document.visibilityState === "visible";
       column-gap:12px;row-gap:2px;
       padding:11px 6px 11px 12px;
       background:none;border:0;cursor:pointer;text-align:left;
-      font-family:'Inter',sans-serif;
+      font-family:var(--font-ui);
     }
     .av-ico{
       grid-column:1;grid-row:1 / span 2;
       width:38px;height:38px;
       display:flex;align-items:center;justify-content:center;
-      background:rgba(255,224,0,0.08);border:1px solid rgba(255,224,0,0.2);
-      border-radius:var(--r);color:var(--yellow);
+      background:rgba(var(--gold-rgb),0.08);border:1px solid rgba(var(--gold-rgb),0.2);
+      border-radius:var(--r);color:var(--gold);
     }
     .av-nome,.av-txt{
       grid-column:2;min-width:0;

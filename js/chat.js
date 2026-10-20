@@ -69,8 +69,8 @@ const PE_ICO_FORA = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
       border-bottom:1px solid var(--black4);
     }
     .pe-hd h2{
-      margin:0;font-family:'Bebas Neue',sans-serif;
-      font-size:24px;letter-spacing:.06em;color:var(--white);line-height:1;
+      margin:0;font-family:var(--font-display);font-weight:600;
+      font-size:24px;letter-spacing:-0.01em;color:var(--white);line-height:1;
     }
     .pe-acoes{display:flex;align-items:center;gap:8px}
     .pe-acoes a,.pe-acoes button{
@@ -119,7 +119,7 @@ function peMontar() {
   p.setAttribute("aria-label", "Chat da igreja");
   p.innerHTML = `
     <div class="pe-hd">
-      <h2>CHAT</h2>
+      <h2>Chat</h2>
       <div class="pe-acoes">
         <a href="${CHAT_URL}" target="_blank" rel="noopener"
            title="Abrir em outra aba" aria-label="Abrir em outra aba">${PE_ICO_FORA}</a>
