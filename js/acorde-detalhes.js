@@ -1,0 +1,635 @@
+// ============================================================
+//  TOM LOUVORES — detalhes do acorde (teoria no tom da música)
+//  Carregar DEPOIS de acordes.js e graus.js.
+//
+//  Ao tocar num acorde da cifra, o balão (celular e hover no
+//  computador) e o painel (computador) ganham um botão
+//  "Detalhes". Ele abre uma folha por cima com:
+//    1. contexto harmônico do acorde no tom
+//    2. como o acorde é formado
+//    3. função harmônica
+//    4. caráter sonoro
+//    5. substituições possíveis
+//    6. dica rápida
+//
+//  Tudo é calculado na hora a partir do nome do acorde e do tom
+//  do leitor: não há tabela por música. Em tom menor a referência
+//  é o relativo maior (Am → C = 1), a mesma do modo "Graus".
+//  Não altera os acordes da cifra nem o som/diagramas.
+// ============================================================
+(function () {
+  "use strict";
+
+  if (typeof acLer !== "function" ||
+      typeof acPintarBalao !== "function" ||
+      typeof acDesenhar !== "function" ||
+      typeof lyraPc !== "function" ||
+      !window.tomLouvoresGraus ||
+      typeof window.tomLouvoresGraus.tonicaDeReferencia !== "function") return;
+
+  const T = window.tomLouvoresGraus;
+  const LETRAS = "CDEFGAB";
+  const ESCALA = [0, 2, 4, 5, 7, 9, 11];
+  const PC_LETRA = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const ROMANOS = ["I", "II", "III", "IV", "V", "VI", "VII"];
+
+  // Qualidade natural de cada grau da escala maior.
+  const NATURAL = ["maior", "menor", "menor", "maior", "maior", "menor", "dim"];
+  const FUNCAO_GRAU = ["Tônica", "Subdominante", "Tônica", "Subdominante", "Dominante", "Tônica", "Dominante"];
+  const NOME_GRAU = ["tônica", "supertônica", "mediante", "subdominante", "dominante", "superdominante", "sensível"];
+
+  const esc = s => String(s).replace(/[&<>"]/g,
+    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------- Nomes de notas com a grafia certa ----------
+
+  function nomeNota(indiceLetra, pc) {
+    const base = PC_LETRA[LETRAS[indiceLetra % 7]];
+    const alt = ((pc - base + 18) % 12) - 6;
+    return LETRAS[indiceLetra % 7] + (alt < 0 ? "b".repeat(-alt) : "#".repeat(alt));
+  }
+
+  // Nota do grau `idx` (0 a 6) da escala maior de `ref`, com alteração opcional.
+  function notaDoGrau(ref, idx, alt = 0) {
+    const pc = (lyraPc(ref) + ESCALA[idx] + alt + 24) % 12;
+    return nomeNota(LETRAS.indexOf(ref[0]) + idx, pc);
+  }
+
+  function parseGrau(g) {
+    const m = String(g).match(/^([#b]*)([1-7])$/);
+    if (!m) return null;
+    return { alt: m[1].includes("#") ? m[1].length : -m[1].length, idx: Number(m[2]) - 1, texto: g };
+  }
+
+  // Nome de um grau em algarismos romanos: maior = maiúsculo, menor = minúsculo.
+  function romano(g, tipo) {
+    const base = ROMANOS[g.idx];
+    const pref = g.alt < 0 ? "b".repeat(-g.alt) : "#".repeat(g.alt);
+    if (tipo === "menor") return pref + base.toLowerCase();
+    if (tipo === "dim") return pref + base.toLowerCase() + "°";
+    if (tipo === "aum") return pref + base + "+";
+    return pref + base;
+  }
+
+  // ---------- Análise do acorde ----------
+
+  const SEMITOM_INTERVALO = (ctx, s) => {
+    switch (s) {
+      case 0:  return { rot: "T", off: 0, nome: "fundamental" };
+      case 1:  return { rot: "b9", off: 1, alta: true };
+      case 2:  return ctx.terca ? { rot: "9ª", off: 1, alta: true } : { rot: "2ª", off: 1 };
+      case 3:  return { rot: "3m", off: 2 };
+      case 4:  return { rot: "3M", off: 2 };
+      case 5:  return ctx.terca ? { rot: "11ª", off: 3, alta: true } : { rot: "4ª", off: 3 };
+      case 6:  return ctx.quinta ? { rot: "#11", off: 3, alta: true }
+                    : { rot: ctx.dim ? "5ª dim" : "b5", off: 4 };
+      case 7:  return { rot: "5J", off: 4 };
+      case 8:  return ctx.quinta ? { rot: "b13", off: 5, alta: true } : { rot: "5ª aum", off: 4 };
+      case 9:  return ctx.dim ? { rot: "7ª dim", off: 6 }
+                    : ctx.setima ? { rot: "13ª", off: 5, alta: true } : { rot: "6ª", off: 5 };
+      case 10: return { rot: "7m", off: 6 };
+      default: return { rot: "7M", off: 6 };
+    }
+  };
+
+  function analisar(nome, tom) {
+    const ac = acLer(nome);
+    const ref = T.tonicaDeReferencia(tom);
+    if (!ac || !ref) return null;
+
+    const raizM = String(nome).match(/^([A-G][#b]?)/);
+    if (!raizM) return null;
+    const raizNome = raizM[1];
+    let sufixo = String(nome).slice(raizNome.length);
+    let baixoNome = null;
+    const inv = sufixo.match(/\/([A-G][#b]?)$/);
+    if (inv) { baixoNome = inv[1]; sufixo = sufixo.slice(0, inv.index); }
+
+    const poder = /^5$/.test(sufixo);
+    const pcs = poder ? [0, 7] : ac.pcs.slice();
+    const tem = n => pcs.includes(n);
+
+    const ctx = {
+      dim: ac.dim,
+      terca: tem(3) || tem(4),
+      quinta: tem(7),
+      setima: tem(10) || tem(11),
+    };
+
+    const maj7 = tem(11);
+    const m7 = tem(10);
+    const meioDim = ac.menor && tem(6) && m7 && !ac.dim;
+    const dom = !ac.menor && !ac.dim && !ac.sus && tem(4) && m7;
+    const triade = ac.dim ? "dim" : ac.aum ? "aum" : ac.menor ? "menor" : "maior";
+
+    const grauTxt = T.grauDaNota(raizNome, tom);
+    const grau = parseGrau(grauTxt);
+    if (!grau) return null;
+
+    // Notas com a grafia correta: cada intervalo cai na letra certa.
+    const letraRaiz = LETRAS.indexOf(raizNome[0]);
+    const raizPc = lyraPc(raizNome);
+    //  Na ordem de empilhamento (1, 3, 5, 7, 9...), não na do semitom.
+    const notas = pcs.map(s => {
+      const i = SEMITOM_INTERVALO(ctx, s);
+      return { nota: nomeNota(letraRaiz + i.off, (raizPc + s) % 12), rot: i.rot,
+               semitons: s, ordem: i.off + (i.alta ? 7 : 0) };
+    }).sort((x, y) => x.ordem - y.ordem);
+
+    // Nome diatônico de um acorde do tom (grau, alteração, sufixo).
+    const nomeDoGrau = (idx, alt, suf = "") => notaDoGrau(ref, idx, alt) + suf;
+
+    // ----- classificação -----
+    const natural = grau.alt === 0;
+    let tipo = "cromatico";
+    let alvo = null;           // para secundário e passagem
+
+    const qualidadeBate = natural && (
+      NATURAL[grau.idx] === triade ||
+      (NATURAL[grau.idx] === "dim" && (ac.dim || meioDim)) ||
+      ((ac.sus || poder) && NATURAL[grau.idx] !== "dim")
+    );
+    // Num acorde natural maior, o 7m só é "da casa" no V (G7 em C).
+    const septimaFora = natural && dom && grau.idx !== 4 && NATURAL[grau.idx] === "maior";
+
+    if (qualidadeBate && !septimaFora) {
+      tipo = "diatonico";
+    } else {
+      // dominante secundário: acorde maior (ou dominante) que aponta uma quinta abaixo
+      const alvoIdx = ESCALA.indexOf((((raizPc + 5) % 12) - lyraPc(ref) + 12) % 12);
+      const emGrauMenor = natural && [1, 2, 5, 6].includes(grau.idx);     // II, III, VI, VII maiores
+      const tonicaComSetima = natural && grau.idx === 0 && dom;           // C7 em C aponta para o IV
+      if (triade === "maior" && !ac.sus && !poder && !maj7 && (emGrauMenor || tonicaComSetima) &&
+          alvoIdx >= 1 && alvoIdx <= 5) {
+        tipo = "secundario";
+        alvo = { idx: alvoIdx, nome: nomeDoGrau(alvoIdx, 0, NATURAL[alvoIdx] === "menor" ? "m" : "") };
+      } else if (ac.dim && grau.alt === 1 && [0, 1, 3, 4].includes(grau.idx)) {
+        // #1°, #2°, #4°, #5°: sobem meio tom até o acorde do grau seguinte
+        const subIdx = grau.idx + 1;
+        tipo = "passagem";
+        alvo = { idx: subIdx, nome: nomeDoGrau(subIdx, 0, NATURAL[subIdx] === "menor" ? "m" : "") };
+      } else if (
+        (triade === "maior" && [-1].includes(grau.alt) && [2, 5, 6].includes(grau.idx)) ||   // bIII, bVI, bVII
+        (triade === "maior" && grau.alt === -1 && grau.idx === 1) ||                           // bII (napolitana)
+        (triade === "menor" && natural && [0, 3, 4].includes(grau.idx)) ||                     // i, iv, v
+        ((ac.dim || meioDim) && natural && grau.idx === 1)                                     // ii°
+      ) {
+        tipo = "emprestimo";
+      }
+    }
+
+    return {
+      ac, ref, tom, nome, raizNome, baixoNome, sufixo, poder,
+      pcs, tem, ctx, maj7, m7, meioDim, dom, triade,
+      grau, grauTxt, notas, nomeDoGrau, tipo, alvo, natural, raizPc,
+      menorTom: /m$/.test(String(tom)) && !/^[A-G][#b]?$/.test(String(tom)),
+    };
+  }
+
+  // ---------- Textos ----------
+
+  function qualidadeFrase(a) {
+    const partes = [];
+    if (a.poder) return "Power chord: só a fundamental e a quinta (sem terça, não é maior nem menor)";
+    if (a.ac.sus) partes.push(a.tem(2) ? "Sus2 (a terça dá lugar à 2ª)" : "Sus4 (a terça dá lugar à 4ª)");
+    else if (a.meioDim) partes.push("Tríade menor com quinta diminuta (meio-diminuto)");
+    else partes.push({ maior: "Tríade maior", menor: "Tríade menor",
+                       dim: "Tríade diminuta", aum: "Tríade aumentada" }[a.triade]);
+    const extras = [];
+    if (a.maj7) extras.push("sétima maior");
+    else if (a.ac.dim && a.tem(9)) extras.push("sétima diminuta");
+    else if (a.m7) extras.push("sétima menor");
+    if (a.tem(9) && !a.ctx.setima && !a.ac.dim) extras.push("sexta");
+    if (a.tem(2) && a.ctx.terca) extras.push("nona");
+    if (a.tem(5) && a.ctx.terca) extras.push("décima primeira");
+    if (a.tem(9) && a.ctx.setima && !a.ac.dim) extras.push("décima terceira");
+    return partes[0] + (extras.length ? " + " + extras.join(" + ") : "");
+  }
+
+  function textoContexto(a) {
+    const tomTxt = a.menorTom
+      ? `${esc(a.tom)} (relativo de ${esc(a.ref)}, que vale como grau 1)`
+      : esc(a.tom);
+    const romanoTxt = romano(a.grau, a.ac.dim || a.meioDim ? "dim" : a.triade === "menor" ? "menor" : a.triade);
+    let linha1 = `<b>${esc(T.grauDoAcorde(a.nome, a.tom) || a.grauTxt)}</b> (${romanoTxt}) no tom de ${tomTxt}.`;
+
+    let linha2;
+    switch (a.tipo) {
+      case "diatonico":
+        linha2 = `Acorde <b>diatônico</b>: está dentro do campo harmônico de ${esc(a.ref)}. É o ${a.grau.idx + 1}º grau, a ${NOME_GRAU[a.grau.idx]}.`;
+        break;
+      case "secundario":
+        linha2 = `<b>Dominante secundário</b>: fica fora do campo, mas traz a tensão do V para apontar ao ${a.alvo.idx + 1}º grau (${esc(a.alvo.nome)}).`;
+        break;
+      case "passagem":
+        linha2 = `<b>Diminuto de passagem</b>: sobe meio tom até ${esc(a.alvo.nome)} (${a.alvo.idx + 1}º grau), ligando dois acordes do campo.`;
+        break;
+      case "emprestimo":
+        linha2 = `<b>Empréstimo modal</b>: não existe no campo de ${esc(a.ref)} maior, vem do ${a.grau.alt < 0 && a.grau.idx === 6
+          ? "modo mixolídio ou do tom menor paralelo" : "tom menor paralelo (" + esc(a.ref) + "m)"}.`;
+        break;
+      default:
+        linha2 = `<b>Fora do campo</b>: uma cor cromática. Vale ouvir para onde ele resolve.`;
+    }
+
+    // campo harmônico do tom de referência
+    const sufCampo = ["", "m", "m", "", "", "m", "°"];
+    const campo = sufCampo.map((s, i) => {
+      const n = esc(notaDoGrau(a.ref, i) + s);
+      return a.tipo === "diatonico" && i === a.grau.idx ? `<b class="acd-hl">${n}</b>` : n;
+    }).join(" · ");
+    const linha3 = `<span class="acd-mudo">Campo de ${esc(a.ref)}:</span> ${campo}`;
+
+    return `<p>${linha1}</p><p>${linha2}</p><p>${linha3}</p>`;
+  }
+
+  function textoFormacao(a) {
+    const notas = a.notas.map(n => esc(n.nota)).join(" – ");
+    const formula = a.notas.map(n => n.rot === "T" ? "1" : esc(n.rot)).join(" · ");
+    let baixo = "";
+    if (a.baixoNome) {
+      const s = (lyraPc(a.baixoNome) - a.raizPc + 12) % 12;
+      const nomeI = { 0: "fundamental", 3: "3ª menor", 4: "3ª maior", 7: "quinta", 10: "7ª menor", 11: "7ª maior", 2: "9ª" }[s];
+      const gb = T.grauDaNota(a.baixoNome, a.tom);
+      baixo = `<p><b>Baixo:</b> ${esc(a.baixoNome)}${nomeI ? ` (a ${nomeI} do acorde)` : ""}${gb ? `, grau ${esc(gb)} do tom` : ""}. É uma inversão: as notas são as mesmas, só muda quem toca por baixo.</p>`;
+    }
+    return `<p><b>${notas}</b></p><p>Fórmula: ${formula}</p><p>${esc(qualidadeFrase(a))}.</p>${baixo}`;
+  }
+
+  function textoFuncao(a) {
+    const g = a.grau.idx;
+    switch (a.tipo) {
+      case "diatonico": {
+        const f = FUNCAO_GRAU[g];
+        const desc = {
+          "Tônica": g === 0
+            ? "É a <b>casa</b> do tom: repouso, chegada. Aqui a música se sente em paz."
+            : "Faz papel de tônica (" + (g === 5 ? "a relativa menor" : "a mediante") + "): repousa, mas com menos firmeza que o grau 1. Dá para trocar pelo 1 sem perder o rumo.",
+          "Subdominante": g === 3
+            ? "Afasta da casa: dá movimento e abertura. Costuma ir para o 5 ou voltar ao 1 (cadência plagal, o “amém”)."
+            : "Prepara o caminho para o 5. É a subdominante em versão menor, comum no encadeamento 2m → 5 → 1.",
+          "Dominante": g === 4
+            ? "Cria tensão e pede resolução, normalmente no 1. É o acorde que “empurra” a música para a casa."
+            : "Sensível do tom: instável, funciona como um 5(7) sem a fundamental e resolve no 1.",
+        }[f];
+        return `<p><b>${f}.</b> ${desc}</p>`;
+      }
+      case "secundario":
+        return `<p><b>Dominante (secundário).</b> Cria uma tensão passageira que “puxa” para o ${a.alvo.idx + 1}º grau (${esc(a.alvo.nome)}), como se ele fosse a casa por um instante. Depois a música volta ao tom.</p>`;
+      case "passagem":
+        return `<p><b>Dominante (de passagem).</b> Instável de propósito: dura pouco e resolve meio tom acima, em ${esc(a.alvo.nome)}.</p>`;
+      case "emprestimo": {
+        const i = a.grau.idx, bemol = a.grau.alt < 0;
+        let titulo, desc;
+        if (i === 1 && bemol) { titulo = "Subdominante (napolitana)"; desc = "Substitui a subdominante com um tom de surpresa, bem dramático."; }
+        else if (i === 1) { titulo = "Subdominante (ii° emprestado)"; desc = "Prepara o 5 com um tom mais escuro, como no tom menor."; }
+        else if (i === 0) { titulo = "Tônica menor"; desc = "Troca o 1 maior pelo menor: a mesma casa, com outra cor."; }
+        else if (i === 2) { titulo = "Tônica relativa do modo menor"; desc = "Traz a cor do modo menor para dentro do tom, sem mudar a tônica."; }
+        else if (i === 3) { titulo = "Subdominante menor"; desc = "É o empréstimo mais clássico: um toque de emoção antes de voltar ao 1."; }
+        else if (i === 4) { titulo = "Dominante menor"; desc = "Tem a função do 5, mas sem a força da sensível. Resolve com suavidade."; }
+        else if (i === 5) { titulo = "Subdominante"; desc = "Soa grandioso e épico, comum antes do bVII e do 1."; }
+        else { titulo = "Subdominante/dominante suave"; desc = "Volta à tônica com suavidade, sem a tensão da sensível."; }
+        return `<p><b>${titulo}.</b> ${desc}</p>`;
+      }
+      default:
+        return `<p><b>Função aberta.</b> Não tem função clara no tom: é um acorde de cor. Para entender o papel dele, veja o acorde que vem logo depois.</p>`;
+    }
+  }
+
+  function textoCarater(a) {
+    let q;
+    if (a.poder) q = "Neutro e firme: sem terça, não soa nem alegre nem triste, só forte. Combina bem com guitarra distorcida e deixa o teclado definir a cor.";
+    else if (a.ac.dim) q = "Tenso e instável, soa como passagem. Pede para seguir adiante e nunca “senta”.";
+    else if (a.meioDim) q = "Sombrio e suspenso: menor com quinta diminuta, quase um dominante sem raiz.";
+    else if (a.ac.aum) q = "Misterioso e flutuante, a quinta aumentada empurra para frente.";
+    else if (a.ac.sus) q = a.tem(2)
+      ? "Aberto e arejado: sem terça, não é maior nem menor, e a 2ª dá um brilho de espera."
+      : "Suspenso, como uma pergunta no ar. A 4ª no lugar da terça pede para resolver.";
+    else if (a.maj7) q = a.triade === "menor"
+      ? "Cinematográfico e inquieto: menor com sétima maior, um clima de suspense."
+      : "Doce, luminoso e flutuante. A sétima maior dá brilho sonhador sem a tensão do dominante.";
+    else if (a.dom) q = "Tenso e com sabor de blues: a terça maior e a sétima menor formam um trítono, que quer resolver.";
+    else if (a.m7 && a.triade === "menor") q = "Suave e aveludado: o menor ganha uma sétima que arredonda a emoção.";
+    else if (a.tem(2) && a.ctx.terca) q = "Espaçoso e moderno: a 9ª abre o acorde sem a tensão da sétima. Muito usado em ambiente de oração.";
+    else if (a.tem(9) && !a.ctx.setima) q = "Calmo e um pouco antigo: a sexta dá um ar de repouso, de final de canção.";
+    else if (a.triade === "menor") q = "Introspectivo e emotivo: o acorde menor soa mais sério e interior.";
+    else q = "Aberto, estável e brilhante: o acorde maior soa afirmativo e cheio.";
+
+    const colorido = {
+      emprestimo: " Por ser emprestado do modo menor, traz um toque de emoção ou de grandeza.",
+      secundario: " Como puxa para outro acorde, a sensação é de expectativa.",
+      passagem: " Soa como um suspiro entre dois acordes.",
+      cromatico: " Como é cromático, chama atenção no meio da harmonia.",
+      diatonico: "",
+    }[a.tipo];
+    return `<p>${q}${colorido}</p>`;
+  }
+
+  // Sufixo "base" sem tensões, para a versão simples.
+  function versaoSimples(a) {
+    const sem = a.raizNome + (a.triade === "menor" ? "m" : a.triade === "dim" ? "dim" : a.triade === "aum" ? "aug" : "");
+    const novo = sem + (a.baixoNome ? "/" + a.baixoNome : "");
+    return novo !== a.nome ? novo : null;
+  }
+
+  function substituicoes(a) {
+    const itens = [];
+    const add = (nome, motivo) => {
+      if (!nome || nome === a.nome || itens.some(i => i.nome === nome)) return;
+      itens.push({ nome, motivo });
+    };
+    const g = a.grau.idx;
+    const N = (idx, alt, suf) => a.nomeDoGrau(idx, alt, suf);
+    const sufNat = idx => NATURAL[idx] === "menor" ? "m" : NATURAL[idx] === "dim" ? "dim" : "";
+
+    const simples = versaoSimples(a);
+    const temExtensao = a.sufixo && !/^(m|dim|°|º)$/.test(a.sufixo);
+    if (simples && temExtensao && !a.ac.dim && !a.meioDim) {
+      add(simples, "Versão simples, sem as tensões. Boa para ensaio ou para tocar mais leve.");
+    }
+
+    const grauApp = n => T.grauDoAcorde(n, a.tom);
+
+    if (a.tipo === "diatonico") {
+      switch (g) {
+        case 0:
+          add(N(5, 0, "m"), "Outra tônica: a relativa menor, mais melancólica.");
+          add(N(2, 0, "m"), "Outra tônica, mais suave e sem fundamental.");
+          add(N(0, 0) + "/" + N(2, 0), "Mesmo acorde com baixo na terça: o baixo caminha melhor para o 4.");
+          if (!a.maj7) add(N(0, 0, "7M"), "Mais aberto e flutuante, bom em finais.");
+          break;
+        case 1:
+          add(N(3, 0), "Mesma função de subdominante, mais clara e sem o menor.");
+          add(N(3, 0) + "/" + N(1, 0), "O 4 com baixo no 2: soa quase igual a " + N(1, 0, "m7") + ".");
+          if (!a.m7) add(N(1, 0, "m7"), "Mais suave que a tríade.");
+          break;
+        case 2:
+          add(N(0, 0, "7M"), "Contém as mesmas notas do " + N(2, 0, "m") + " e soa mais aberto.");
+          add(N(0, 0) + "/" + N(2, 0), "Tônica com baixo na terça, quase a mesma cor.");
+          add(N(5, 0, "m"), "Outra tônica, mais grave e escura.");
+          break;
+        case 3:
+          add(N(1, 0, "m"), "Mesma função de subdominante, em versão menor.");
+          if (!a.maj7) add(N(3, 0, "7M"), "Soa mais suave e aberto, comum em louvor.");
+          add(N(3, 0) + "/" + N(0, 0), "Baixo na tônica (nota pedal): mantém o chão firme enquanto o acorde muda.");
+          if (!a.tem(2)) add(N(3, 0, "add9"), "Deixa o acorde arejado, bom em ambiente.");
+          break;
+        case 4:
+          if (!a.ac.sus) add(N(4, 0, "sus4"), "Prepara a resolução: toque o sus4 e depois o acorde normal.");
+          if (!a.dom) add(N(4, 0, "7"), "Mais tensão, pede o 1 com mais força.");
+          add(N(6, 0, "dim"), "Sem a fundamental, soa como " + N(4, 0, "7") + " e resolve no 1.");
+          add(N(4, 0) + "/" + N(6, 0), "Baixo na sensível: sobe para a tônica com fluidez.");
+          break;
+        case 5:
+          add(N(3, 0, "7M"), "Contém as notas do " + N(5, 0, "m") + " e soa mais luminoso.");
+          add(N(0, 0), "A relativa maior, mais clara e brilhante.");
+          add(N(0, 0) + "/" + N(5, 0), "Soa como " + N(5, 0, "m7") + ": menor com sétima, mais suave.");
+          break;
+        default:
+          add(N(4, 0, "7"), "O dominante completo, com a fundamental.");
+          add(N(4, 0) + "/" + N(6, 0), "O 5 com baixo na sensível.");
+          add(N(4, 0), "O dominante simples.");
+      }
+    } else if (a.tipo === "secundario") {
+      add(a.raizNome + "sus4", "Retarda a resolução: toque o sus4 e depois o acorde.");
+      const iiNome = nomeNota(LETRAS.indexOf(a.raizNome[0]) + 4, (a.raizPc + 7) % 12) + "m7";
+      add(iiNome, "Antecipa com um ii–V: toque " + iiNome + " antes de " + a.raizNome + "7.");
+      const tri = nomeNota(LETRAS.indexOf(a.raizNome[0]) + 4, (a.raizPc + 6) % 12) + "7";
+      add(tri, "Troca de trítono, cor de jazz (avançado).");
+      add(a.alvo.nome, "Simplifique: vá direto ao acorde de destino, sem a tensão.");
+    } else if (a.tipo === "passagem") {
+      const alvoNome = a.alvo.nome;
+      const dom7 = nomeNota(LETRAS.indexOf(a.raizNome[0]) + 5, (a.raizPc + 8) % 12) + "7/" + a.raizNome;
+      add(dom7, "Mesmas notas, com o dominante por inteiro: também resolve em " + alvoNome + ".");
+      add(alvoNome, "Simplifique: pule o diminuto e vá direto a " + alvoNome + ".");
+    } else if (a.tipo === "emprestimo") {
+      const natIdx = a.grau.idx;
+      const bemol = a.grau.alt < 0;
+      if (bemol && natIdx === 1) add(N(3, 0), "Mesma função de subdominante, dentro do campo.");
+      if (bemol && natIdx === 2) add(N(0, 0), "A tônica do campo, mais estável.");
+      if (bemol && natIdx === 5) add(N(3, 0), "O 4 do campo: mesma função de subdominante.");
+      if (bemol && natIdx === 6) add(N(3, 0), "Mesma função de subdominante, dentro do campo.");
+      if (a.triade === "menor" && natIdx === 3) add(N(3, 0), "O 4 maior, mais claro. Mesma função de subdominante.");
+      if (a.triade === "menor" && natIdx === 0) add(N(0, 0), "A tônica maior do tom.");
+      if (a.triade === "menor" && natIdx === 4) add(N(4, 0), "O 5 maior, dominante de verdade.");
+      if (!bemol && natIdx === 1) add(N(1, 0, "m"), "A versão diatônica: ii menor, sem o empréstimo.");
+    } else {
+      // fora do campo: só sugere o grau natural se o acorde estiver sobre ele
+      if (a.natural) add(N(g, 0, sufNat(g)), "O acorde natural do mesmo grau, dentro do campo.");
+      if (a.meioDim) {
+        const dom7 = nomeNota(LETRAS.indexOf(a.raizNome[0]) + 3, (a.raizPc + 5) % 12) + "7";
+        add(dom7, "Costuma vir antes dele: " + a.nome + " → " + dom7 + " forma um ii–V.");
+      }
+    }
+
+    return itens.slice(0, 5).map(i => ({ ...i, grau: grauApp(i.nome) }));
+  }
+
+  function textoSubstituicoes(a) {
+    const lista = substituicoes(a);
+    if (!lista.length) return `<p class="acd-mudo">Sem substituição direta que valha a pena sugerir.</p>`;
+    return `<ul class="acd-lista">${lista.map(i =>
+      `<li><span class="acd-chip">${esc(i.nome)}${i.grau ? `<i>${esc(i.grau)}</i>` : ""}</span>${esc(i.motivo)}</li>`
+    ).join("")}</ul>`;
+  }
+
+  function textoDica(a) {
+    if (a.baixoNome) return `<p>Com baixista, deixe o baixo na nota ${esc(a.baixoNome)}. Sozinho no violão, comece a corda mais grave por ela e o resto do acorde já soa certo.</p>`;
+    if (a.poder) return `<p>Evite carregar demais na distorção: sem terça o acorde fica vazio. Deixe o teclado ou a segunda guitarra definirem se é maior ou menor.</p>`;
+    if (a.ac.dim) return `<p>Passe rápido: dura um ou dois tempos. Se segurar, a tensão cansa; a graça é chegar logo ao acorde seguinte.</p>`;
+    if (a.ac.sus) return `<p>Resolva sempre: segure o sus por um ou dois tempos e depois toque o acorde com a terça. Se ficar no sus para sempre, o ouvido fica esperando.</p>`;
+    if (a.maj7) return `<p>No violão, não aperte demais as cordas de cima e deixe a sétima soar leve. No teclado, a sétima fica acima da fundamental. Combina com músicas em ambiente de oração.</p>`;
+    if (a.dom) return `<p>Se estiver apertado, toque só a tríade e deixe a sétima para o teclado ou o baixo. Cresça a dinâmica nele e solte na resolução.</p>`;
+    if (a.tem(2) && a.ctx.terca) return `<p>Toque mais leve que na tríade: a 9ª é para dar espaço, não para ser destacada. No violão, soltar uma corda aberta ajuda.</p>`;
+    if (a.tipo === "emprestimo") return `<p>Capriche na dinâmica: esse acorde é o momento “diferente” da harmonia. Vale uma respirada antes e voltar ao tom com calma.</p>`;
+    if (a.tipo === "secundario") return `<p>Veja para onde ele vai: o acorde seguinte é o ${esc(a.alvo.nome)}. Se ele não vier, o dominante fica solto e soa estranho.</p>`;
+    if (a.tipo === "diatonico" && a.grau.idx === 4) return `<p>Faça um pequeno crescendo e solte na resolução. É nele que a música pede o final da frase.</p>`;
+    if (a.tipo === "diatonico" && a.grau.idx === 0) return `<p>É o lugar de respirar. Se a banda estiver ensaiando um final ou uma pausa, é aqui que ela cai.</p>`;
+    return `<p>Escute o acorde antes de tocar: ouvir como ele soa no tom ajuda a decorar a música sem depender da cifra.</p>`;
+  }
+
+  // ---------- Folha de detalhes ----------
+
+  let nomeAberto = null;
+
+  (function estilo() {
+    const st = document.createElement("style");
+    st.textContent = `
+    .acd-abrir{
+      display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
+      margin-top:8px;padding:7px 10px;background:none;border:1px solid var(--gray3);
+      border-radius:8px;color:#d8d8d8;font-family:var(--font-ui);font-size:11.5px;
+      font-weight:700;cursor:pointer;transition:all .15s;
+    }
+    .acd-abrir:hover{border-color:var(--cifra);color:var(--cifra)}
+    .claro .acd-abrir{color:#3a3a3a;border-color:rgba(0,0,0,.2)}
+    .claro .acd-abrir:hover{border-color:var(--cifra-claro);color:var(--cifra-claro)}
+    .ac-painel .acd-abrir{width:auto;margin-top:0;padding:8px 16px;font-size:12.5px}
+    @media (max-width:820px),(pointer:coarse){.ac-balao .acd-abrir{padding:9px 10px;font-size:12.5px}}
+
+    .acd-folha{
+      position:absolute;left:0;right:0;bottom:0;z-index:45;
+      background:#161616;border-top:1px solid var(--gray3);
+      box-shadow:0 -12px 30px rgba(0,0,0,.45);
+      padding:14px 16px calc(18px + env(safe-area-inset-bottom));
+      max-height:78%;overflow:auto;
+      transform:translateY(101%);transition:transform .22s ease;
+      visibility:hidden;
+    }
+    .acd-folha.on{transform:none;visibility:visible}
+    .claro .acd-folha{background:#F1EDE6;border-top-color:rgba(0,0,0,.14);box-shadow:0 -12px 30px rgba(0,0,0,.14)}
+    @media (min-width:1100px){.lyra-box.op-fixo .acd-folha{left:var(--op-menu)}}
+    .acd-folha > *{max-width:560px;margin-left:auto;margin-right:auto}
+
+    .acd-hd{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .acd-nome{font-size:22px;font-weight:800;color:var(--cifra);letter-spacing:.02em}
+    .claro .acd-nome{color:var(--cifra-claro)}
+    .acd-grau{font-size:12px;color:var(--gray);flex:1;min-width:0}
+    .acd-x{background:none;border:none;color:var(--gray);font-size:18px;cursor:pointer;padding:2px 6px}
+
+    .acd-sec{border-top:1px solid var(--gray3);padding:10px 0 2px}
+    .claro .acd-sec{border-top-color:rgba(0,0,0,.12)}
+    .acd-sec h4{
+      margin:0 0 6px;font-family:var(--font-ui);font-size:11px;font-weight:800;
+      letter-spacing:.08em;text-transform:uppercase;color:var(--cifra);
+    }
+    .claro .acd-sec h4{color:var(--cifra-claro)}
+    .acd-sec p{margin:0 0 7px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5;color:#e4e4e4}
+    .claro .acd-sec p{color:#2c2c2c}
+    .acd-mudo{color:var(--gray)}
+    .acd-hl{color:var(--cifra)}
+    .claro .acd-hl{color:var(--cifra-claro)}
+    .acd-lista{list-style:none;margin:0 0 6px;padding:0}
+    .acd-lista li{
+      display:flex;gap:10px;align-items:baseline;margin-bottom:8px;
+      font-family:var(--font-ui);font-size:13px;line-height:1.45;color:#e4e4e4;
+    }
+    .claro .acd-lista li{color:#2c2c2c}
+    .acd-chip{
+      flex:none;min-width:64px;text-align:center;padding:3px 8px;border-radius:7px;
+      border:1px solid var(--gray3);font-weight:800;color:var(--cifra);
+    }
+    .acd-chip i{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--gray)}
+    .claro .acd-chip{color:var(--cifra-claro);border-color:rgba(0,0,0,.18)}`;
+    document.head.appendChild(st);
+  })();
+
+  function folha() {
+    let f = document.getElementById("acdFolha");
+    if (f) return f;
+    const box = document.getElementById("lyraBox");
+    if (!box) return null;
+    f = document.createElement("div");
+    f.id = "acdFolha";
+    f.className = "acd-folha";
+    f.setAttribute("role", "dialog");
+    f.setAttribute("aria-label", "Detalhes do acorde");
+    box.appendChild(f);
+    f.addEventListener("click", e => {
+      if (e.target.closest(".acd-x")) fechar();
+    });
+    return f;
+  }
+
+  function abrir(nome) {
+    const f = folha();
+    if (!f || !nome) return;
+    const tom = typeof lyraAtual !== "undefined" && lyraAtual && lyraAtual.tom;
+    const a = tom ? analisar(nome, tom) : null;
+    nomeAberto = nome;
+
+    if (!a) {
+      f.innerHTML = `
+        <div class="acd-hd"><span class="acd-nome">${esc(nome)}</span><span class="acd-grau"></span>
+          <button type="button" class="acd-x" aria-label="Fechar">&#10005;</button></div>
+        <div class="acd-sec"><p class="acd-mudo">Não consegui analisar este acorde no tom atual.</p></div>`;
+    } else {
+      const grauApp = T.grauDoAcorde(nome, tom) || a.grauTxt;
+      f.innerHTML = `
+        <div class="acd-hd">
+          <span class="acd-nome">${esc(nome)}</span>
+          <span class="acd-grau">grau ${esc(grauApp)} em ${esc(a.menorTom ? tom + " (ref. " + a.ref + ")" : tom)}</span>
+          <button type="button" class="acd-x" aria-label="Fechar">&#10005;</button>
+        </div>
+        <section class="acd-sec"><h4>Contexto no tom</h4>${textoContexto(a)}</section>
+        <section class="acd-sec"><h4>Como é formado</h4>${textoFormacao(a)}</section>
+        <section class="acd-sec"><h4>Função harmônica</h4>${textoFuncao(a)}</section>
+        <section class="acd-sec"><h4>Caráter sonoro</h4>${textoCarater(a)}</section>
+        <section class="acd-sec"><h4>Substituições possíveis</h4>${textoSubstituicoes(a)}</section>
+        <section class="acd-sec"><h4>Dica rápida</h4>${textoDica(a)}</section>`;
+    }
+
+    f.scrollTop = 0;
+    //  um painel por vez: o balão recolhe e o painel de diagrama fica por baixo
+    if (typeof acEsconderBalao === "function") acEsconderBalao();
+    f.classList.add("on");
+  }
+
+  function fechar() {
+    const f = document.getElementById("acdFolha");
+    if (f) f.classList.remove("on");
+    nomeAberto = null;
+  }
+
+  // ---------- Botões no balão e no painel ----------
+
+  function botao(nome) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "acd-abrir";
+    b.textContent = "Detalhes do acorde";
+    b.setAttribute("aria-label", "Ver detalhes de teoria do acorde " + nome);
+    b.addEventListener("click", e => { e.stopPropagation(); abrir(nome); });
+    return b;
+  }
+
+  const pintarBalaoOriginal = acPintarBalao;
+  acPintarBalao = function (...args) {
+    const r = pintarBalaoOriginal.apply(this, args);
+    const b = document.getElementById("acBalao");
+    if (b && typeof acBalaoAc !== "undefined" && acBalaoAc && !b.querySelector(".acd-abrir")) {
+      b.appendChild(botao(acBalaoAc));
+    }
+    return r;
+  };
+
+  const desenharOriginal = acDesenhar;
+  acDesenhar = function (...args) {
+    const r = desenharOriginal.apply(this, args);
+    const alvo = document.getElementById("acConteudo");
+    if (alvo && typeof acAtual !== "undefined" && acAtual && !alvo.querySelector(".acd-abrir")) {
+      (alvo.querySelector(".ac-acoes") || alvo).appendChild(botao(acAtual));
+    }
+    return r;
+  };
+
+  // Tocar fora da folha (ou em outro acorde) fecha a folha.
+  document.addEventListener("click", e => {
+    if (!nomeAberto) return;
+    if (e.target.closest(".acd-folha, .acd-abrir")) return;
+    fechar();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && nomeAberto) fechar();
+  });
+
+  // Troca de música, de tom ou saída do leitor: a folha fecha junto.
+  if (typeof lyraRenderConteudo === "function") {
+    const renderOriginal = lyraRenderConteudo;
+    lyraRenderConteudo = async function (...a) {
+      const r = await renderOriginal.apply(this, a);
+      fechar();
+      return r;
+    };
+  }
+  if (typeof lyraFecharLeitor === "function") {
+    const fecharLeitorOriginal = lyraFecharLeitor;
+    lyraFecharLeitor = function (...a) {
+      fechar();
+      return fecharLeitorOriginal.apply(this, a);
+    };
+  }
+
+  // Útil para testes; não dá acesso a nenhum dado do banco ou do usuário.
+  window.tomLouvoresDetalhes = Object.freeze({ analisar, substituicoes, abrir, fechar });
+})();
