@@ -467,77 +467,136 @@
     .ac-painel .acd-abrir{width:auto;margin-top:0;padding:8px 16px;font-size:12.5px}
     @media (max-width:820px),(pointer:coarse){.ac-balao .acd-abrir{padding:9px 10px;font-size:12.5px}}
 
+    /* Design nativo do Tom Louvores: carvão, dourado e linhas discretas. */
     .acd-folha{
-      position:absolute;inset:0;z-index:120;
-      display:flex;flex-direction:column;
-      background:#111214;color:#ebebed;
-      border:0;box-shadow:0 -12px 35px rgba(0,0,0,.5);
-      max-height:none;padding:0;
-      overflow:hidden;overscroll-behavior:contain;
-      transform:translateY(103%);transition:transform .22s ease,visibility .22s;
-      visibility:hidden;font-family:var(--font-ui);
+      position:absolute;inset:0;z-index:120;display:flex;flex-direction:column;
+      max-height:none;padding:0;overflow:hidden;overscroll-behavior:contain;
+      background:#0d0d0e;color:#f4f2ed;font-family:var(--font-ui);
+      transform:translateY(103%);transition:transform .24s ease,visibility .24s;
+      visibility:hidden;
     }
     .acd-folha.on{transform:none;visibility:visible}
-    .lyra-box.claro .acd-folha{background:#f5f6fa;color:#202632}
     .acd-hd{
-      position:relative;display:flex;align-items:center;gap:12px;flex:none;
-      padding:18px 20px 15px;max-width:none!important;width:100%;
-      border-bottom:1px solid rgba(125,125,125,.22);
-      background:inherit;
+      width:100%;max-width:none!important;flex:none;display:flex;align-items:center;
+      gap:13px;padding:18px 20px 14px;border-bottom:1px solid var(--fio);
+      background:#0d0d0e;
     }
-    .acd-nome{font-size:27px;font-weight:850;color:var(--cifra);letter-spacing:.01em}
-    .claro .acd-nome{color:var(--cifra-claro)}
-    .acd-grau{font-size:12px;color:#a2a4ab;flex:1;min-width:0}
-    .acd-x{width:40px;height:40px;flex:none;border:0;background:rgba(128,128,128,.12);border-radius:50%;color:inherit;font-size:19px;cursor:pointer}
+    .acd-hd-main{flex:1;min-width:0}
+    .acd-voltar{display:flex;align-items:center;width:max-content;gap:5px;padding:0;
+      margin-bottom:8px;border:0;background:none;color:var(--gold);
+      font:600 12px var(--font-ui);cursor:pointer}
+    .acd-nome{display:block;color:var(--paper);font-size:clamp(24px,4.5vw,31px);font-weight:800;line-height:1.15}
+    .acd-grau{display:block;color:#9e9b95;font-size:12px;line-height:1.5;margin-top:4px}
+    .acd-x{width:42px;height:42px;flex:none;border:1px solid var(--fio);
+      background:#19191a;border-radius:50%;color:var(--paper);font-size:20px;cursor:pointer}
+    .acd-x:hover,.acd-x:focus-visible{border-color:var(--gold);color:var(--gold)}
     .acd-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-      -webkit-overflow-scrolling:touch;padding:16px 20px max(24px,env(safe-area-inset-bottom));}
-    .acd-scroll-inner{max-width:690px;margin:0 auto;display:grid;gap:13px}
-    .acd-lead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .acd-tag{display:inline-block;padding:6px 10px;border-radius:30px;background:rgba(76,175,104,.16);color:#67d68b;font-size:12px;font-weight:750}
-    .acd-tonalidade{font-size:12px;color:#a2a4ab}
-    .acd-tonalidade strong{display:block;margin-top:3px;color:inherit;font-size:15px}
-    .acd-sec{border:1px solid rgba(140,140,140,.18);border-radius:15px;background:#1d1f23;padding:16px;min-width:0}
-    .acd-sec h4{margin:0 0 10px;font-size:11px;font-weight:850;letter-spacing:.065em;text-transform:uppercase;color:#a9a7fa}
-    .acd-sec p{margin:0 0 9px;font-size:13px;line-height:1.57;color:inherit}
+      -webkit-overflow-scrolling:touch;padding:20px 20px max(28px,env(safe-area-inset-bottom))}
+    .acd-scroll-inner{max-width:710px;margin:0 auto;display:grid;gap:12px}
+    .acd-lead{display:flex;justify-content:space-between;align-items:center;gap:12px;
+      flex-wrap:wrap;padding:2px 2px 6px}
+    .acd-tags{display:flex;gap:7px;flex-wrap:wrap}
+    .acd-tag,.acd-degree{display:inline-flex;align-items:center;padding:7px 11px;
+      border:1px solid rgba(var(--gold-rgb),.25);background:rgba(var(--gold-rgb),.09);
+      border-radius:999px;font-size:11px;font-weight:800;color:var(--gold-hi)}
+    .acd-degree{color:#d2c7ad;border-color:var(--fio);background:rgba(255,255,255,.045)}
+    .acd-tonalidade{font-size:10px;letter-spacing:.06em;color:#928d84;text-transform:uppercase}
+    .acd-tonalidade strong{display:block;margin-top:3px;color:#f4f2ed;font-size:14px;letter-spacing:0;text-transform:none}
+    .acd-sec{min-width:0;border:1px solid var(--fio);border-radius:13px;
+      background:#181819;padding:16px 17px}
+    .acd-sec h4{margin:0 0 13px;font-family:var(--font-ui);font-size:11px;
+      font-weight:800;letter-spacing:.065em;text-transform:uppercase;color:var(--gold)}
+    .acd-sec p{margin:0 0 9px;font-family:var(--font-ui);font-size:12.5px;
+      line-height:1.65;color:#d7d5d1}
     .acd-sec p:last-child{margin-bottom:0}
-    .acd-mudo{color:#a0a1a9}
-    .acd-hl{color:#e9b83e;font-weight:800}
-    .acd-notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin:10px 0}
-    .acd-nota{border-radius:10px;background:rgba(127,127,127,.09);text-align:center;padding:11px 4px}
-    .acd-nota strong{display:block;font-size:20px;color:#f2ca67}
-    .acd-nota small{display:block;margin-top:5px;font-size:10px;color:#a1a3aa}
-    .acd-campo{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:10px}
-    .acd-campo-item{border-radius:8px;background:rgba(127,127,127,.1);text-align:center;padding:10px 2px;font-size:12px;font-weight:750;overflow-wrap:anywhere}
-    .acd-campo-item small{display:block;margin-bottom:4px;font-size:9px;font-weight:600;opacity:.7}
-    .acd-campo-item.on{background:var(--cifra);color:#101010}
-    .acd-context{margin-top:12px}
+    .acd-sec b{color:#f5f0e7}
+    .acd-mudo{color:#a49f96}
+    .acd-hl{color:var(--gold)!important;font-weight:800}
+    .acd-notas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:7px 0 13px}
+    .acd-nota{min-width:0;border:1px solid rgba(255,255,255,.065);border-radius:9px;
+      background:#222122;text-align:center;padding:12px 4px 10px}
+    .acd-nota .acd-intervalo{display:block;font-size:14px;font-weight:800;color:#eae5db}
+    .acd-nota small{display:block;font-size:10px;color:#918c84;margin-top:4px;line-height:1.3}
+    .acd-nota strong{display:block;font-size:19px;color:var(--gold-hi);margin-top:9px;font-weight:800}
+    .acd-campo{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:4px 0 11px}
+    .acd-campo-item{min-width:0;display:grid;place-content:center;text-align:center;
+      border:1px solid var(--fio);border-radius:9px;background:#222122;
+      padding:10px 2px;font-size:12px;font-weight:800;overflow-wrap:anywhere;color:#eee9df}
+    .acd-campo-item small{display:block;margin-top:5px;font-size:10px;font-weight:600;color:#96918b}
+    .acd-campo-item.on{color:#15120b;background:var(--gold);border-color:var(--gold)}
+    .acd-campo-item.on small{color:#4c3914}
+    .acd-context{padding-top:11px;border-top:1px solid var(--fio)}
+    .acd-context p{font-size:12px;color:#b9b5ae}
+    .acd-funcao-box{display:flex;align-items:center;gap:9px;margin-bottom:11px;
+      color:var(--gold-hi);font-size:13px;font-weight:800}
+    .acd-funcao-box::before{content:'◉';font-size:17px}
+    .acd-character{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;
+      margin-bottom:10px;border-radius:8px;background:rgba(var(--gold-rgb),.08);
+      color:var(--gold-hi);font-size:12px;font-weight:800}
+    .acd-meters{display:grid;gap:6px;margin-top:14px}
+    .acd-meter-row{display:flex;align-items:center;gap:9px;font-size:11px;color:#aca8a0}
+    .acd-meter-row>span{min-width:76px}
+    .acd-meter{display:flex;gap:4px;flex:1;max-width:145px}
+    .acd-meter i{height:6px;flex:1;border-radius:8px;background:#35332f}
+    .acd-meter i.on{background:var(--gold)}
+    .acd-meter.tensao i.on{background:#ba8b45}
     .acd-lista{list-style:none;margin:0;padding:0}
-    .acd-lista li{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:12px;line-height:1.5;color:inherit}
-    .acd-chip{display:inline-flex;flex-direction:column;min-width:77px;max-width:110px;flex:none;text-align:center;border-radius:9px;background:rgba(127,127,127,.12);padding:8px;color:#f0c65b;font-weight:850}
-    .acd-chip i{font-size:10px;font-style:normal;font-weight:500;color:#a1a1a9}
-    .lyra-box.claro .acd-sec{background:#fff;border-color:#e0e3e9}
-    .lyra-box.claro .acd-sec h4{color:#515aa5}
-    .lyra-box.claro .acd-nota strong,.lyra-box.claro .acd-chip{color:#2751c9}
-    .lyra-box.claro .acd-campo-item.on{background:#2751c9;color:#fff}
-    .lyra-box.claro .acd-tag{color:#267a43;background:#e0f5e5}
-    .lyra-box.claro .acd-grau,.lyra-box.claro .acd-tonalidade{color:#646b79}
-    @media(min-width:821px){
-      .acd-folha{inset:5% auto 5% 50%;width:min(740px,calc(100% - 48px));height:90%;max-height:850px;
-        transform:translate(-50%,105%);border:1px solid rgba(128,128,128,.25);border-radius:20px;
-        box-shadow:0 25px 70px rgba(0,0,0,.6)}
+    .acd-lista li{display:flex;align-items:center;gap:12px;padding:9px 0;
+      border-bottom:1px solid var(--fio);font-size:12px;line-height:1.5;color:#d7d3cb}
+    .acd-lista li:last-child{border-bottom:0;padding-bottom:0}
+    .acd-chip{display:inline-flex;flex:none;flex-direction:column;justify-content:center;
+      min-width:75px;max-width:112px;padding:8px 10px;border-radius:9px;
+      border:1px solid rgba(var(--gold-rgb),.2);background:rgba(var(--gold-rgb),.06);
+      color:var(--gold-hi);text-align:center;font-size:14px;font-weight:800}
+    .acd-chip i{display:block;font-style:normal;font-size:10px;font-weight:600;color:#aaa49b}
+    .acd-tip{background:rgba(var(--gold-rgb),.055);border-color:rgba(var(--gold-rgb),.2)}
+    .acd-tip h4::before{content:'✦';margin-right:8px}
+    /* Modo claro continua quente/neutro, sem azul, roxo ou verde. */
+    .lyra-box.claro .acd-folha,.lyra-box.claro .acd-hd{background:#faf9f7;color:#171512}
+    .lyra-box.claro .acd-hd{border-color:rgba(0,0,0,.12)}
+    .lyra-box.claro .acd-nome,.lyra-box.claro .acd-tonalidade strong{color:#171512}
+    .lyra-box.claro .acd-grau,.lyra-box.claro .acd-tonalidade{color:#77716a}
+    .lyra-box.claro .acd-x{background:#efebe5;color:#302820;border-color:rgba(0,0,0,.13)}
+    .lyra-box.claro .acd-sec{background:#fffdf9;border-color:#e4dfd5}
+    .lyra-box.claro .acd-sec p,.lyra-box.claro .acd-lista li{color:#4a4640}
+    .lyra-box.claro .acd-sec b{color:#25211c}
+    .lyra-box.claro .acd-tag{color:#8d6009;background:#fff5da}
+    .lyra-box.claro .acd-degree{color:#706558;background:#f4eee4;border-color:#e4dfd5}
+    .lyra-box.claro .acd-nota,.lyra-box.claro .acd-campo-item{background:#f5f1eb;border-color:#e6e0d8;color:#332c24}
+    .lyra-box.claro .acd-nota .acd-intervalo{color:#302b25}
+    .lyra-box.claro .acd-nota small,.lyra-box.claro .acd-campo-item small{color:#797169}
+    .lyra-box.claro .acd-nota strong,.lyra-box.claro .acd-chip,.lyra-box.claro .acd-funcao-box,
+    .lyra-box.claro .acd-character{color:var(--cifra-claro)}
+    .lyra-box.claro .acd-campo-item.on{background:var(--gold);border-color:var(--gold);color:#1c150a}
+    .lyra-box.claro .acd-campo-item.on small{color:#493711}
+    .lyra-box.claro .acd-context,.lyra-box.claro .acd-lista li{border-color:#ebe4da}
+    .lyra-box.claro .acd-chip{background:#fff5e1;border-color:#edddb5}
+    .lyra-box.claro .acd-tip,.lyra-box.claro .acd-character{background:#fff8e9}
+    .lyra-box.claro .acd-meter i{background:#e4ded6}
+    .lyra-box.claro .acd-meter i.on{background:#c68d1d}
+    @media(min-width:821px) and (pointer:fine){
+      .acd-folha{inset:5% auto 5% 50%;width:min(760px,calc(100% - 48px));height:90%;
+        max-height:880px;transform:translate(-50%,105%);border:1px solid var(--fio);
+        border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.72)}
       .acd-folha.on{transform:translateX(-50%)}
       .acd-scroll-inner{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .acd-scroll-inner>.acd-wide{grid-column:1/-1}
+      .acd-wide{grid-column:1/-1}
     }
     @media(max-width:820px),(pointer:coarse){
-      .acd-folha{position:absolute;inset:0;width:100%;height:100%;border-radius:0}
-      .acd-hd{padding:calc(14px + env(safe-area-inset-top)) 15px 12px}
-      .acd-scroll{padding:13px 12px calc(25px + env(safe-area-inset-bottom))}
-      .acd-scroll-inner{gap:11px}
-      .acd-sec{padding:14px}
-      .acd-campo{gap:3px}
-      .acd-campo-item{font-size:10px;padding:9px 1px}
-    }`;
+      .acd-folha{inset:0;width:100%;height:100%;border-radius:0}
+      .acd-hd{padding:calc(12px + env(safe-area-inset-top)) 16px 13px}
+      .acd-scroll{padding:14px 12px calc(24px + env(safe-area-inset-bottom))}
+      .acd-sec{padding:15px}
+      .acd-campo{gap:4px}
+      .acd-campo-item{font-size:10px;padding:10px 1px}
+      .acd-campo-item small{font-size:9px}
+      .acd-notas{gap:5px}
+      .acd-nota{padding:10px 2px}
+      .acd-nota strong{font-size:17px}
+    }
+    @media(max-width:350px){.acd-notas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(prefers-reduced-motion:reduce){.acd-folha{transition:none}}
+    `;
     document.head.appendChild(st);
   })();
 
@@ -553,7 +612,7 @@
     f.setAttribute("aria-label", "Detalhes do acorde");
     box.appendChild(f);
     f.addEventListener("click", e => {
-      if (e.target.closest(".acd-x")) fechar();
+      if (e.target.closest(".acd-x, .acd-voltar")) fechar();
     });
     return f;
   }
@@ -565,38 +624,55 @@
     const a = tom ? analisar(nome, tom) : null;
     nomeAberto = nome;
 
-    const hd = (detail) => `<div class="acd-hd"><span class="acd-nome">${esc(nome)}</span>
-      <span class="acd-grau">${detail}</span>
-      <button type="button" class="acd-x" aria-label="Fechar detalhes">&#10005;</button></div>`;
+    const hd = (detail,subtitle="") => `<div class="acd-hd"><div class="acd-hd-main">
+      <button type="button" class="acd-voltar">‹ Voltar</button>
+      <span class="acd-nome">${esc(nome)}</span><span class="acd-grau">${subtitle || detail}</span>
+      </div><button type="button" class="acd-x" aria-label="Fechar detalhes">&#10005;</button></div>`;
     if (!a) {
       f.innerHTML = hd("") + `<div class="acd-scroll"><div class="acd-scroll-inner">
         <section class="acd-sec"><p>Não consegui analisar este acorde no tom atual.</p></section>
       </div></div>`;
     } else {
       const grauApp = T.grauDoAcorde(nome, tom) || a.grauTxt;
-      const familia = a.tipo === "diatonico" ? "Diatônico" : a.tipo === "secundario" ? "Dominante secundário"
-        : a.tipo === "emprestimo" ? "Empréstimo modal" : a.tipo === "passagem" ? "Acorde de passagem" : "Cromático";
+      const familia = a.tipo === "diatonico" ? "Acorde diatônico" : a.tipo === "secundario" ? "Dominante secundário"
+        : a.tipo === "emprestimo" ? "Empréstimo modal" : a.tipo === "passagem" ? "Acorde de passagem" : "Acorde cromático";
       const funcoes = ["Tônica", "Subdominante", "Tônica", "Subdominante", "Dominante", "Tônica", "Dominante"];
       const sufixos = ["", "m", "m", "", "", "m", "dim"];
       const campo = sufixos.map((s,i) => {
         const nota = notaDoGrau(a.ref,i) + s;
         const ativo = a.tipo === "diatonico" && a.grau.idx === i;
-        return `<span class="acd-campo-item${ativo ? " on" : ""}"><small>${ROMANOS[i]}</small>${esc(nota)}</span>`;
+        const roman = NATURAL[i] === "menor" ? ROMANOS[i].toLowerCase() : i === 6 ? "vii°" : ROMANOS[i];
+        return `<span class="acd-campo-item${ativo ? " on" : ""}">${esc(nota)}<small>${roman}</small></span>`;
       }).join("");
-      const notas = a.notas.map(n => `<div class="acd-nota"><strong>${esc(n.nota)}</strong><small>${esc(n.rot === "T" ? "Fundamental" : n.rot)}</small></div>`).join("");
+      const nomesIntervalos = {"T":"Fundamental","3m":"Terça menor","3M":"Terça maior",
+        "5J":"Quinta justa","7m":"Sétima menor","7M":"Sétima maior","5ª dim":"Quinta diminuta",
+        "5ª aum":"Quinta aumentada","9ª":"Nona","2ª":"Segunda","4ª":"Quarta","6ª":"Sexta"};
+      const notas = a.notas.map(n => `<div class="acd-nota"><span class="acd-intervalo">${esc(n.rot === "T" ? "1" : n.rot)}</span>
+        <small>${esc(nomesIntervalos[n.rot] || n.rot)}</small><strong>${esc(n.nota)}</strong></div>`).join("");
       const context = textoContexto(a).replace(/<p><span class="acd-mudo">Campo de [\s\S]*?<\/p>/, "");
-      f.innerHTML = hd(`Grau ${esc(grauApp)} · ${esc(tom)}`) + `
+      const estabilidade = a.ac.dim || a.tipo === "passagem" ? 1 : a.dom || a.tipo === "secundario" ? 2
+        : a.triade === "menor" ? 4 : 5;
+      const tensao = 6 - estabilidade;
+      const barras = (valor, classe) => `<div class="acd-meter ${classe}">${Array.from({length:5},(_,i)=>`<i class="${i<valor?"on":""}"></i>`).join("")}</div>`;
+      const caracter = a.ac.dim ? "Instável" : a.triade === "menor" ? "Menor · introspectivo" : "Maior · brilhante";
+      f.innerHTML = hd(`Grau ${esc(grauApp)} · ${esc(tom)}`,esc(qualidadeFrase(a))) + `
         <div class="acd-scroll"><div class="acd-scroll-inner">
-          <div class="acd-lead acd-wide"><span class="acd-tag">${esc(familia)}</span>
+          <div class="acd-lead acd-wide"><div class="acd-tags"><span class="acd-tag">${esc(familia)}</span>
+            <span class="acd-degree">Grau ${esc(grauApp)} · ${esc(a.ref)}</span></div>
             <span class="acd-tonalidade">TONALIDADE ATUAL<strong>${esc(tom)}</strong></span></div>
           <section class="acd-sec acd-wide"><h4>Como o acorde é formado</h4>
             <div class="acd-notas">${notas}</div><p>${esc(qualidadeFrase(a))}.</p></section>
-          <section class="acd-sec acd-wide"><h4>Campo harmônico de ${esc(a.ref)}</h4>
+          <section class="acd-sec acd-wide"><h4>No campo harmônico de ${esc(a.ref)}</h4>
             <div class="acd-campo">${campo}</div><div class="acd-context">${context}</div></section>
-          <section class="acd-sec"><h4>Função harmônica · ${esc(funcoes[a.grau.idx])}</h4>${textoFuncao(a)}</section>
-          <section class="acd-sec"><h4>Caráter sonoro</h4>${textoCarater(a)}</section>
+          <section class="acd-sec"><h4>Função harmônica</h4>
+            <div class="acd-funcao-box">${esc(a.tipo === "diatonico" ? funcoes[a.grau.idx] : familia)}</div>
+            ${textoFuncao(a)}</section>
+          <section class="acd-sec"><h4>Caráter sonoro</h4>
+            <div class="acd-character">${esc(caracter)}</div>${textoCarater(a)}
+            <div class="acd-meters"><div class="acd-meter-row"><span>Estabilidade</span>${barras(estabilidade, "estabilidade")}</div>
+            <div class="acd-meter-row"><span>Tensão</span>${barras(tensao, "tensao")}</div></div></section>
           <section class="acd-sec acd-wide"><h4>Substituições possíveis</h4>${textoSubstituicoes(a)}</section>
-          <section class="acd-sec acd-wide"><h4>Dica rápida</h4>${textoDica(a)}</section>
+          <section class="acd-sec acd-tip acd-wide"><h4>Dica rápida</h4>${textoDica(a)}</section>
         </div></div>`;
     }
     const scroller = f.querySelector(".acd-scroll");
