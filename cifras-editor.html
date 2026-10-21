@@ -430,11 +430,39 @@ Cole ou digite sua cifra aqui..."></textarea>
 <script src="js/config.js"></script>
 <script src="js/cifras-tonalidades.js"></script>
 <script>
+// Cada música tem o seu próprio rascunho. Antes existia uma única
+// chave para todas: o editor reabria sempre a última música mexida,
+// não importava qual lápis foi tocado.
+(() => {
+  "use strict";
+
+  const p = new URLSearchParams(location.search);
+  let id = null;
+  let titulo = "";
+
+  if (p.get("origem") === "repertorio" && p.get("modo") === "editar") {
+    try {
+      const v = JSON.parse(
+        sessionStorage.getItem("tl_editor_vinculo") || "null"
+      );
+      id = v?.repertorioId || null;
+      titulo = v?.titulo || "";
+    } catch (_) {}
+  }
+
+  window.tlEditorEdicao = id ? { id, titulo } : null;
+  window.tlEditorCarregando = !!id;
+  window.tlRascunhoChave = id
+    ? "tom_louvores_editor_rascunho_v2_m" + id
+    : "tom_louvores_editor_rascunho_v2_nova";
+})();
+</script>
+<script>
 (() => {
   "use strict";
 
   const $ = id => document.getElementById(id);
-  const STORAGE = "tom_louvores_editor_rascunho_v1";
+  const STORAGE = window.tlRascunhoChave;
 
   const tons = [
     "C","C#","Db","D","D#","Eb","E","F",
@@ -493,11 +521,16 @@ Cole ou digite sua cifra aqui..."></textarea>
   });
 
   $("rascunho").addEventListener("click", () => {
+    // Enquanto a cifra da música ainda está chegando do banco os
+    // campos estão vazios: gravar agora apagaria o rascunho certo.
+    if (window.tlEditorCarregando) return;
+
     const dados = {
       titulo: $("titulo").value,
       artista: $("artista").value,
       tom: $("tom").value,
-      cifra: $("cifra").value
+      cifra: $("cifra").value,
+      salvoEm: Date.now()
     };
 
     try {
@@ -510,22 +543,91 @@ Cole ou digite sua cifra aqui..."></textarea>
     }
   });
 
-  try {
-    const dados = JSON.parse(localStorage.getItem(STORAGE) || "null");
-
-    if (dados) {
-      for (const campo of [
-        "titulo","artista","tom","cifra"
-      ]) {
-        if (typeof dados[campo] === "string")
-          $(campo).value = dados[campo];
-      }
+  function aplicar(dados) {
+    for (const campo of ["titulo","artista","tom","cifra"]) {
+      if (typeof dados[campo] === "string")
+        $(campo).value = dados[campo];
     }
+  }
+
+  let rascunho = null;
+  try {
+    rascunho = JSON.parse(localStorage.getItem(STORAGE) || "null");
   } catch (erro) {
     console.warn("Rascunho inválido");
   }
 
-  detectar();
+  const edicao = window.tlEditorEdicao;
+
+  if (!edicao) {
+    // Música nova: só o rascunho da própria música nova.
+    if (rascunho) aplicar(rascunho);
+    detectar();
+    return;
+  }
+
+  // Edição: a cifra vem do banco (public.cifras, pelo mesmo slug que
+  // a publicação usa). O rascunho só vence se for mais recente que
+  // a última publicação — senão uma edição feita no Lyra seria
+  // escondida por um rascunho velho.
+  function slugificar(valor) {
+    return (valor || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  function finalizar() {
+    window.tlEditorCarregando = false;
+    detectar();
+  }
+
+  (async () => {
+    let cifra = null;
+
+    try {
+      const r = await fetch(
+        CONFIG.SUPABASE_URL + "/rest/v1/cifras" +
+        "?select=title,artist,base_key,chords,updated_at" +
+        "&slug=eq." + encodeURIComponent(slugificar(edicao.titulo)) +
+        "&limit=1",
+        {
+          headers: {
+            apikey: CONFIG.SUPABASE_KEY,
+            Authorization: "Bearer " + CONFIG.SUPABASE_KEY
+          }
+        }
+      );
+      if (r.ok) cifra = (await r.json())[0] || null;
+    } catch (erro) {
+      console.warn("Não foi possível carregar a cifra:", erro);
+    }
+
+    const publicadaEm = cifra ? Date.parse(cifra.updated_at) || 0 : 0;
+
+    if (rascunho && (!cifra || (rascunho.salvoEm || 0) > publicadaEm)) {
+      aplicar(rascunho);
+      $("resultado").textContent = "Rascunho local desta música.";
+    } else if (cifra) {
+      aplicar({
+        artista: cifra.artist || "",
+        cifra: cifra.chords || ""
+      });
+      if (tons.includes(cifra.base_key)) {
+        $("tom").value = cifra.base_key;
+        manual = true;
+      }
+    } else {
+      $("resultado").textContent =
+        "Esta música ainda não tem cifra publicada.";
+    }
+
+    finalizar();
+  })();
 })();
 </script>
 
@@ -590,7 +692,7 @@ Cole ou digite sua cifra aqui..."></textarea>
 
   const $ = id => document.getElementById(id);
   const STORAGE = "tl_cifra_ministrantes_v1";
-  const DRAFT = "tom_louvores_editor_rascunho_v1";
+  const DRAFT = window.tlRascunhoChave;
 
   const nomes = typeof MINISTRANTES !== "undefined"
     ? MINISTRANTES
@@ -737,6 +839,8 @@ Cole ou digite sua cifra aqui..."></textarea>
   // O botão existente salva o restante do formulário.
   // Complementamos o mesmo rascunho com os ministrantes.
   $("rascunho").addEventListener("click", () => {
+    if (window.tlEditorCarregando) return;
+
     try {
       const dados = JSON.parse(localStorage.getItem(DRAFT) || "{}");
 
