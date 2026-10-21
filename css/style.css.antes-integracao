@@ -1,0 +1,1816 @@
+/* ============================================================
+   TOM LOUVORES — INVB — style.css
+
+   Cada cor tem um dono:
+     amarelo  → tom, data, ação principal
+     vermelho → YouTube        (só nos botões do modal)
+     verde    → Spotify        (só nos botões do modal)
+     âmbar    → cifra          (modal e leitor)
+   Ministrante não é bloco colorido: é um chip neutro de largura
+   fixa com um ponto de 6px na cor da pessoa.
+   ============================================================ */
+
+   /* A fonte vem pelo <link> de cada página. Um @import aqui baixava
+      a mesma fonte de novo e segurava a primeira pintura da tela. */
+
+   /* A troca de aba era animada (@view-transition). Com a foto no
+      fundo e as camadas translúcidas, o iPhone mostrava as duas
+      páginas sobrepostas e o cabeçalho piscando. Sem animação. */
+
+   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+   
+   html{overflow-x:clip}
+   
+   /* Identidade INVB — a mesma do site principal (invbotafogo):
+      dourado do "V", fundo escuro quente, Fraunces nos títulos
+      e Montserrat no resto. Para mudar a cor de destaque do site
+      inteiro, mude só --gold, --gold-hi e --gold-rgb. */
+   /* Identidade INVB — copiada do site principal (invbotafogo.com.br):
+      Montserrat em tudo, dourado do V, fundo preto (#0A0A0B),
+      fios dourados translúcidos e botões em pílula. Para mudar a cor
+      de destaque do site inteiro, mude só --gold, --gold-hi e --gold-rgb. */
+   :root{
+     --black:  #0A0A0B;      /* preto de verdade */
+     --ink:    #0B0B0C;      /* header, rodapé, texto sobre o dourado */
+     --black2: #131315;      /* cards */
+     --black3: #1B1B1E;
+     --black4: #262629;
+     --black5: #343438;
+     --gold:    #F0B93A;      /* o dourado do V, um ponto mais aceso */
+     --gold-hi: #F6D27A;
+     --gold-rgb: 240,185,58;
+     --on-gold: #0B0B0C;
+     --line: rgba(240,185,58,0.38);   /* fio dourado */
+     --fio:  rgba(255,255,255,0.12);  /* fio neutro */
+     --dim:  rgba(255,255,255,0.78);  /* texto secundário */
+     --paper:  #FFFFFF;
+     --gray:   #B8B8BC;
+     --gray2:  #8A8A90;
+     --gray3:  #433D36;
+     --white:  #FFFFFF;
+     --r: 12px;
+     --pill: 999px;
+     --veu: rgba(10,10,11,0.94);   /* camadas que grudam, sobre a foto */
+
+     --font-ui:      'Montserrat', system-ui, sans-serif;
+     --font-display: 'Montserrat', system-ui, sans-serif;
+     --font-tom:     'Montserrat', system-ui, sans-serif;
+
+     /* largura única dos chips de ministrante */
+     --chip-w: 116px;
+
+     /* leitor de cifras: acordes no dourado da casa */
+     --cifra:       #FFC93C;
+     --cifra-claro: #9A6A06;
+   }
+   
+   body{
+     font-family:var(--font-ui);
+     background:var(--black);
+     color:var(--white);
+     min-height:100vh;
+     font-feature-settings:"tnum" 0;
+     -webkit-font-smoothing:antialiased;
+     touch-action:manipulation;
+     -webkit-text-size-adjust:100%;
+   }
+   
+   /* ============================================================
+      HEADER
+      ============================================================ */
+   .header{
+     background:#0A0A0B;   /* sólido: o blur no header piscava no iPhone */
+     border-bottom:1px solid var(--line);
+     box-shadow:0 8px 24px rgba(0,0,0,0.35);
+     position:sticky;top:0;z-index:100;
+     padding-top:env(safe-area-inset-top);   /* notch, com app instalado */
+   }
+   .header-inner{
+     max-width:1280px;margin:0 auto;
+     padding:0 36px;height:64px;
+     display:flex;align-items:center;justify-content:space-between;
+   }
+   .logo{display:flex;align-items:center;gap:12px}
+   .logo-img{height:30px;width:auto;display:block}
+   .logo picture{display:block}
+   @media(min-width:901px){.logo-img{height:42px}}
+   .logo-sep{width:1px;height:28px;background:var(--line)}
+   .logo-sub{
+     font-size:11px;font-weight:600;
+     color:var(--dim);letter-spacing:0.2em;
+     text-transform:uppercase;line-height:1.35;
+   }
+   .header-right{display:flex;align-items:center;gap:10px}
+   
+   .status-pill{
+     display:flex;align-items:center;gap:7px;
+     padding:8px 14px;
+     border:1px solid var(--fio);
+     font-size:12px;font-weight:600;
+     color:var(--gray);letter-spacing:0.06em;
+     text-transform:uppercase;
+     background:rgba(255,255,255,0.03);
+     border-radius:var(--pill);
+   }
+   .status-pill.ok {color:#4ADE80;border-color:rgba(74,222,128,0.3)}
+   .status-pill.err{color:#F87171;border-color:rgba(248,113,113,0.3)}
+   .dot{
+     width:6px;height:6px;border-radius:50%;
+     background:currentColor;
+     animation:blink 2s ease infinite;flex-shrink:0;
+   }
+   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+   
+   .btn-add{
+     display:flex;align-items:center;gap:8px;
+     padding:11px 22px;
+     background:var(--gold);
+     border:1px solid var(--gold);cursor:pointer;
+     font-family:var(--font-ui);
+     font-size:14px;font-weight:600;
+     color:var(--on-gold);
+     letter-spacing:0;
+     transition:background 0.2s,border-color 0.2s,transform 0.15s;
+     border-radius:var(--pill);
+   }
+   .btn-add:hover{background:var(--gold-hi);border-color:var(--gold-hi)}
+   .btn-add:active{transform:scale(0.98)}
+   
+   /* botão Sair e afins no header */
+   .btn-logout{
+     padding:10px 18px;
+     border:1px solid var(--line);
+     border-radius:var(--pill);
+     background:rgba(0,0,0,0.5);
+     font-family:var(--font-ui);
+     font-size:14px;font-weight:500;
+     letter-spacing:0;
+     cursor:pointer;color:var(--paper);
+     transition:color 0.2s,border-color 0.2s,background 0.2s;
+   }
+   .btn-logout:hover{
+     background:rgba(11,11,12,0.6);
+     color:var(--gold);
+     border-color:var(--gold);
+   }
+   
+   /* ============================================================
+      HERO
+      ============================================================ */
+   /* A foto fica fixa atrás da página inteira (como no site da
+      igreja), escurecida para o texto ler bem. É um elemento fixo e
+      não background-attachment: fixed, que o iPhone ignora. */
+   body::before{
+     content:'';
+     position:fixed;inset:0;z-index:-1;
+     background:url('../img/image.jpg') center 30% / cover no-repeat;
+     filter:saturate(1.15);
+   }
+   body::after{
+     content:'';
+     position:fixed;inset:0;z-index:-1;
+     background:linear-gradient(180deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.80) 45%, rgba(0,0,0,0.90) 100%);
+   }
+   body{background:transparent}
+   html{background:var(--black)}
+   .hero-outer{position:relative}
+   .hero-outer::before{display:none}
+   .hero{
+     max-width:1280px;margin:0 auto;
+     padding:64px 36px 48px;
+     display:grid;grid-template-columns:1fr auto;
+     gap:48px;align-items:end;
+     position:relative;z-index:1;
+   }
+   .hero-right-col{
+     display:flex;flex-direction:column;
+     align-items:center;gap:20px;
+     align-self:end;
+   }
+   .hero-tag{
+     display:block;
+     color:var(--gold);
+     font-size:13px;font-weight:400;
+     letter-spacing:3px;text-transform:uppercase;
+     margin-bottom:14px;
+   }
+   .hero-h1{
+     font-family:var(--font-display);
+     font-weight:700;
+     font-size:clamp(2.4rem,5.8vw,3.8rem);
+     line-height:1.1;letter-spacing:-0.01em;
+     color:var(--paper);
+   }
+   .hero-h1 em{color:inherit;font-style:normal}
+   .hero-sub{
+     font-size:18px;font-weight:400;max-width:560px;
+     color:var(--dim);margin-top:16px;line-height:1.65;
+   }
+   .hero-stats{
+     display:flex;flex-direction:column;
+     border:1px solid var(--line);
+     background:rgba(var(--gold-rgb),0.08);
+     border-radius:14px;
+     overflow:hidden;
+     align-self:stretch;
+     min-width:220px;
+   }
+   .stat-row{
+     padding:16px 24px;
+     display:flex;align-items:center;justify-content:space-between;
+     gap:16px;
+     border-bottom:1px solid var(--line);
+   }
+   .stat-row:last-child{border-bottom:none}
+   .stat-n{
+     font-family:var(--font-display);font-weight:700;
+     font-size:40px;line-height:1;letter-spacing:-0.02em;
+     color:var(--gold-hi);
+   }
+   .stat-l{
+     font-size:14px;font-weight:400;
+     color:var(--dim);letter-spacing:0;
+   }
+   
+   /* ============================================================
+      TOOLBAR — busca e filtros
+      ============================================================ */
+   .toolbar{
+     max-width:1280px;margin:28px auto 0;padding:8px 36px;
+     display:flex;gap:10px;align-items:center;
+     position:sticky;top:64px;z-index:90;
+     transition:box-shadow 0.2s,border-color 0.2s;
+   }
+   .toolbar.stuck::before{box-shadow:0 6px 20px rgba(0,0,0,0.4)}
+   .toolbar.stuck::before{border-bottom:1px solid var(--line)}
+   .search-row{flex:1;min-width:0;display:flex}
+   .filtros-row{display:flex;gap:10px;align-items:center;flex-shrink:0}
+   .search-wrap{flex:1;min-width:0;position:relative}
+   .search-ico{
+     position:absolute;left:16px;top:50%;transform:translateY(-50%);
+     color:var(--gray2);pointer-events:none;font-size:15px;
+   }
+   .inp-search{
+     width:100%;
+     background:rgba(255,255,255,0.03);
+     border:1px solid var(--fio);
+     color:var(--white);
+     padding:13px 38px 13px 42px;
+     border-radius:var(--pill);
+     font-family:var(--font-ui);font-size:15px;
+     outline:none;transition:border-color 0.2s;
+   }
+   .inp-search:focus{border-color:var(--gold)}
+   .inp-search::placeholder{color:var(--gray2)}
+   
+   .search-clear{
+     position:absolute;right:9px;top:50%;transform:translateY(-50%);
+     width:24px;height:24px;
+     display:none;align-items:center;justify-content:center;
+     background:transparent;border:none;cursor:pointer;
+     color:var(--gray2);font-size:12px;line-height:1;
+     border-radius:4px;transition:color 0.15s,background 0.15s;
+   }
+   .search-clear.on{display:flex}
+   .search-clear:hover{color:var(--white);background:var(--black4)}
+   
+   .sel{
+     background-color:rgba(255,255,255,0.03);
+     border:1px solid var(--fio);
+     color:var(--paper);
+     padding:13px 40px 13px 18px;border-radius:var(--pill);
+     font-family:var(--font-ui);font-size:15px;
+     outline:none;cursor:pointer;
+     transition:border-color 0.2s;min-width:165px;
+     /* seta própria, afastada da borda */
+     -webkit-appearance:none;-moz-appearance:none;appearance:none;
+     background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+     background-repeat:no-repeat;
+     background-position:right 14px center;
+   }
+   .sel:focus{border-color:var(--gold)}
+   .sel option{background:var(--black2);color:var(--white)}
+   
+   /* ============================================================
+      GRADE E CARDS
+      ============================================================ */
+   .grid-wrap{max-width:1280px;margin:20px auto 80px;padding:0}
+   .grid{
+     display:grid;
+     grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+     gap:12px;
+     margin:28px auto 0;
+     padding:8px 36px;
+   }
+   
+   .card{
+     background:rgba(16,16,18,0.80);
+     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+     border:1px solid rgba(255,255,255,0.14);
+     border-radius:14px;
+     padding:22px 22px 18px;
+     display:flex;flex-direction:column;gap:14px;
+     cursor:pointer;
+     transition:border-color 0.2s,background 0.2s,transform 0.2s;
+     position:relative;overflow:hidden;
+   }
+   .card::before{display:none}
+   .card:hover{background:var(--black3);border-color:var(--line)}
+      .card-editable{cursor:pointer}
+   .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+   
+   .act-btn.del{
+     width:26px;height:26px;flex-shrink:0;
+     background:transparent;
+     border:1px solid transparent;
+     display:flex;align-items:center;justify-content:center;
+     cursor:pointer;color:var(--gray2);
+     transition:all 0.15s;border-radius:4px;font-size:12px;
+     opacity:0;
+   }
+   .card:hover .act-btn.del{opacity:1}
+   .act-btn.del:hover{background:rgba(248,113,113,0.1);color:#F87171;border-color:rgba(248,113,113,0.3)}
+   
+   .card-nome{
+     font-size:18px;font-weight:600;line-height:1.3;
+     color:var(--paper);letter-spacing:0;
+     min-height:calc(18px * 1.3 * 2);
+     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+   }
+   .card-obs{
+     font-size:13px;color:var(--gray);line-height:1.6;font-weight:300;
+     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+   }
+   
+   /* YouTube / Spotify / Cifra: na grade são só sinal de "existe".
+      Monocromáticos, para não brigar com o amarelo do tom. */
+   .card-tags{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+   .card-ico{
+     display:inline-flex;align-items:center;justify-content:center;
+     color:#5F5F5F;transition:color 0.2s;
+   }
+   .card:hover .card-ico{color:#8C8C8C}
+   
+   /* ——— Linha de tom ——— */
+   .card-tons{display:flex;flex-direction:column;gap:6px}
+   .card-ton-row{
+     display:flex;align-items:center;justify-content:space-between;gap:8px;
+   }
+   /* o "m" do tom menor: a Bebas Neue não tem minúscula */
+   .tom-m{font:inherit;letter-spacing:0}
+
+   .card-badge{
+     font-family:var(--font-tom);font-weight:700;
+     font-size:15px;letter-spacing:0;
+     line-height:1;color:var(--gold-hi);
+     background:rgba(var(--gold-rgb),0.10);
+     border:1px solid var(--line);
+     padding:6px 10px;border-radius:8px;
+     flex-shrink:0;min-width:48px;text-align:center;
+   }
+   .ton-row-right{
+     display:flex;align-items:center;gap:6px;
+     flex-wrap:wrap;justify-content:flex-end;
+     margin-left:auto;min-width:0;
+   }
+   /* selo do tom mais cantado nos cultos */
+   .tom-top{
+     flex-shrink:0;
+     font-size:10px;font-weight:800;letter-spacing:0.04em;
+     color:var(--gold);
+     background:rgba(var(--gold-rgb),0.08);
+     border:1px solid rgba(var(--gold-rgb),0.3);
+     padding:3px 7px;border-radius:4px;line-height:1;
+     white-space:nowrap;
+   }
+   .view-tons .tom-top{font-size:11px;padding:4px 9px}
+   
+   /* ——— Chips de ministrante ———
+      Todos iguais: mesma largura, texto centralizado e em maiúsculas,
+      como o "TODOS". Sem cor e sem ponto: quem manda na cor é o tom. */
+   .card-min-label{
+     display:inline-flex;align-items:center;justify-content:center;
+     width:var(--chip-w);          /* largura única: as linhas alinham */
+     padding:5px 11px;
+     font-size:12px;font-weight:500;
+     letter-spacing:0.02em;
+     background:rgba(255,255,255,0.04);
+     border:1px solid var(--fio);
+     color:var(--paper);
+     border-radius:var(--pill);
+     white-space:nowrap;overflow:hidden;
+   }
+   
+   /* "Todos" é informação, não pessoa: um tom de cinza abaixo */
+   .chip-todos{
+     background:transparent;
+     border-color:var(--fio);
+     color:var(--dim);
+   }
+   
+   /* cor de cada ministrante — sem uso enquanto os chips são neutros.
+      Ficam aqui caso um dia você queira marcar a pessoa de novo. */
+   .chip-Raphaela{--min:#F2789F}   /* rosa     */
+   .chip-Daniela {--min:#6BA8F5}   /* azul     */
+   .chip-Cris    {--min:#4FD1C5}   /* turquesa */
+   .chip-Mirian  {--min:#C084FC}   /* violeta  */
+   .chip-Humberto{--min:#F97B5B}   /* coral    */
+   
+   .card-foot{
+     display:flex;align-items:center;justify-content:space-between;gap:10px;
+     padding-top:12px;border-top:1px solid var(--fio);margin-top:auto;
+   }
+   .card-foot .card-tags{flex:1;min-width:0}
+   .card-date{
+     font-size:12px;color:var(--gray2);font-weight:400;
+     letter-spacing:0.04em;flex-shrink:0;white-space:nowrap;
+   }
+   
+   /* ============================================================
+      ESTADOS (carregando / vazio)
+      ============================================================ */
+   .state-loading,.state-empty{
+     grid-column:1/-1;
+     display:none;flex-direction:column;align-items:center;
+     gap:14px;padding:90px 24px;
+     color:var(--gray);text-align:center;
+   }
+   .state-loading{display:flex}
+   .spinner{
+     width:36px;height:36px;
+     border:2px solid var(--black5);
+     border-top-color:var(--gold);
+     border-radius:50%;
+     animation:spin 0.7s linear infinite;
+   }
+   @keyframes spin{to{transform:rotate(360deg)}}
+   .empty-sym{
+     font-family:var(--font-display);font-weight:700;
+     font-size:56px;letter-spacing:-0.02em;
+     color:var(--black5);line-height:1;
+   }
+   .empty-ttl{font-size:18px;font-weight:700;color:var(--black5)}
+   .empty-sub{font-size:13px;color:var(--gray2)}
+   
+   /* ============================================================
+      MODAIS
+      ============================================================ */
+   .overlay-bg{
+     position:fixed;inset:0;
+     background:rgba(6,5,4,0.78);
+     -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+     display:none;align-items:center;justify-content:center;
+     padding:24px;z-index:200;
+   }
+   .overlay-bg.open{display:flex}
+   .modal{
+     background:#111113;
+     border:1px solid var(--line);
+     width:100%;max-width:500px;
+     border-radius:18px;overflow:hidden;
+     box-shadow:0 30px 80px rgba(0,0,0,0.55);
+     max-height:90dvh;display:flex;flex-direction:column;
+   }
+   .modal-hd{
+     padding:24px 24px 20px;
+     display:flex;align-items:center;justify-content:space-between;
+     border-bottom:1px solid var(--fio);flex-shrink:0;
+   }
+   .modal-hd h2{
+     font-family:var(--font-display);font-weight:700;
+     font-size:24px;letter-spacing:-0.01em;color:var(--paper);
+   }
+   .modal-close{
+     width:34px;height:34px;
+     background:transparent;border:1px solid var(--fio);
+     color:var(--dim);font-size:14px;cursor:pointer;
+     display:flex;align-items:center;justify-content:center;
+     border-radius:50%;transition:all 0.2s;
+   }
+   .modal-close:hover{border-color:var(--gold);color:var(--gold)}
+   .modal-bd{
+     padding:20px 24px;
+     display:flex;flex-direction:column;gap:16px;overflow-y:auto;
+   }
+   .modal-ft{
+     padding:14px 24px 20px;
+     display:flex;gap:8px;justify-content:flex-end;
+     border-top:1px solid var(--fio);flex-shrink:0;
+   }
+   
+   .flabel{
+     font-size:12px;font-weight:600;color:var(--dim);
+     letter-spacing:0.14em;text-transform:uppercase;
+     display:block;margin-bottom:8px;
+   }
+   .finput{
+     width:100%;
+     background:rgba(255,255,255,0.03);border:1px solid var(--fio);
+     color:var(--white);padding:13px 15px;
+     border-radius:var(--r);
+     font-family:var(--font-ui);font-size:15px;
+     outline:none;transition:border-color 0.2s;
+   }
+   .finput:focus{border-color:var(--gold)}
+   .finput::placeholder{color:var(--gray2)}
+   .finput option{background:var(--black2);color:var(--white)}
+   .ftextarea{resize:vertical;min-height:72px}
+   
+   /* ——— Tom + ministrante ——— */
+   .tom-add-row{
+     display:grid;grid-template-columns:1fr 1fr auto;
+     gap:8px;align-items:center;
+   }
+   .btn-add-tom{
+     height:44px;width:44px;
+     background:var(--gold);border:none;cursor:pointer;
+     font-size:22px;font-weight:600;color:var(--on-gold);
+     border-radius:50%;
+     display:flex;align-items:center;justify-content:center;
+     transition:background 0.15s;flex-shrink:0;
+   }
+   .btn-add-tom:hover{background:var(--gold-hi)}
+   
+   .tom-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+   .tom-list-item{
+     display:flex;align-items:center;justify-content:space-between;
+     gap:10px;
+     background:var(--black3);border:1px solid var(--black5);
+     border-radius:var(--r);padding:8px 12px;
+   }
+   .tom-list-info{display:flex;align-items:center;gap:10px}
+   .tom-list-badge{
+     font-family:var(--font-tom);font-weight:700;
+     font-size:16px;letter-spacing:0;
+     color:var(--gold-hi);min-width:40px;text-align:center;
+   }
+   /* aqui o chip tem o "✕" dentro: largura livre */
+   .tom-list-min.card-min-label{width:auto}
+   .tom-list-remove{
+     width:24px;height:24px;
+     background:transparent;border:1px solid var(--black5);
+     color:var(--gray2);font-size:12px;border-radius:4px;
+     cursor:pointer;display:flex;align-items:center;justify-content:center;
+     transition:all 0.15s;flex-shrink:0;
+   }
+   .tom-list-remove:hover{
+     background:rgba(248,113,113,0.1);
+     color:#F87171;border-color:rgba(248,113,113,0.3);
+   }
+   .tom-list-hint{
+     font-size:11px;line-height:1.5;color:var(--gray);
+     background:rgba(255,255,255,0.03);
+     border:1px solid rgba(255,255,255,0.10);
+     border-radius:var(--r);
+     padding:8px 12px;
+   }
+   
+   /* ——— Cifras (lista dinâmica) ——— */
+   .cifra-add-row{
+     display:grid;grid-template-columns:1fr auto;
+     gap:8px;align-items:center;
+   }
+   .cifra-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+   .cifra-list-info{min-width:0;flex:1}
+   .cifra-list-icon{color:#F59E0B;font-size:16px;flex-shrink:0}
+   .cifra-list-url{
+     font-size:12px;color:var(--gray);
+     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+   }
+   
+   /* ——— Botões do modal ——— */
+   .btn-cancel{
+     padding:11px 20px;
+     background:transparent;border:1px solid var(--line);
+     color:var(--paper);font-family:var(--font-ui);
+     font-size:14px;font-weight:500;cursor:pointer;
+     transition:all 0.2s;border-radius:var(--pill);
+   }
+   .btn-cancel:hover{border-color:var(--gold);color:var(--gold)}
+   .btn-save{
+     padding:11px 24px;
+     background:var(--gold);border:1px solid var(--gold);
+     color:var(--on-gold);font-family:var(--font-ui);
+     font-size:14px;font-weight:600;cursor:pointer;
+     transition:background 0.2s,border-color 0.2s;border-radius:var(--pill);
+     letter-spacing:0;
+   }
+   .btn-save:hover{background:var(--gold-hi);border-color:var(--gold-hi)}
+   .btn-save:disabled{opacity:0.4;cursor:not-allowed}
+   
+   /* ============================================================
+      TOAST
+      ============================================================ */
+   .toast{
+     position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+     background:#111113;border:1px solid var(--line);
+     color:var(--paper);padding:12px 24px;
+     font-size:13px;font-weight:500;
+     border-radius:var(--pill);white-space:nowrap;
+     box-shadow:0 12px 32px rgba(0,0,0,0.45);
+     opacity:0;pointer-events:none;
+     transition:opacity 0.25s;z-index:999;
+   }
+   .toast.show{opacity:1}
+   .toast.err{border-color:rgba(248,113,113,0.4);color:#F87171}
+   
+   /* ============================================================
+      LOGIN
+      ============================================================ */
+   #loginOverlay{
+     display:none;
+     position:fixed;inset:0;
+     background:rgba(0,0,0,0.82);
+     backdrop-filter:blur(6px);
+     z-index:300;
+     align-items:center;justify-content:center;
+     padding:24px;
+   }
+   #loginOverlay.open{display:flex}
+   .login-box{
+     background:#111113;
+     border:1px solid var(--line);
+     border-radius:18px;
+     padding:36px 32px 28px;
+     width:100%;max-width:380px;
+     box-shadow:0 30px 80px rgba(0,0,0,.55);
+     display:flex;flex-direction:column;gap:18px;
+   }
+   .login-box h2{
+     font-family:var(--font-display);font-weight:700;
+     font-size:24px;letter-spacing:-0.01em;
+     color:var(--paper);margin:0 0 2px;
+   }
+   .login-box p.login-sub{font-size:12px;color:var(--gray2);margin:0}
+   .login-box label{
+     font-size:11px;font-weight:600;
+     letter-spacing:0.14em;text-transform:uppercase;
+     color:var(--dim);display:block;margin-bottom:8px;
+   }
+   .login-box input{
+     width:100%;
+     background:rgba(255,255,255,0.03);
+     border:1px solid var(--fio);
+     color:var(--white);
+     padding:12px 14px;
+     border-radius:var(--r);
+     font-family:var(--font-ui);font-size:13px;
+     outline:none;transition:border-color 0.2s;
+   }
+   .login-box input:focus{border-color:var(--gold)}
+   .login-box input::placeholder{color:var(--gray2)}
+   .login-error{font-size:12px;font-weight:600;color:#F87171;min-height:16px}
+   .login-actions{display:flex;gap:8px;margin-top:4px}
+   .btn-login-cancel{
+     flex:1;padding:11px 20px;
+     background:transparent;border:1px solid var(--line);
+     color:var(--paper);font-family:var(--font-ui);
+     font-size:14px;font-weight:500;cursor:pointer;
+     transition:all 0.2s;border-radius:var(--pill);
+   }
+   .btn-login-cancel:hover{border-color:var(--gold);color:var(--gold)}
+   .btn-login-submit{
+     flex:2;padding:11px 24px;
+     background:var(--gold);border:1px solid var(--gold);
+     color:var(--on-gold);font-family:var(--font-ui);
+     font-size:14px;font-weight:600;cursor:pointer;
+     transition:background 0.2s,border-color 0.2s;border-radius:var(--pill);
+     letter-spacing:0;
+   }
+   .btn-login-submit:hover{background:var(--gold-hi);border-color:var(--gold-hi)}
+
+   /* confirmação de exclusão: mesma caixa do login, botão vermelho */
+   .confirma-overlay{
+     display:none;position:fixed;inset:0;
+     background:rgba(0,0,0,0.82);backdrop-filter:blur(6px);
+     z-index:400;align-items:center;justify-content:center;padding:24px;
+   }
+   .confirma-overlay.open{display:flex}
+   .confirma-box{padding:28px 24px 22px}
+   .confirma-box .login-sub{font-size:14px;line-height:1.5;color:var(--gray);margin-top:6px}
+   .confirma-box .login-sub b{color:var(--white);font-weight:700}
+   .btn-excluir{
+     flex:2;padding:12px 18px;
+     background:#DC2626;border:none;color:#fff;
+     font-family:var(--font-ui);font-size:14px;font-weight:600;
+     border-radius:var(--pill);cursor:pointer;transition:background 0.15s;
+   }
+   .btn-excluir:hover{background:#B91C1C}
+   .confirma-box button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+   
+   /* ============================================================
+      MODAL DE LEITURA (ver música)
+      ============================================================ */
+   .view-modal{max-width:540px}
+   .view-modal .modal-hd h2{
+     font-size:26px;letter-spacing:-0.01em;color:var(--paper);
+     line-height:1.2;
+   }
+   .view-hd-actions{display:flex;align-items:center;gap:8px}
+   .view-edit-btn{
+     width:34px;height:34px;
+     background:transparent;border:1px solid var(--fio);
+     color:var(--dim);cursor:pointer;
+     display:flex;align-items:center;justify-content:center;
+     border-radius:50%;transition:all 0.2s;
+   }
+   .view-edit-btn:hover{
+     color:var(--gold);border-color:var(--gold);
+   }
+   body.read-only .view-edit-btn{display:none}
+   
+   .view-bd{gap:24px;padding:24px}
+   
+   .view-tons{display:flex;flex-direction:column;gap:8px}
+   .view-tons .card-ton-row{
+     background:rgba(255,255,255,0.03);border:1px solid var(--fio);
+     border-radius:14px;padding:12px 16px;
+   }
+   .view-tons .card-badge{font-size:20px;padding:9px 14px;min-width:60px}
+   
+   .view-section .flabel{margin-bottom:10px;font-size:12px;font-weight:400;letter-spacing:3px;color:var(--gold)}
+   .view-obs{
+     font-size:17px;line-height:1.75;color:var(--paper);font-weight:400;
+     white-space:pre-wrap;word-break:break-word;
+     background:rgba(255,255,255,0.03);
+     border:1px solid var(--fio);
+     border-left:2px solid var(--gold);
+     border-radius:12px;
+     padding:16px 18px;
+   }
+   .view-obs.empty{
+     color:var(--gray2);font-style:italic;font-size:14px;
+     border-left-color:var(--black5);
+   }
+   
+   /* botões de link: aqui a cor da marca vale, são poucos e ajudam */
+   .view-links{display:flex;flex-direction:column;gap:8px}
+   .view-yt-btn{
+     display:flex;align-items:center;gap:10px;
+     padding:13px 22px;
+     background:rgba(0,0,0,0.5);
+     border:1px solid var(--line);
+     border-radius:var(--pill);
+     color:var(--gold-hi);font-family:var(--font-ui);font-size:14px;font-weight:600;
+     letter-spacing:0;cursor:pointer;
+     text-decoration:none;transition:all 0.2s;
+   }
+   .view-lt-btn{justify-content:center
+   }
+   .view-yt-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(var(--gold-rgb),0.06)}
+   .view-yt-btn svg{flex-shrink:0}
+   .view-sp-btn{}
+   .view-sp-btn:hover{}
+   .view-cf-btn{
+     background:var(--gold);
+     border-color:var(--gold);
+     color:var(--on-gold);
+     justify-content:center;
+   }
+   .view-cf-btn:hover{background:var(--gold-hi);border-color:var(--gold-hi);color:var(--on-gold)}
+   .view-links-row{display:flex;gap:8px}
+   .view-links-row .view-mini{flex:1;min-width:0}
+   .view-mini{justify-content:center;padding:13px 12px;font-size:13px}
+   
+   /* botões de cifra e letra do Lyra */
+   .view-lyra{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+   .view-lyra .view-yt-btn{
+     width:100%;
+     display:flex;align-items:center;justify-content:center;gap:9px;
+   }
+   
+   /* ============================================================
+      CULTOS
+      ============================================================ */
+   .cultos-wrap{max-width:1280px;margin:36px auto;padding:0 36px}
+   .cultos-head{margin-bottom:18px}
+   .cultos-title{
+     font-family:var(--font-display);font-weight:700;
+     font-size:clamp(26px,3.4vw,34px);
+     letter-spacing:-0.01em;line-height:1.15;color:var(--paper);
+   }
+   .cultos-title em{color:inherit;font-style:normal}
+   .cultos-sub{font-size:13px;font-weight:300;color:var(--gray);margin-top:8px}
+   .cultos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+   .cultos-grid.solo{grid-template-columns:1fr}
+   
+   .culto-col{
+     background:rgba(16,16,18,0.80);
+     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+     border:1px solid rgba(255,255,255,0.14);
+     border-radius:14px;
+     display:flex;flex-direction:column;
+     overflow:hidden;min-height:160px;
+   }
+   .culto-col-hd{
+     padding:20px 20px 16px;
+     border-bottom:1px solid var(--fio);
+     display:flex;align-items:center;justify-content:space-between;gap:12px;
+   }
+   .culto-col-hd-left{min-width:0}
+   .culto-col-titulo-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+   .culto-col-titulo{
+     font-family:var(--font-display);font-weight:700;
+     font-size:24px;letter-spacing:-0.01em;color:var(--paper);line-height:1.1;
+   }
+   .culto-col-data{
+     font-family:var(--font-ui);
+     font-size:14px;font-weight:600;letter-spacing:0;
+     color:var(--gold-hi);line-height:1;
+     display:inline-flex;align-items:center;justify-content:center;
+     background:rgba(var(--gold-rgb),0.10);
+     border:1px solid var(--line);
+     padding:7px 12px;border-radius:var(--pill);
+   }
+   .culto-col-dia{
+     font-size:12px;font-weight:400;color:var(--gold);
+     letter-spacing:2.5px;text-transform:uppercase;margin-top:7px;
+   }
+   .culto-col-count{
+     font-size:13px;font-weight:500;color:var(--dim);
+     letter-spacing:0;flex-shrink:0;
+     background:transparent;
+     border:1px solid var(--fio);
+     padding:6px 13px;border-radius:var(--pill);
+   }
+   .culto-col-bd{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}
+   
+   .culto-louvor{
+     background:rgba(255,255,255,0.03);
+     border:1px solid var(--fio);
+     border-radius:12px;
+     padding:10px 12px;
+     display:flex;align-items:center;gap:10px;justify-content:space-between;
+     transition:border-color 0.2s;
+   }
+   .culto-louvor-info{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+   .culto-louvor-click{cursor:pointer;border-radius:4px;transition:opacity 0.15s}
+   .culto-louvor-click:hover{opacity:0.85}
+   .culto-louvor:has(.culto-louvor-click:hover){border-color:var(--line)}
+   .culto-louvor-badge{
+     font-family:var(--font-tom);font-weight:700;
+     font-size:15px;letter-spacing:0;color:var(--gold-hi);
+     background:rgba(var(--gold-rgb),0.10);
+     border:1px solid var(--line);
+     padding:7px 9px;border-radius:8px;
+     flex-shrink:0;min-width:42px;text-align:center;line-height:1;
+   }
+   .culto-louvor-txt{min-width:0}
+   .culto-louvor-nome{
+     font-size:16px;font-weight:500;color:var(--paper);line-height:1.25;
+     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+   }
+   @media (max-width:820px){
+     .culto-louvor-nome{font-size:17px}
+     .culto-louvor-badge{font-size:16px;min-width:48px}
+   }
+   .culto-louvor-rm{
+     width:24px;height:24px;flex-shrink:0;
+     background:transparent;border:1px solid var(--black5);
+     color:var(--gray2);font-size:11px;border-radius:4px;cursor:pointer;
+     display:flex;align-items:center;justify-content:center;transition:all 0.15s;
+   }
+   .culto-louvor-rm:hover{
+     background:rgba(248,113,113,0.1);color:#F87171;border-color:rgba(248,113,113,0.3);
+   }
+   .culto-empty{
+     font-size:13px;color:var(--gray2);text-align:center;
+     padding:18px 8px;letter-spacing:0.04em;
+   }
+   .culto-add-btn{
+     margin:0 12px 12px;
+     padding:10px;background:transparent;
+     border:1px dashed var(--line);
+     color:var(--gold-hi);font-family:var(--font-ui);
+     font-size:14px;font-weight:600;letter-spacing:0;
+     border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
+   }
+   .culto-add-btn:hover{
+     border-color:var(--gold);color:var(--gold);
+     background:rgba(var(--gold-rgb),0.04);
+   }
+   body.read-only .culto-add-btn,
+   body.read-only .culto-louvor-rm{display:none}
+   
+   /* seções extras: hierarquia por posição e tamanho, não por cor */
+   .culto-secao{
+     margin:0 12px 12px;
+     padding-top:13px;
+     border-top:1px solid var(--fio);
+     display:flex;flex-direction:column;gap:8px;
+   }
+   .culto-secao-label{
+     font-size:12px;font-weight:400;color:var(--gold);
+     letter-spacing:2.5px;text-transform:uppercase;
+   }
+   .culto-secao-bd{display:flex;flex-direction:column;gap:8px}
+   .culto-add-secao{margin:0}
+   
+   /* rodapé: "atualizado há X" + copiar */
+   .culto-col-meta{
+     display:flex;align-items:center;justify-content:space-between;gap:10px;
+     margin:0 12px 12px;padding-top:12px;
+     border-top:1px solid var(--fio);
+   }
+   .culto-atualizado{
+     font-size:13px;font-weight:400;color:var(--gray2);
+     letter-spacing:0;min-width:0;
+     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+   }
+   .culto-copy-btn{
+     display:inline-flex;align-items:center;gap:7px;flex-shrink:0;
+     background:rgba(0,0,0,0.5);border:1px solid var(--line);
+     color:var(--paper);font-family:var(--font-ui);
+     font-size:13px;font-weight:500;letter-spacing:0;
+     padding:7px 14px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
+   }
+   .culto-copy-btn:hover{
+     border-color:var(--gold);color:var(--gold);
+     background:rgba(var(--gold-rgb),0.04);
+   }
+   .culto-copy-btn svg{width:13px;height:13px}
+   
+   /* ministrante escalado do culto */
+   .culto-escala{
+     display:flex;align-items:center;gap:10px;
+     padding:12px 20px;
+     border-bottom:1px solid var(--fio);
+     background:transparent;
+   }
+   .culto-escala-label{
+     font-size:14px;font-weight:400;color:var(--dim);
+     letter-spacing:0;flex-shrink:0;
+   }
+   .culto-escala-sel{
+     flex:1;min-width:0;
+     background:var(--black3);border:1px solid var(--black5);
+     color:var(--white);font-family:var(--font-ui);
+     font-size:14px;font-weight:600;
+     padding:8px 11px;border-radius:var(--r);cursor:pointer;transition:border-color 0.15s;
+   }
+   .culto-escala-sel:hover{border-color:var(--gray2)}
+   .culto-escala-sel:focus{outline:none;border-color:var(--gold)}
+   .culto-escala-nome{
+     display:inline-flex;align-items:center;justify-content:center;
+     font-size:14px;font-weight:600;
+     letter-spacing:0;
+     padding:6px 15px;border-radius:var(--pill);
+     background:rgba(255,255,255,0.04);
+     border:1px solid var(--fio);
+     color:var(--paper);
+   }
+   .culto-escala-vazio{color:var(--gray2)}
+   /* admin vê o seletor; quem só visualiza vê o nome */
+   body.read-only .culto-escala-sel{display:none}
+   body:not(.read-only) .culto-escala-nome{display:none}
+   
+   /* abas do modal de culto */
+   .culto-tabs{display:flex;gap:6px;margin-bottom:4px}
+   .culto-tab{
+     flex:1;padding:10px;background:transparent;
+     border:1px solid var(--fio);color:var(--dim);
+     font-family:var(--font-ui);font-size:13px;font-weight:600;
+     letter-spacing:0;
+     border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
+   }
+   .culto-tab.active{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+   .culto-musica-list{
+     margin-top:10px;display:flex;flex-direction:column;gap:5px;
+     max-height:280px;overflow-y:auto;padding-right:2px;
+   }
+   .culto-musica-opt{
+     min-height:42px;
+     display:flex;align-items:center;
+     padding:0 14px;background:rgba(255,255,255,0.03);
+     border:1px solid var(--fio);border-radius:12px;
+     font-size:14px;line-height:1.3;color:var(--paper);cursor:pointer;transition:all 0.15s;
+     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+   }
+   .culto-musica-opt:hover{border-color:var(--gray3);background:var(--black4)}
+   .culto-musica-opt.sel{border-color:var(--gold);background:rgba(var(--gold-rgb),0.06)}
+   .culto-hint{font-size:11px;color:var(--gray2);margin-top:8px;font-style:italic}
+   
+   /* seletor de culto */
+   .culto-seletor{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+   .culto-seletor-data{
+     flex-shrink:0;
+     font-family:var(--font-ui);
+     font-size:13px;font-weight:600;letter-spacing:0;
+     color:var(--gold-hi);line-height:1;
+     display:inline-flex;align-items:center;justify-content:center;
+     background:rgba(var(--gold-rgb),0.10);
+     border:1px solid var(--line);
+     padding:12px 16px;border-radius:var(--pill);
+     min-width:64px;
+   }
+   .culto-seletor-sel{flex:1;min-width:0;color:var(--white);font-weight:600}
+   
+   /* ============================================================
+      LEITOR DE CIFRAS E LETRAS
+      Tela cheia em qualquer aparelho: no palco o que importa é
+      caber o máximo de cifra, sem caixa flutuante nem moldura.
+      ============================================================ */
+   #lyraOverlay{
+     position:fixed;inset:0;z-index:9000;
+     display:none;align-items:center;justify-content:center;
+     padding:0;background:#0d0d0d;
+   }
+   #lyraOverlay.open{display:flex}
+   #lyraOverlay:has(.lyra-box.claro){background:#FAF9F7}
+   body.lyra-travado{overflow:hidden}   /* a página atrás não rola */
+   
+   .lyra-box{
+     width:100%;max-width:none;
+     height:100dvh;max-height:100dvh;
+     display:flex;flex-direction:column;overflow:hidden;
+     background:#0d0d0d;
+     border:none;border-radius:0;
+     padding-top:env(safe-area-inset-top);
+     padding-bottom:env(safe-area-inset-bottom);
+   }
+   
+   /* cabeçalho */
+   .lyra-hd{
+     display:flex;align-items:center;justify-content:space-between;gap:12px;
+     padding:14px 16px 12px;
+   }
+   .lyra-hd-txt{min-width:0}
+   .lyra-hd h3{
+     margin:0;font-size:17px;font-weight:800;letter-spacing:0.02em;
+     color:#f2f2f2;
+     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+   }
+   .lyra-hd p{
+     margin:3px 0 0;font-size:12px;font-weight:500;color:var(--gray);
+     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+   }
+   .lyra-hd-acoes{display:flex;align-items:center;gap:6px;flex-shrink:0}
+   .lyra-x{
+     background:none;border:none;cursor:pointer;
+     color:var(--gray);font-size:19px;line-height:1;
+     padding:4px 6px;margin-left:2px;
+   }
+   .lyra-x:hover{color:#e6e6e6}
+   
+   /* barra de controles: cada grupo quebra inteiro,
+      nunca solta um botão sozinho na linha */
+   .lyra-barra{
+     display:flex;flex-wrap:wrap;align-items:center;
+     gap:10px;padding:12px 16px;justify-content:space-between;
+     border-top:1px solid rgba(255,255,255,0.07);
+     border-bottom:1px solid rgba(255,255,255,0.07);
+   }
+   .lyra-grupo{
+     display:flex;align-items:center;gap:8px;flex-wrap:nowrap;
+     flex:1 1 260px;min-width:0;
+   }
+   .lyra-grupo > .lyra-seg{flex:1;min-width:0}
+   .lyra-grupo > .lyra-btn{flex:0 0 auto;min-width:46px}
+   .lyra-lbl{font-size:13px;font-weight:600;color:var(--gray);flex:0 0 auto}
+   
+   .lyra-seg{
+     display:inline-flex;align-items:center;overflow:hidden;
+     background:var(--black5);
+     border:1px solid var(--gray3);
+     border-radius:11px;
+   }
+   .lyra-seg button{
+     background:none;border:none;cursor:pointer;
+     font-family:var(--font-ui);font-size:13px;font-weight:800;
+     color:#c8c8c8;padding:0 16px;height:40px;
+     flex:1;min-width:0;white-space:nowrap;
+     transition:background 0.15s,color 0.15s;
+   }
+   .lyra-seg button:hover{background:rgba(255,255,255,0.09);color:var(--white)}
+   .lyra-seg button.on,
+   .lyra-seg button.on:hover{background:var(--cifra);color:#1a1a1a}
+   .lyra-seg .lyra-pct{
+     padding:0 6px;flex:0 0 auto;
+     border-left:1px solid var(--gray3);
+     border-right:1px solid var(--gray3);
+   }
+   .lyra-pct{
+     font-size:12px;font-weight:700;color:#c8c8c8;
+     min-width:56px;text-align:center;line-height:40px;user-select:none;
+   }
+   
+   /* seletor de tom */
+   .lyra-grupo-tom{display:inline-flex;align-items:center;gap:8px;flex:1;min-width:0}
+   .lyra-tom{position:relative;display:inline-flex;align-items:center;flex:1;min-width:0}
+   .lyra-tom select{
+     -webkit-appearance:none;appearance:none;border:none;cursor:pointer;
+     background:var(--cifra);color:#1a1a1a;
+     font-family:var(--font-ui);font-size:16px;font-weight:800;
+     padding:9px 34px 9px 16px;border-radius:11px;
+     width:100%;height:40px;
+   }
+   .lyra-tom select:focus-visible{outline:2px solid var(--white);outline-offset:2px}
+   .lyra-tom svg{position:absolute;right:12px;pointer-events:none;color:#1a1a1a}
+   
+   .lyra-btn{
+     display:inline-flex;align-items:center;justify-content:center;
+     background:var(--black5);
+     border:1px solid var(--gray3);
+     color:#f0f0f0;border-radius:11px;cursor:pointer;
+     font-family:var(--font-ui);font-size:14px;font-weight:800;
+     min-width:46px;height:40px;padding:0 12px;
+     transition:background 0.15s,color 0.15s,border-color 0.15s;
+   }
+   .lyra-btn:hover{background:#3A3A3A;border-color:var(--gray2)}
+   .lyra-btn.on,
+   .lyra-btn.on:hover{background:var(--cifra);border-color:var(--cifra);color:#1a1a1a}
+   .lyra-btn:focus-visible{outline:2px solid var(--cifra);outline-offset:2px}
+   /* seta que não leva a lugar nenhum (ponta da lista) */
+   .lyra-btn:disabled{opacity:0.3;cursor:default}
+   .lyra-btn:disabled:hover{background:var(--black5);border-color:var(--gray3)}
+   
+   /* corpo: cifra e letra */
+   .lyra-corpo{
+     overflow:auto;overscroll-behavior:contain;padding:18px 16px 28px;
+     flex:1;min-height:0;min-width:0;
+     background:#070708;
+   }
+   .lyra-box.claro .lyra-corpo{background:#FAF9F7}
+   .lyra-zoom-indicador{
+     position:absolute;left:50%;top:52%;transform:translate(-50%,-50%) scale(.95);
+     z-index:70;pointer-events:none;opacity:0;
+     padding:13px 22px;border-radius:15px;
+     background:rgba(25,23,20,.94);color:var(--gold-hi);
+     border:1px solid rgba(var(--gold-rgb),.36);
+     box-shadow:0 12px 40px rgba(0,0,0,.32);
+     font:800 26px/1 var(--font-ui);font-variant-numeric:tabular-nums;
+     transition:opacity .16s ease,transform .16s ease;
+   }
+   .lyra-zoom-indicador.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+   .lyra-box.claro .lyra-zoom-indicador{
+     background:rgba(250,249,247,.96);color:var(--cifra-claro);
+     border-color:rgba(0,0,0,.15);
+   }
+   .lyra-pre{
+     margin:0;white-space:pre;line-height:1.55;
+     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+   }
+   #lyraCorpo .lyra-pre.quebra{
+     display:block;width:100%;max-width:100%;box-sizing:border-box;
+     white-space:pre-wrap;overflow-wrap:anywhere;
+   }
+   #lyraCorpo .lyra-pre.quebra .lyra-secao{max-width:100%;box-sizing:border-box}
+   .lyra-pre.letra{
+     white-space:pre-wrap;line-height:1.75;font-weight:500;
+     font-family:var(--font-ui);
+   }
+   .lyra-acordes,.lyra-secao{color:var(--cifra);font-weight:700}
+   .lyra-letra{color:#EDEDED}
+   .lyra-msg{
+     padding:34px 18px;text-align:center;
+     color:var(--gray);font-size:13px;font-weight:600;
+   }
+   
+   /* modo claro */
+   .lyra-box.claro{background:#FAF9F7}
+   .claro .lyra-hd h3{color:#141414}
+   .claro .lyra-hd p{color:#6b6b6b}
+   .claro .lyra-x{color:#767676}
+   .claro .lyra-x:hover{color:#111}
+   .claro .lyra-barra{border-color:rgba(0,0,0,0.10)}
+   .claro .lyra-lbl,
+   .claro .lyra-pct{color:#5f5f5f}
+   .claro .lyra-btn{background:#E4DFD8;border-color:rgba(0,0,0,0.16);color:#242424}
+   .claro .lyra-btn:hover{background:#D8D2C9;border-color:rgba(0,0,0,0.28)}
+   .claro .lyra-btn.on,
+   .claro .lyra-btn.on:hover{
+     background:var(--cifra-claro);border-color:var(--cifra-claro);color:var(--white);
+   }
+   .claro .lyra-btn:disabled:hover{background:#E4DFD8;border-color:rgba(0,0,0,0.16)}
+   .claro .lyra-seg{background:#E4DFD8;border-color:rgba(0,0,0,0.16)}
+   .claro .lyra-seg .lyra-pct{border-color:rgba(0,0,0,0.14)}
+   .claro .lyra-seg button{color:#5f5f5f}
+   .claro .lyra-seg button:hover{background:rgba(0,0,0,0.05);color:#141414}
+   .claro .lyra-seg button.on,
+   .claro .lyra-seg button.on:hover{background:var(--cifra-claro);color:var(--white)}
+   .claro .lyra-tom select{background:var(--cifra-claro);color:var(--white)}
+   .claro .lyra-tom svg{color:var(--white)}
+   .claro .lyra-acordes,
+   .claro .lyra-secao{color:var(--cifra-claro)}
+   .claro .lyra-letra{color:#242424}
+   .claro .lyra-msg{color:#6b6b6b}
+   
+   /* em monitor largo o fundo vai de ponta a ponta, mas o conteúdo
+      para de esticar: seletor de tom com 600px não ajuda ninguém */
+   @media (min-width:1180px){
+     .lyra-hd,.lyra-barra,.lyra-mapa,.lyra-prog,.lyra-corpo{
+       width:100%;max-width:1180px;
+       margin-left:auto;margin-right:auto;
+     }
+   }
+   
+   /* ============================================================
+      RESPONSIVO
+      ============================================================ */
+   
+   /* iPad e tablets: o modal da música também preenche a tela */
+   @media (min-width:601px) and (max-width:1180px) and (pointer:coarse){
+     .overlay-bg{padding:0;align-items:stretch;justify-content:stretch}
+     .overlay-bg .modal{
+       width:100%;max-width:none;
+       height:100dvh;max-height:100dvh;
+       border:none;border-radius:0;
+     }
+     .modal-hd{padding-top:calc(24px + env(safe-area-inset-top))}
+     .modal-ft{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+     .modal-hd,.modal-bd,.modal-ft{
+       width:100%;max-width:620px;
+       margin-left:auto;margin-right:auto;
+     }
+     .modal-bd{flex:1}
+   }
+   
+   @media(max-width:768px){
+     /* a toolbar deixa de ser caixa: busca e filtros viram filhas
+        diretas da seção, então a busca gruda durante a seção toda */
+     .toolbar{display:contents}
+     .repertorio{padding:0 36px}
+     .search-row{
+       position:sticky;top:calc(64px + env(safe-area-inset-top));z-index:90;
+       padding:8px 0 10px;margin-top:28px;
+       background:rgba(10,10,11,0.88);
+       -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+       transition:box-shadow 0.2s,border-color 0.2s;
+     }
+     .search-row.stuck::before{
+       border-bottom:1px solid var(--line);
+       box-shadow:0 6px 20px rgba(0,0,0,0.4);
+     }
+     .filtros-row{padding-bottom:4px;margin-top:0}
+     .filtros-row .sel{flex:1 1 0;min-width:0;width:auto}
+     .grid{padding:0}
+   }
+   
+   @media(max-width:700px){
+     .header-inner,.hero{padding-left:20px;padding-right:20px}
+     .toolbar{padding-left:20px;padding-right:20px}
+     .hero{grid-template-columns:1fr;gap:24px}
+     .hero-right-col{align-self:auto;width:100%}
+     /* stats viram uma linha só, ocupando a largura toda */
+     .hero-stats{flex-direction:row;width:100%;min-width:unset}
+     .stat-row{
+       flex:1;flex-direction:column;
+       align-items:center;justify-content:center;gap:4px;
+       border-bottom:none;border-right:1px solid var(--black4);
+       padding:14px 8px;
+     }
+     .stat-row:last-child{border-right:none}
+     .stat-n{font-size:30px}
+     .stat-l{font-size:9px;letter-spacing:0.06em;text-align:center}
+     .act-btn.del{opacity:1}
+     .grid{grid-template-columns:1fr}
+     .cultos-wrap,.repertorio{padding-left:20px;padding-right:20px}
+     .cultos-grid{grid-template-columns:1fr}
+     /* iOS dá zoom em campos abaixo de 16px ao focar */
+     .inp-search,.sel,.finput,.login-box input{font-size:16px}
+   }
+   
+   @media(max-width:600px){
+     .lyra-barra{gap:9px;padding:11px 14px}
+     .lyra-grupo{gap:7px}
+     .lyra-seg button{padding:0 14px}
+   }
+   
+   @media(max-width:480px){
+     .header-inner{padding:0 16px;height:56px}
+     .search-row{top:calc(56px + env(safe-area-inset-top))}
+     .logo-img{height:26px}
+     .logo-sep{height:22px}
+     .logo-sub{font-size:9px;letter-spacing:0.1em}
+     .status-pill{padding:5px 8px;font-size:10px;gap:5px}
+     .btn-add{padding:8px 12px;font-size:12px;letter-spacing:0.02em}
+     #statusTxt{display:none}
+     .login-box{padding:28px 20px 22px}
+   }
+
+   
+   /* ============================================================
+      ACESSIBILIDADE
+      ============================================================ */
+
+   /* quem navega pelo teclado vê onde está; no toque nada muda */
+   :where(a,button,select,input,textarea,[tabindex]):focus-visible{
+     outline:2px solid var(--gold);
+     outline-offset:2px;
+   }
+   ::selection{background:rgba(var(--gold-rgb),0.35);color:var(--white)}
+
+   /* sem zoom de pinça: o tamanho da letra é pelo A− / A+ do leitor.
+      O Safari do iPhone ignora o user-scalable=no; o touch-action
+      abaixo é o que segura o zoom lá. */
+   html,body{touch-action:pan-x pan-y}
+   #lyraOverlay{touch-action:pan-x pan-y}
+
+   /* O iPhone também dá zoom sozinho ao tocar num campo com letra
+      menor que 16px (o seletor de Ministrante do culto tinha 14px),
+      e a tela ficava ampliada e solta para os lados. Em tela de
+      toque, todo campo tem no mínimo 16px; o maximum-scale=1 do
+      <meta viewport> segura o resto. */
+   @media (hover:none) and (pointer:coarse){
+     input,select,textarea{font-size:16px !important}
+   }
+
+   /* quem pediu ao celular menos movimento não vê nada piscando */
+   @media (prefers-reduced-motion: reduce){
+     *,*::before,*::after{
+       animation-duration:0.01ms !important;
+       animation-iteration-count:1 !important;
+       transition-duration:0.01ms !important;
+       scroll-behavior:auto !important;
+     }
+   }
+
+   /* ============================================================
+      LEITOR — identidade INVB e recursos de palco (leitor-palco.js)
+      ============================================================ */
+   #lyraOverlay{background:#070708}
+   .lyra-box{background:#070708}
+   .lyra-hd h3{font-family:var(--font-ui);font-weight:700;letter-spacing:0;color:var(--paper)}
+   .lyra-hd p{color:var(--dim)}
+   .lyra-barra{border-color:var(--fio)}
+   .lyra-btn{border-radius:var(--pill);background:rgba(255,255,255,0.05);border-color:var(--fio)}
+   .lyra-btn:hover{background:rgba(255,255,255,0.09);border-color:var(--line)}
+   .lyra-seg{border-radius:var(--pill);background:rgba(255,255,255,0.05);border-color:var(--fio)}
+   .lyra-tom select{border-radius:var(--pill)}
+
+   /* partes da música: rótulo claro com fio dourado */
+   .lyra-pre .lyra-secao{
+     display:inline-block;
+     font-family:var(--font-ui);font-size:0.82em;
+     text-transform:uppercase;letter-spacing:0.12em;
+     padding-left:10px;border-left:2px solid var(--gold);
+     line-height:1.3;
+   }
+   .lyra-pre .lyra-meta{color:var(--gray2);font-size:0.85em}
+   .claro .lyra-pre .lyra-meta{color:#8a8178}
+   @keyframes lyraPisca{0%,100%{background:transparent}30%{background:rgba(var(--gold-rgb),0.28)}}
+   .lyra-pisca{animation:lyraPisca 1.4s ease}
+
+   /* mapa da música */
+   .lyra-mapa{
+     display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+     padding:10px 16px;border-bottom:1px solid var(--fio);
+     -webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);
+             mask-image:linear-gradient(90deg,#000 92%,transparent);
+   }
+   .lyra-mapa::-webkit-scrollbar{display:none}
+   .lyra-mapa[hidden]{display:none}
+   .lyra-mapa button{
+     flex:0 0 auto;
+     font-family:var(--font-ui);font-size:13px;font-weight:600;
+     color:var(--dim);background:transparent;
+     border:1px solid var(--fio);border-radius:var(--pill);
+     padding:6px 12px;cursor:pointer;white-space:nowrap;
+     transition:color .2s,border-color .2s,background .2s;
+   }
+   .lyra-mapa button:hover{color:var(--paper);border-color:var(--line)}
+   .lyra-mapa button.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold)}
+   .claro .lyra-mapa{border-color:rgba(0,0,0,0.1)}
+   .claro .lyra-mapa button{color:#5f5f5f;border-color:rgba(0,0,0,0.14)}
+   .claro .lyra-mapa button.on{color:#fff;background:var(--cifra-claro);border-color:var(--cifra-claro)}
+
+   /* progresso da leitura */
+   .lyra-prog{height:2px;background:rgba(255,255,255,0.04);flex-shrink:0}
+   .lyra-prog[hidden]{display:none}
+   .lyra-prog i{
+     display:block;height:100%;background:var(--gold);
+     transform-origin:left;transform:scaleX(0);
+     will-change:transform;   /* sem transição: ela brigava com a rolagem no iPhone */
+   }
+
+   /* colunas: o texto vira linhas em bloco para o par acorde + letra
+      nunca cair em colunas diferentes */
+   #lyraCorpo.colunas .lyra-pre{
+     font-size:0 !important;line-height:0;
+     white-space:pre;
+     column-rule:1px solid rgba(255,255,255,0.06);
+   }
+   .lyra-pre .lp-bloco{display:contents}
+   #lyraCorpo.colunas .lyra-pre .lp-bloco{display:block;break-inside:avoid}
+   #lyraCorpo.colunas .lyra-pre > span:not(.lp-bloco),
+   #lyraCorpo.colunas .lyra-pre .lp-bloco > span{
+     display:block;font-size:var(--lyra-fs);line-height:1.55;
+   }
+   #lyraCorpo.colunas .lyra-pre .lyra-secao{margin-top:.4em;width:max-content}
+   .claro #lyraCorpo.colunas .lyra-pre{column-rule-color:rgba(0,0,0,0.08)}
+   .lyra-so-largo{display:none}
+   @media (min-width:700px){.lyra-so-largo{display:inline-flex}}
+   .lyra-colsel{
+     align-items:center;gap:2px;padding:3px;height:40px;
+     border:1px solid var(--fio);border-radius:var(--pill);
+     background:rgba(255,255,255,0.04);
+   }
+   .lyra-colsel button{
+     display:inline-flex;align-items:center;gap:6px;
+     height:32px;padding:0 12px;border:none;border-radius:var(--pill);
+     background:transparent;color:var(--dim);cursor:pointer;
+     font-family:var(--font-ui);font-size:13px;font-weight:700;
+     transition:background .2s,color .2s;
+   }
+   .lyra-colsel button.on{background:var(--gold);color:var(--on-gold)}
+   .lyra-colsel.nao-cabe button[data-cols="2"].on{background:rgba(var(--gold-rgb),0.35)}
+   .claro .lyra-colsel{border-color:rgba(0,0,0,0.14);background:#E4DFD8}
+   .claro .lyra-colsel button{color:#5f5f5f}
+   .claro .lyra-colsel button.on{background:var(--cifra-claro);color:#fff}
+
+   /* ============================================================
+      MODO ADMIN — ordem dos louvores e "Desfazer"
+      ============================================================ */
+   .culto-louvor-ordem{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+   .culto-louvor-ordem button{
+     width:26px;height:18px;
+     display:flex;align-items:center;justify-content:center;
+     background:transparent;border:1px solid var(--fio);border-radius:6px;
+     color:var(--dim);cursor:pointer;transition:all .15s;
+   }
+   .culto-louvor-ordem button:hover:not(:disabled){color:var(--gold);border-color:var(--gold)}
+   .culto-louvor-ordem button:disabled{opacity:.25;cursor:default}
+   body.read-only .culto-louvor-ordem{display:none}
+   .culto-louvor-rm{border-radius:50%;width:26px;height:26px}
+
+   .toast.com-acao{pointer-events:auto;display:flex;align-items:center;gap:14px;padding:8px 8px 8px 22px}
+   .toast-acao{
+     font-family:var(--font-ui);font-size:13px;font-weight:600;
+     color:var(--on-gold);background:var(--gold);
+     border:none;border-radius:var(--pill);
+     padding:7px 14px;cursor:pointer;
+   }
+   .toast-acao:hover{background:var(--gold-hi)}
+   @media (pointer:coarse){
+     .culto-louvor-ordem button{width:32px;height:22px}
+   }
+
+   /* ── páginas (2 colunas) ── */
+   .lyra-box{position:relative}
+   #lyraCorpo.paginas{overflow:hidden;touch-action:pan-y;position:relative}
+   #lyraMarcoFim{position:absolute;top:0;width:1px;height:1px;pointer-events:none}
+   .lyra-vira{
+     position:absolute;width:18px;pointer-events:none;z-index:3;
+     background:linear-gradient(90deg,transparent,rgba(var(--gold-rgb),0.10));
+     border-right:2px solid var(--gold);
+     display:flex;align-items:center;justify-content:center;
+   }
+   .lyra-vira[hidden]{display:none}
+   .lyra-vira span{
+     position:absolute;right:-2px;top:50%;transform:translateY(-50%);
+     writing-mode:vertical-rl;
+     font-family:var(--font-ui);font-size:10px;font-weight:700;
+     letter-spacing:.22em;text-transform:uppercase;color:var(--on-gold);
+     background:var(--gold);padding:12px 4px;border-radius:8px 0 0 8px;
+   }
+   .lyra-pags{
+     position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:4;
+     display:flex;align-items:center;gap:4px;padding:4px;
+     background:rgba(10,10,11,0.94);border:1px solid var(--line);border-radius:var(--pill);
+     box-shadow:0 10px 30px rgba(0,0,0,.45);
+     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+   }
+   .lyra-pags[hidden]{display:none}
+   .lyra-pags button{
+     width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+     display:flex;align-items:center;justify-content:center;
+     background:rgba(255,255,255,0.06);color:var(--paper);
+   }
+   .lyra-pags button:not(:disabled):hover{background:var(--gold);color:var(--on-gold)}
+   .lyra-pags button:disabled{opacity:.3;cursor:default}
+   .lyra-pags span{
+     min-width:52px;text-align:center;
+     font-family:var(--font-ui);font-size:14px;font-weight:700;color:var(--gold-hi);
+     font-variant-numeric:tabular-nums;
+   }
+   .claro .lyra-pags{background:rgba(250,249,247,0.95);border-color:rgba(0,0,0,.12)}
+   .claro .lyra-pags span{color:var(--cifra-claro)}
+   .claro .lyra-pags button{background:#E4DFD8;color:#242424}
+   .claro .lyra-vira{border-right-color:var(--cifra-claro);background:linear-gradient(90deg,transparent,rgba(0,0,0,.05))}
+   .claro .lyra-vira span{background:var(--cifra-claro);color:#fff}
+
+   /* ── comentários ("// …") e marcas dentro das linhas de acorde ── */
+   .lyra-pre .lyra-comentario{color:var(--gray2);font-style:italic}
+   .claro .lyra-pre .lyra-comentario{color:#8a8178}
+   /* "Riff 2", "Solo:" — mesma fonte e largura, só mais visível */
+   .lyra-pre .lyra-marco{color:var(--paper);font-weight:700}
+   .claro .lyra-pre .lyra-marco{color:#141414}
+
+   /* o título apertado no mapa fica marcado na cifra, igual ao botão.
+      Só cor e fundo: a largura não muda e a cifra não desalinha */
+   .lyra-pre .lyra-alvo{
+     background:var(--gold);color:var(--on-gold) !important;
+     box-shadow:0 0 0 4px var(--gold);border-radius:3px;
+     border-left-color:transparent;
+   }
+   .lyra-pre .lyra-secao.lyra-alvo{box-shadow:0 0 0 4px var(--gold),-6px 0 0 4px var(--gold)}
+   .claro .lyra-pre .lyra-alvo{background:var(--cifra-claro);color:#fff !important;box-shadow:0 0 0 4px var(--cifra-claro)}
+   .claro .lyra-pre .lyra-secao.lyra-alvo{box-shadow:0 0 0 4px var(--cifra-claro),-6px 0 0 4px var(--cifra-claro)}
+
+   /* botão Entrar: ícone + texto, igual aos vizinhos */
+   .btn-entrar{gap:7px}
+   .btn-entrar svg{flex-shrink:0}
+
+   /* caixa de login */
+   .login-ico{
+     width:48px;height:48px;border-radius:50%;
+     display:flex;align-items:center;justify-content:center;
+     background:rgba(var(--gold-rgb),0.12);border:1px solid var(--line);
+     color:var(--gold);margin-bottom:6px;
+   }
+   .login-box p.login-sub{font-size:14px;color:var(--dim)}
+   .login-box label{font-size:12px}
+   .login-box input{font-size:15px;padding:13px 15px}
+   .btn-login-submit,.btn-login-cancel{padding:12px 22px;font-size:15px}
+
+   /* ============================================================
+      ARRASTAR LOUVORES (arrastar.js)
+      ============================================================ */
+   body:not(.read-only) #cultosGrid .culto-louvor{touch-action:pan-y;cursor:grab}
+   .culto-louvor.seg-espera{transform:scale(0.985);transition:transform .2s}
+   .culto-louvor.arr-vazio{
+     border:1px dashed var(--gold);opacity:.45;
+     background:rgba(var(--gold-rgb),0.06);box-sizing:border-box;
+   }
+   .culto-louvor.arr-vazio > *{visibility:hidden}
+   .arr-ghost{
+     position:fixed;z-index:9999;pointer-events:none;
+     background:#1B1B1E;border-color:var(--gold);
+     box-shadow:0 18px 40px rgba(0,0,0,.6);transform:scale(1.03) rotate(-1deg);
+   }
+   .arr-ghost .culto-louvor-ordem,.arr-ghost .culto-louvor-rm{display:none}
+   .culto-col-bd.arr-alvo,.culto-secao-bd.arr-alvo{
+     outline:2px dashed var(--line);outline-offset:4px;border-radius:10px;
+   }
+   body.arrastando{user-select:none;-webkit-user-select:none;cursor:grabbing}
+   body.arrastando .culto-louvor-click{cursor:grabbing}
+
+   /* ============================================================
+      CABEÇALHO NO CELULAR — regras que valem no PRIMEIRO quadro
+      As mesmas regras existem no menu.js e no paginas.js, mas elas
+      só entram quando o JS roda; até lá o iPhone pintava o cabeçalho
+      de computador ("TOM LOUVORES", botão Entrar) por cima do menu.
+      ============================================================ */
+   @media (max-width:900px){
+     .header-right > *:not(#mnBtn){display:none !important}
+     .logo-sub,.logo-sep{display:none}
+     .header-inner{flex-wrap:nowrap;gap:12px;position:relative}
+   }
+
+   /* ============================================================
+      CIFRA / LETRA — chave do leitor
+      Era um bloco amarelo cheio, o elemento mais forte da tela,
+      mais chamativo que a própria cifra. Agora segue o resto do
+      site: pílula de fio fino, rótulo em caixa alta espaçada (como
+      o menu Cultos · Repertório) e o dourado só no lado escolhido.
+      Uma pastilha desliza entre os dois lados ao trocar.
+      ============================================================ */
+   #lyraBox #lyraSeg{
+     position:relative;isolation:isolate;
+     display:inline-grid;grid-template-columns:1fr 1fr;
+     padding:3px;gap:0;overflow:visible;
+     border-radius:var(--pill);
+     background:rgba(255,255,255,0.03);
+     border:1px solid var(--fio);
+   }
+   #lyraBox #lyraSeg::before{
+     content:"";position:absolute;z-index:-1;
+     top:3px;bottom:3px;left:3px;width:calc(50% - 3px);
+     border-radius:var(--pill);
+     background:rgba(var(--gold-rgb),0.14);
+     border:1px solid rgba(var(--gold-rgb),0.45);
+     transition:transform .28s cubic-bezier(.22,1,.36,1);
+   }
+   #lyraBox #lyraSeg:has([data-modo="letra"].on)::before{transform:translateX(100%)}
+
+   #lyraBox #lyraSeg button,
+   #lyraBox #lyraSeg button:hover,
+   #lyraBox #lyraSeg button.on{
+     display:inline-flex;align-items:center;justify-content:center;gap:7px;
+     height:32px;padding:0 20px;min-width:0;
+     background:none;border-radius:var(--pill);
+     font-family:var(--font-ui);font-size:11px;font-weight:800;
+     letter-spacing:.14em;text-transform:uppercase;
+     color:var(--gray);
+     transition:color .2s;
+   }
+   #lyraBox #lyraSeg button:hover{color:var(--white)}
+   #lyraBox #lyraSeg button.on{color:var(--gold)}
+
+   /* ícone antes do rótulo: nota para a cifra, linhas para a letra */
+   #lyraBox #lyraSeg button::before{
+     content:"";width:14px;height:14px;flex-shrink:0;
+     background:currentColor;
+     -webkit-mask:var(--ico) center/contain no-repeat;
+     mask:var(--ico) center/contain no-repeat;
+   }
+   #lyraBox #lyraSeg [data-modo="cifra"]{
+     --ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/svg%3E");
+   }
+   #lyraBox #lyraSeg [data-modo="letra"]{
+     --ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M4 6h16M4 12h16M4 18h10'/%3E%3C/svg%3E");
+   }
+
+   /* fundo claro */
+   #lyraBox.claro #lyraSeg{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.14)}
+   #lyraBox.claro #lyraSeg::before{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.22)}
+   #lyraBox.claro #lyraSeg button{color:#6b6b6b}
+   #lyraBox.claro #lyraSeg button:hover{color:#141414}
+   #lyraBox.claro #lyraSeg button.on{color:var(--cifra-claro)}
+
+   @media (max-width: 820px), (pointer: coarse){
+     #lyraBox #lyraSeg button,
+     #lyraBox #lyraSeg button:hover,
+     #lyraBox #lyraSeg button.on{height:30px;padding:0 18px}
+   }
+
+   /* 1 / 2 colunas: mesmo idioma da chave Cifra/Letra — o lado
+      escolhido ganha só o fio e o texto dourados, sem bloco cheio */
+   #lyraBox .lyra-colsel button.on{
+     background:rgba(var(--gold-rgb),0.14);color:var(--gold);
+     box-shadow:inset 0 0 0 1px rgba(var(--gold-rgb),0.45);
+   }
+   #lyraBox .lyra-colsel.nao-cabe button[data-cols="2"].on{background:rgba(var(--gold-rgb),0.06);color:var(--dim)}
+   #lyraBox.claro .lyra-colsel{background:rgba(0,0,0,0.03)}
+   #lyraBox.claro .lyra-colsel button.on{
+     background:rgba(0,0,0,0.05);color:var(--cifra-claro);
+     box-shadow:inset 0 0 0 1px rgba(0,0,0,0.22);
+   }
+
+/* Cifra integrada — Nova música / Editar música */
+.cifra-integrada {
+  padding:18px;
+  border:1px solid rgba(240,185,58,.26);
+  border-radius:13px;
+  background:rgba(240,185,58,.035);
+}
+.cifra-integrada-titulo {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:17px;
+}
+.cifra-integrada-titulo strong {
+  color:var(--gold);
+  font-size:14px;
+}
+#cifraEstado {
+  color:var(--gray);
+  font-size:10px;
+  text-align:right;
+}
+.cifra-integrada-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:14px;
+}
+.cifra-integrada-hint {
+  color:var(--gold-hi);
+  font-size:11px;
+  line-height:1.6;
+  margin:8px 0 18px;
+}
+.cifra-integrada-texto {
+  display:block;
+  min-height:250px;
+  margin-top:8px;
+  resize:vertical;
+  white-space:pre;
+  font:12px/1.65 Menlo,Consolas,monospace;
+  tab-size:4;
+}
+.cifra-integrada-aviso {
+  color:var(--gray);
+  font-size:10px;
+  line-height:1.6;
+  margin-top:12px;
+}
+@media(max-width:550px) {
+  .cifra-integrada-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+/* Cultos — seletor de ministrante compacto */
+.culto-min-select,
+.culto-ministro-select,
+select[id*="ministrante"],
+select[class*="ministrante"] {
+  width: auto !important;
+  min-width: 110px;
+  max-width: 180px;
+  flex: 0 0 auto !important;
+  border-radius: 999px;
+  padding: 6px 30px 6px 14px;
+}
+
+/* Mantém o nome e o seletor na mesma linha */
+.culto-min-card,
+.culto-min-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+
+/* Cultos — seletor de ministrante compacto */
+.culto-escala .culto-escala-sel {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 110px;
+  max-width: 180px;
+  padding: 7px 30px 7px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.culto-escala {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+
+/* Ministrante: texto e seta proporcionais */
+.culto-escala .culto-escala-sel {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+
+  padding: 7px 27px 7px 13px !important;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 12px !important;
+
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 0 0 auto !important;
+}
+
+
+/* HEADER ESTAVEL — sem mudanca visual ao restaurar login */
+
+/* Reserva o espaço da logo desde o primeiro desenho */
+.header .logo {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.header .logo picture {
+  display: block;
+  flex-shrink: 0;
+}
+
+.header .logo-img {
+  display: block;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Em notebooks, não depende mais do estado do login */
+@media (min-width: 901px) and (max-width: 1439px) {
+  .header .logo-sub,
+  .header .logo-sep {
+    display: none !important;
+  }
+}
+
+/* Em telas grandes, mantém o nome sempre visível */
+@media (min-width: 1440px) {
+  .header .logo-sub {
+    display: inline-block !important;
+  }
+
+  .header .logo-sep {
+    display: block !important;
+  }
+}
+
+/* Celular e iPad: apenas a logo, espaço reservado */
+@media (max-width: 900px) {
+  .header .logo-sub,
+  .header .logo-sep {
+    display: none !important;
+  }
+
+  .header .logo-img {
+    max-width: 100%;
+  }
+}
+
+/* Cabeçalho — remover divisória vertical entre logo e navegação */
+.header .nav-pag {
+  border-left: none !important;
+  padding-left: 0 !important;
+}
+
+
+/* Ocultar observações na visualização da música */
+#viewObsWrap {
+  display: none !important;
+}
+
