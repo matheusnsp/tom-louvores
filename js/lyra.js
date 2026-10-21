@@ -1531,6 +1531,7 @@ function lyraMontarEstrutura() {
   document.getElementById("lyraMais").addEventListener("click",  () => lyraAjustarZoom(+10));
 
   lyraLigarArraste(document.getElementById("lyraCorpo"));
+  lyraLigarPinca(document.getElementById("lyraCorpo"));
 
   // Esc fecha só o leitor; setas trocam de música
   document.addEventListener("keydown", e => {
@@ -1545,13 +1546,17 @@ function lyraMontarEstrutura() {
 // já chegou ao fim da rolagem horizontal, para não brigar com ela
 function lyraLigarArraste(corpo) {
   let x0 = 0, y0 = 0, t0 = 0;
+  let multitoque = false;
 
   corpo.addEventListener("touchstart", e => {
+    if (e.touches.length > 1) { multitoque = true; return; }
+    multitoque = false;
     const t = e.changedTouches[0];
     x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
   }, { passive: true });
 
   corpo.addEventListener("touchend", e => {
+    if (multitoque) { if (!e.touches.length) multitoque = false; return; }
     const t = e.changedTouches[0];
     const dx = t.clientX - x0;
     const dy = t.clientY - y0;
@@ -1567,6 +1572,75 @@ function lyraLigarArraste(corpo) {
 
     lyraIrPara(dx < 0 ? +1 : -1);
   }, { passive: true });
+}
+
+// Mesmo gesto de zoom do Púlpito: pinça muda somente o tamanho da letra,
+// preservando cifras, barras de controle e layout do leitor.
+function lyraLigarPinca(corpo) {
+  if (!corpo || corpo.dataset.pincaLigada === "1") return;
+  corpo.dataset.pincaLigada = "1";
+  let inicio = null;
+  let frame = 0;
+  let pendente = null;
+  const limitar = v => Math.max(60, Math.min(220, Math.round(v)));
+  const distancia = touches => Math.hypot(
+    touches[0].clientX - touches[1].clientX,
+    touches[0].clientY - touches[1].clientY
+  );
+  const aplicar = valor => {
+    pendente = limitar(valor);
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (pendente === null || pendente === lyraZoom) return;
+      lyraZoom = pendente;
+      pendente = null;
+      lyraAplicarEstiloTexto();
+    });
+  };
+  corpo.addEventListener("touchstart", e => {
+    if (e.touches.length !== 2) return;
+    const dist = distancia(e.touches);
+    inicio = dist > 0 ? { dist, zoom: lyraZoom } : null;
+  }, { passive: true });
+  corpo.addEventListener("touchmove", e => {
+    if (!inicio || e.touches.length !== 2) return;
+    e.preventDefault();
+    aplicar(inicio.zoom * distancia(e.touches) / inicio.dist);
+  }, { passive: false });
+  const terminar = e => {
+    if (e.touches.length >= 2) return;
+    if (!inicio) return;
+    inicio = null;
+    if (frame) { cancelAnimationFrame(frame); frame = 0; }
+    if (pendente !== null) {
+      lyraZoom = pendente;
+      pendente = null;
+      lyraAplicarEstiloTexto();
+    }
+    lyraSalvarPrefs();
+  };
+  corpo.addEventListener("touchend", terminar, { passive: true });
+  corpo.addEventListener("touchcancel", terminar, { passive: true });
+  // Safari iOS pode gerar eventos gesture* mesmo com touchmove cancelado.
+  ["gesturestart", "gesturechange", "gestureend"].forEach(tipo =>
+    corpo.addEventListener(tipo, e => e.preventDefault(), { passive: false })
+  );
+  // Trackpad de Mac: pinça chega como wheel com Ctrl pressionado.
+  corpo.addEventListener("wheel", e => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    aplicar(lyraZoom * Math.exp(-e.deltaY / 200));
+    clearTimeout(corpo._lyraZoomSalvar);
+    corpo._lyraZoomSalvar = setTimeout(() => {
+      if (pendente !== null) {
+        lyraZoom = pendente;
+        pendente = null;
+        lyraAplicarEstiloTexto();
+      }
+      lyraSalvarPrefs();
+    }, 180);
+  }, { passive: false });
 }
 
 function lyraAjustarZoom(passo) {
