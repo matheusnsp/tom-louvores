@@ -1131,9 +1131,6 @@
      background:#070708;
    }
    .lyra-box.claro .lyra-corpo{background:#FAF9F7}
-   /* A quebra deve respeitar a largura disponível, sem esticar o fundo. */
-   .lyra-pre{max-width:100%;box-sizing:border-box}
-   .lyra-pre.quebra{width:100%;white-space:pre-wrap;overflow-wrap:anywhere}
    .lyra-zoom-indicador{
      position:absolute;left:50%;top:52%;transform:translate(-50%,-50%) scale(.95);
      z-index:70;pointer-events:none;opacity:0;
@@ -1153,7 +1150,11 @@
      margin:0;white-space:pre;line-height:1.55;
      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
    }
-   .lyra-pre.quebra{white-space:pre-wrap;overflow-wrap:anywhere}
+   #lyraCorpo .lyra-pre.quebra{
+     display:block;width:100%;max-width:100%;box-sizing:border-box;
+     white-space:pre-wrap;overflow-wrap:anywhere;
+   }
+   #lyraCorpo .lyra-pre.quebra .lyra-secao{max-width:100%;box-sizing:border-box}
    .lyra-pre.letra{
      white-space:pre-wrap;line-height:1.75;font-weight:500;
      font-family:var(--font-ui);
