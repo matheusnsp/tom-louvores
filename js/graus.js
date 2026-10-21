@@ -109,8 +109,12 @@
   function atualizarSeletor() {
     const controle = document.getElementById("lyraGrausGrupo");
     if (!controle) return;
-    controle.style.display = (typeof lyraAtual !== "undefined" && lyraAtual &&
-      lyraAtual.modo === "cifra" && lyraAtual.song) ? "" : "none";
+    const disponivel = !!(typeof lyraAtual !== "undefined" && lyraAtual &&
+      lyraAtual.modo === "cifra" && lyraAtual.song);
+    controle.style.display = disponivel ? "" : "none";
+    // No menu lateral, esconda a linha inteira ao trocar para Letra.
+    const linha = document.getElementById("opLinhaGraus");
+    if (linha) linha.style.display = disponivel ? "" : "none";
     controle.querySelectorAll("button[data-graus]").forEach(botao => {
       const selecionado = (botao.dataset.graus === "sim") === emGraus;
       botao.classList.toggle("on", selecionado);
@@ -147,13 +151,40 @@
       @media(max-width:600px){.lyra-graus-grupo{flex:1 1 100%}
       .lyra-graus-grupo .lyra-seg{width:100%}}`;
     document.head.appendChild(estilo);
-    barra.insertBefore(grupo, barra.children[1] || null);
+    // Deixe o controle original de tamanho ANTES do de graus.
+    // opcoes.js procura o primeiro segmento livre ao montar "Tamanho";
+    // inseri-lo antes fazia o menu capturar os graus por engano.
+    barra.appendChild(grupo);
     grupo.querySelectorAll("button[data-graus]").forEach(botao => {
       botao.addEventListener("click", () => escolherGraus(botao.dataset.graus === "sim"));
     });
     atualizarSeletor();
     return res;
   };
+
+  // opcoes.js move os controles reais da barra para o menu lateral.
+  // Depois dessa montagem, colocamos os graus em sua PRÓPRIA linha,
+  // sem roubar os botões de tamanho (A-, porcentagem, A+).
+  if (typeof opMontar === "function" && typeof opLinha === "function") {
+    const montarOpcoesOriginal = opMontar;
+    opMontar = function (...args) {
+      const resultado = montarOpcoesOriginal.apply(this, args);
+      const painel = document.getElementById("opPainel");
+      const grupo = document.getElementById("lyraGrausGrupo");
+      if (painel && grupo && !document.getElementById("opLinhaGraus")) {
+        const tamanho = [...painel.querySelectorAll(".op-linha")].find(linha =>
+          linha.querySelector(".op-nome")?.textContent?.trim() === "Tamanho");
+        if (tamanho?.parentElement) {
+          const linha = opLinha(
+            typeof OP_ICO !== "undefined" ? OP_ICO.texto : "",
+            "Notação", grupo, "opLinhaGraus", "Acordes ou graus");
+          tamanho.parentElement.insertBefore(linha, tamanho);
+        }
+      }
+      atualizarSeletor();
+      return resultado;
+    };
+  }
 
   const aplicarModoOriginal = lyraAplicarModo;
   lyraAplicarModo = function (...args) {
