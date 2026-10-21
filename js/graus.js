@@ -1,7 +1,17 @@
 // ============================================================
-// TOM LOUVORES — cifras por graus (numerais relativos ao tom)
+// TOM LOUVORES — cifras por graus (Nashville Number System)
 // Carregar DEPOIS de lyra.js, acordes.js, quebra.js e leitor-palco.js.
 // Não altera os acordes originais, nem o data-ac dos botões sonoros.
+//
+// Convenção:
+//  - Tom MAIOR: 1 = tônica do tom.
+//  - Tom MENOR: 1 = tônica do RELATIVO MAIOR (Am -> C = 1, Am = 6m).
+//    Assim os acordes do campo harmônico natural ficam sem bemol.
+//  - Maior = número puro (1, 4, 5); menor = "m" colado (6m, 2m, 3m).
+//  - Acidentes ANTES do número (b7, #5).
+//  - Diminuto: símbolo colado (#5°).
+//  - Extensões SEMPRE entre parênteses: 5(7), 4(maj7), 6m(7), 1(add9), 5(sus4).
+//  - Inversões: 1/3, 5/7.
 // ============================================================
 (function () {
   "use strict";
@@ -10,7 +20,7 @@
       typeof lyraCifraParaHTML !== "function" ||
       typeof lyraPc !== "function") return;
 
-  const PREF = "tom-louvores-graus-v1";
+  const PREF = "tom-louvores-graus-v2";
   let emGraus = false;
   try { emGraus = localStorage.getItem(PREF) === "1"; }
   catch (_) { /* no modo privado, funciona sem salvar */ }
@@ -18,17 +28,58 @@
   const LETRAS = "CDEFGAB";
   const ESCALA_MAIOR = [0, 2, 4, 5, 7, 9, 11];
 
-  // Relaciona a nota à tônica por grau DIATÔNICO, e não só por semitom:
-  // em C, C# é #1 e Db é b2; em Am, C é b3; em F, Bb é 4.
-  function grauDaNota(nota, tom) {
-    const raizTom = (typeof lyraPartesTom === "function"
-      ? lyraPartesTom(tom).raiz : String(tom).replace(/m$/, ""));
-    if (!/^[A-G][#b]?$/.test(nota) || !/^[A-G][#b]?$/.test(raizTom)) return null;
+  // ---------- Tom ----------
 
-    const notaPc = lyraPc(nota), tomPc = lyraPc(raizTom);
+  function tomEhMenor(tom) {
+    if (typeof lyraPartesTom === "function") {
+      try {
+        const p = lyraPartesTom(tom);
+        if (p && typeof p.menor === "boolean") return p.menor;
+        if (p && typeof p.minor === "boolean") return p.minor;
+      } catch (_) { /* cai no teste simples abaixo */ }
+    }
+    return /m$/.test(String(tom));
+  }
+
+  function raizDoTom(tom) {
+    if (typeof lyraPartesTom === "function") {
+      try {
+        const p = lyraPartesTom(tom);
+        if (p && p.raiz) return p.raiz;
+      } catch (_) { /* cai no teste simples abaixo */ }
+    }
+    return String(tom).replace(/m$/, "");
+  }
+
+  // Relativo maior de uma tônica menor, com a grafia correta:
+  // A -> C, F# -> A, Bb -> Db, C# -> E.
+  function relativoMaior(raizMenor) {
+    const letra = LETRAS[(LETRAS.indexOf(raizMenor[0]) + 2) % 7];
+    const alvoPc = (lyraPc(raizMenor) + 3) % 12;
+    let alt = (alvoPc - lyraPc(letra) + 12) % 12;
+    if (alt > 6) alt -= 12;
+    return letra + (alt < 0 ? "b".repeat(-alt) : "#".repeat(alt));
+  }
+
+  // Tônica usada como "1": a do tom (maior) ou a do relativo maior (menor).
+  function tonicaDeReferencia(tom) {
+    const raiz = raizDoTom(tom);
+    if (!/^[A-G][#b]?$/.test(raiz)) return null;
+    return tomEhMenor(tom) ? relativoMaior(raiz) : raiz;
+  }
+
+  // ---------- Nota -> grau ----------
+
+  // Relaciona a nota à tônica por grau DIATÔNICO, e não só por semitom:
+  // em C, C# é #1 e Db é b2; em F, Bb é 4.
+  function grauDaNota(nota, tom) {
+    const ref = tonicaDeReferencia(tom);
+    if (!ref || !/^[A-G][#b]?$/.test(nota)) return null;
+
+    const notaPc = lyraPc(nota), tomPc = lyraPc(ref);
     if (notaPc === null || tomPc === null) return null;
 
-    const posTom = LETRAS.indexOf(raizTom[0]);
+    const posTom = LETRAS.indexOf(ref[0]);
     const posNota = LETRAS.indexOf(nota[0]);
     const indice = (posNota - posTom + 7) % 7;
     const semitons = (notaPc - tomPc + 12) % 12;
@@ -39,8 +90,53 @@
     return (alteracao < 0 ? "b".repeat(-alteracao) : "#".repeat(alteracao)) + (indice + 1);
   }
 
-  // Preserva qualidade e tensões: Am7 -> 6m7, G7 -> 5⁷,
-  // G/B -> 5/7, F#m7/C# -> #4m7/#1 (em C).
+  // ---------- Sufixo ----------
+
+  // Normaliza uma extensão: 7M / M7 / Δ7 / M -> maj7 / maj
+  function normalizarExtensao(p) {
+    if (p === "7M") return "maj7";
+    const m = p.match(/^(?:maj|Maj|M|Δ)(\d*)$/);
+    return m ? "maj" + m[1] : p;
+  }
+
+  // "m7" -> "m(7)"; "7M(9)" -> "(maj7)(9)"; "sus4" -> "(sus4)"; "dim7" -> "°(7)"
+  function formatarSufixo(resto) {
+    if (!resto) return "";
+
+    let qualidade = "";
+    const dim = resto.match(/^(dim|°|º)/i);
+    if (dim) {
+      qualidade = "°";
+      resto = resto.slice(dim[0].length);
+    } else {
+      const men = resto.match(/^(min|m)(?!aj)/);
+      if (men) {
+        qualidade = "m";
+        resto = resto.slice(men[0].length);
+      }
+    }
+
+    // "G4" na cifra de louvor significa sus4.
+    if (resto === "4") resto = "sus4";
+
+    const partes = [];
+    const re = /7M|(?:maj|Maj|M|Δ)\d*|add[b#]?\d+|sus\d*|aug|\+|[b#]\d+|\d+|\(([^)]*)\)/y;
+    let pos = 0;
+    while (pos < resto.length) {
+      re.lastIndex = pos;
+      const m = re.exec(resto);
+      if (!m) return qualidade + "(" + resto.slice(pos) + ")"; // não reconhecido: isola como veio
+      partes.push(m[1] !== undefined ? m[1] : m[0]);
+      pos = re.lastIndex;
+    }
+
+    return qualidade + partes.map(p => "(" + normalizarExtensao(p) + ")").join("");
+  }
+
+  // ---------- Acorde -> grau ----------
+
+  // Exemplos (tom C ou Am): Am7 -> 6m(7), G7 -> 5(7), F7M(9) -> 4(maj7)(9),
+  // G4 -> 5(sus4), G/B -> 5/7, G#° -> #5°.
   function grauDoAcorde(acorde, tom) {
     if (!acorde || !tom ||
         (typeof LYRA_RE_ACORDE !== "undefined" && !LYRA_RE_ACORDE.test(acorde))) return null;
@@ -58,13 +154,10 @@
       resto = resto.slice(0, -invertido[0].length);
     }
 
-    // "5⁷" evita a leitura ambígua de "57" para o dominante.
-    // Os demais sufixos conservam a grafia da cifra original.
-    if (resto === "7") resto = "⁷";
-    else if (/^(dim|°|º)$/i.test(resto)) resto = "°";
-
-    return grau + resto + (baixo ? "/" + baixo : "");
+    return grau + formatarSufixo(resto) + (baixo ? "/" + baixo : "");
   }
+
+  // ---------- Integração com o leitor ----------
 
   function grauAtivoNoLeitor() {
     return emGraus && typeof lyraAtual !== "undefined" && lyraAtual &&
@@ -193,7 +286,6 @@
     return res;
   };
 
-  // Pode ser útil para testes e futuras melhorias; não dá acesso
-  // a nenhuma informação do banco ou do usuário.
-  window.tomLouvoresGraus = Object.freeze({ grauDaNota, grauDoAcorde });
+  // Útil para testes; não dá acesso a nenhuma informação do banco ou do usuário.
+  window.tomLouvoresGraus = Object.freeze({ grauDaNota, grauDoAcorde, formatarSufixo, relativoMaior });
 })();
