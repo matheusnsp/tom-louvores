@@ -626,7 +626,7 @@
       const grauApp = T.grauDoAcorde(nome, tom) || a.grauTxt;
       const familia = a.tipo === "diatonico" ? "Pertence ao campo" : a.tipo === "secundario" ? "Possível dominante secundário"
         : a.tipo === "emprestimo" ? "Possível empréstimo modal" : a.tipo === "passagem" ? "Possível diminuto de passagem" : "Fora do campo";
-      
+
       const sufixos = ["", "m", "m", "", "", "m", "dim"];
       const campo = sufixos.map((s,i) => {
         const nota = notaDoGrau(a.ref,i) + s;
