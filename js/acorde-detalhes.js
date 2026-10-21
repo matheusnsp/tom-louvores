@@ -468,49 +468,76 @@
     @media (max-width:820px),(pointer:coarse){.ac-balao .acd-abrir{padding:9px 10px;font-size:12.5px}}
 
     .acd-folha{
-      position:absolute;left:0;right:0;bottom:0;z-index:45;
-      background:#161616;border-top:1px solid var(--gray3);
-      box-shadow:0 -12px 30px rgba(0,0,0,.45);
-      padding:14px 16px calc(18px + env(safe-area-inset-bottom));
-      max-height:78%;overflow:auto;
-      transform:translateY(101%);transition:transform .22s ease;
-      visibility:hidden;
+      position:absolute;inset:0;z-index:120;
+      display:flex;flex-direction:column;
+      background:#111214;color:#ebebed;
+      border:0;box-shadow:0 -12px 35px rgba(0,0,0,.5);
+      max-height:none;padding:0;
+      overflow:hidden;overscroll-behavior:contain;
+      transform:translateY(103%);transition:transform .22s ease,visibility .22s;
+      visibility:hidden;font-family:var(--font-ui);
     }
     .acd-folha.on{transform:none;visibility:visible}
-    .claro .acd-folha{background:#F1EDE6;border-top-color:rgba(0,0,0,.14);box-shadow:0 -12px 30px rgba(0,0,0,.14)}
-    @media (min-width:1100px){.lyra-box.op-fixo .acd-folha{left:var(--op-menu)}}
-    .acd-folha > *{max-width:560px;margin-left:auto;margin-right:auto}
-
-    .acd-hd{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-    .acd-nome{font-size:22px;font-weight:800;color:var(--cifra);letter-spacing:.02em}
+    .lyra-box.claro .acd-folha{background:#f5f6fa;color:#202632}
+    .acd-hd{
+      position:relative;display:flex;align-items:center;gap:12px;flex:none;
+      padding:18px 20px 15px;max-width:none!important;width:100%;
+      border-bottom:1px solid rgba(125,125,125,.22);
+      background:inherit;
+    }
+    .acd-nome{font-size:27px;font-weight:850;color:var(--cifra);letter-spacing:.01em}
     .claro .acd-nome{color:var(--cifra-claro)}
-    .acd-grau{font-size:12px;color:var(--gray);flex:1;min-width:0}
-    .acd-x{background:none;border:none;color:var(--gray);font-size:18px;cursor:pointer;padding:2px 6px}
-
-    .acd-sec{border-top:1px solid var(--gray3);padding:10px 0 2px}
-    .claro .acd-sec{border-top-color:rgba(0,0,0,.12)}
-    .acd-sec h4{
-      margin:0 0 6px;font-family:var(--font-ui);font-size:11px;font-weight:800;
-      letter-spacing:.08em;text-transform:uppercase;color:var(--cifra);
+    .acd-grau{font-size:12px;color:#a2a4ab;flex:1;min-width:0}
+    .acd-x{width:40px;height:40px;flex:none;border:0;background:rgba(128,128,128,.12);border-radius:50%;color:inherit;font-size:19px;cursor:pointer}
+    .acd-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;padding:16px 20px max(24px,env(safe-area-inset-bottom));}
+    .acd-scroll-inner{max-width:690px;margin:0 auto;display:grid;gap:13px}
+    .acd-lead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .acd-tag{display:inline-block;padding:6px 10px;border-radius:30px;background:rgba(76,175,104,.16);color:#67d68b;font-size:12px;font-weight:750}
+    .acd-tonalidade{font-size:12px;color:#a2a4ab}
+    .acd-tonalidade strong{display:block;margin-top:3px;color:inherit;font-size:15px}
+    .acd-sec{border:1px solid rgba(140,140,140,.18);border-radius:15px;background:#1d1f23;padding:16px;min-width:0}
+    .acd-sec h4{margin:0 0 10px;font-size:11px;font-weight:850;letter-spacing:.065em;text-transform:uppercase;color:#a9a7fa}
+    .acd-sec p{margin:0 0 9px;font-size:13px;line-height:1.57;color:inherit}
+    .acd-sec p:last-child{margin-bottom:0}
+    .acd-mudo{color:#a0a1a9}
+    .acd-hl{color:#e9b83e;font-weight:800}
+    .acd-notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin:10px 0}
+    .acd-nota{border-radius:10px;background:rgba(127,127,127,.09);text-align:center;padding:11px 4px}
+    .acd-nota strong{display:block;font-size:20px;color:#f2ca67}
+    .acd-nota small{display:block;margin-top:5px;font-size:10px;color:#a1a3aa}
+    .acd-campo{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:10px}
+    .acd-campo-item{border-radius:8px;background:rgba(127,127,127,.1);text-align:center;padding:10px 2px;font-size:12px;font-weight:750;overflow-wrap:anywhere}
+    .acd-campo-item small{display:block;margin-bottom:4px;font-size:9px;font-weight:600;opacity:.7}
+    .acd-campo-item.on{background:var(--cifra);color:#101010}
+    .acd-context{margin-top:12px}
+    .acd-lista{list-style:none;margin:0;padding:0}
+    .acd-lista li{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:12px;line-height:1.5;color:inherit}
+    .acd-chip{display:inline-flex;flex-direction:column;min-width:77px;max-width:110px;flex:none;text-align:center;border-radius:9px;background:rgba(127,127,127,.12);padding:8px;color:#f0c65b;font-weight:850}
+    .acd-chip i{font-size:10px;font-style:normal;font-weight:500;color:#a1a1a9}
+    .lyra-box.claro .acd-sec{background:#fff;border-color:#e0e3e9}
+    .lyra-box.claro .acd-sec h4{color:#515aa5}
+    .lyra-box.claro .acd-nota strong,.lyra-box.claro .acd-chip{color:#2751c9}
+    .lyra-box.claro .acd-campo-item.on{background:#2751c9;color:#fff}
+    .lyra-box.claro .acd-tag{color:#267a43;background:#e0f5e5}
+    .lyra-box.claro .acd-grau,.lyra-box.claro .acd-tonalidade{color:#646b79}
+    @media(min-width:821px){
+      .acd-folha{inset:5% auto 5% 50%;width:min(740px,calc(100% - 48px));height:90%;max-height:850px;
+        transform:translate(-50%,105%);border:1px solid rgba(128,128,128,.25);border-radius:20px;
+        box-shadow:0 25px 70px rgba(0,0,0,.6)}
+      .acd-folha.on{transform:translateX(-50%)}
+      .acd-scroll-inner{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .acd-scroll-inner>.acd-wide{grid-column:1/-1}
     }
-    .claro .acd-sec h4{color:var(--cifra-claro)}
-    .acd-sec p{margin:0 0 7px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5;color:#e4e4e4}
-    .claro .acd-sec p{color:#2c2c2c}
-    .acd-mudo{color:var(--gray)}
-    .acd-hl{color:var(--cifra)}
-    .claro .acd-hl{color:var(--cifra-claro)}
-    .acd-lista{list-style:none;margin:0 0 6px;padding:0}
-    .acd-lista li{
-      display:flex;gap:10px;align-items:baseline;margin-bottom:8px;
-      font-family:var(--font-ui);font-size:13px;line-height:1.45;color:#e4e4e4;
-    }
-    .claro .acd-lista li{color:#2c2c2c}
-    .acd-chip{
-      flex:none;min-width:64px;text-align:center;padding:3px 8px;border-radius:7px;
-      border:1px solid var(--gray3);font-weight:800;color:var(--cifra);
-    }
-    .acd-chip i{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--gray)}
-    .claro .acd-chip{color:var(--cifra-claro);border-color:rgba(0,0,0,.18)}`;
+    @media(max-width:820px),(pointer:coarse){
+      .acd-folha{position:absolute;inset:0;width:100%;height:100%;border-radius:0}
+      .acd-hd{padding:calc(14px + env(safe-area-inset-top)) 15px 12px}
+      .acd-scroll{padding:13px 12px calc(25px + env(safe-area-inset-bottom))}
+      .acd-scroll-inner{gap:11px}
+      .acd-sec{padding:14px}
+      .acd-campo{gap:3px}
+      .acd-campo-item{font-size:10px;padding:9px 1px}
+    }`;
     document.head.appendChild(st);
   })();
 
@@ -538,31 +565,46 @@
     const a = tom ? analisar(nome, tom) : null;
     nomeAberto = nome;
 
+    const hd = (detail) => `<div class="acd-hd"><span class="acd-nome">${esc(nome)}</span>
+      <span class="acd-grau">${detail}</span>
+      <button type="button" class="acd-x" aria-label="Fechar detalhes">&#10005;</button></div>`;
     if (!a) {
-      f.innerHTML = `
-        <div class="acd-hd"><span class="acd-nome">${esc(nome)}</span><span class="acd-grau"></span>
-          <button type="button" class="acd-x" aria-label="Fechar">&#10005;</button></div>
-        <div class="acd-sec"><p class="acd-mudo">Não consegui analisar este acorde no tom atual.</p></div>`;
+      f.innerHTML = hd("") + `<div class="acd-scroll"><div class="acd-scroll-inner">
+        <section class="acd-sec"><p>Não consegui analisar este acorde no tom atual.</p></section>
+      </div></div>`;
     } else {
       const grauApp = T.grauDoAcorde(nome, tom) || a.grauTxt;
-      f.innerHTML = `
-        <div class="acd-hd">
-          <span class="acd-nome">${esc(nome)}</span>
-          <span class="acd-grau">grau ${esc(grauApp)} em ${esc(a.menorTom ? tom + " (ref. " + a.ref + ")" : tom)}</span>
-          <button type="button" class="acd-x" aria-label="Fechar">&#10005;</button>
-        </div>
-        <section class="acd-sec"><h4>Contexto no tom</h4>${textoContexto(a)}</section>
-        <section class="acd-sec"><h4>Como é formado</h4>${textoFormacao(a)}</section>
-        <section class="acd-sec"><h4>Função harmônica</h4>${textoFuncao(a)}</section>
-        <section class="acd-sec"><h4>Caráter sonoro</h4>${textoCarater(a)}</section>
-        <section class="acd-sec"><h4>Substituições possíveis</h4>${textoSubstituicoes(a)}</section>
-        <section class="acd-sec"><h4>Dica rápida</h4>${textoDica(a)}</section>`;
+      const familia = a.tipo === "diatonico" ? "Diatônico" : a.tipo === "secundario" ? "Dominante secundário"
+        : a.tipo === "emprestimo" ? "Empréstimo modal" : a.tipo === "passagem" ? "Acorde de passagem" : "Cromático";
+      const funcoes = ["Tônica", "Subdominante", "Tônica", "Subdominante", "Dominante", "Tônica", "Dominante"];
+      const sufixos = ["", "m", "m", "", "", "m", "dim"];
+      const campo = sufixos.map((s,i) => {
+        const nota = notaDoGrau(a.ref,i) + s;
+        const ativo = a.tipo === "diatonico" && a.grau.idx === i;
+        return `<span class="acd-campo-item${ativo ? " on" : ""}"><small>${ROMANOS[i]}</small>${esc(nota)}</span>`;
+      }).join("");
+      const notas = a.notas.map(n => `<div class="acd-nota"><strong>${esc(n.nota)}</strong><small>${esc(n.rot === "T" ? "Fundamental" : n.rot)}</small></div>`).join("");
+      const context = textoContexto(a).replace(/<p><span class="acd-mudo">Campo de [\s\S]*?<\/p>/, "");
+      f.innerHTML = hd(`Grau ${esc(grauApp)} · ${esc(tom)}`) + `
+        <div class="acd-scroll"><div class="acd-scroll-inner">
+          <div class="acd-lead acd-wide"><span class="acd-tag">${esc(familia)}</span>
+            <span class="acd-tonalidade">TONALIDADE ATUAL<strong>${esc(tom)}</strong></span></div>
+          <section class="acd-sec acd-wide"><h4>Como o acorde é formado</h4>
+            <div class="acd-notas">${notas}</div><p>${esc(qualidadeFrase(a))}.</p></section>
+          <section class="acd-sec acd-wide"><h4>Campo harmônico de ${esc(a.ref)}</h4>
+            <div class="acd-campo">${campo}</div><div class="acd-context">${context}</div></section>
+          <section class="acd-sec"><h4>Função harmônica · ${esc(funcoes[a.grau.idx])}</h4>${textoFuncao(a)}</section>
+          <section class="acd-sec"><h4>Caráter sonoro</h4>${textoCarater(a)}</section>
+          <section class="acd-sec acd-wide"><h4>Substituições possíveis</h4>${textoSubstituicoes(a)}</section>
+          <section class="acd-sec acd-wide"><h4>Dica rápida</h4>${textoDica(a)}</section>
+        </div></div>`;
     }
-
-    f.scrollTop = 0;
+    const scroller = f.querySelector(".acd-scroll");
+    if (scroller) scroller.scrollTop = 0;
     //  um painel por vez: o balão recolhe e o painel de diagrama fica por baixo
     if (typeof acEsconderBalao === "function") acEsconderBalao();
     f.classList.add("on");
+    f.querySelector(".acd-x")?.focus({ preventScroll: true });
   }
 
   function fechar() {
