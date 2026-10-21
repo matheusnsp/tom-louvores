@@ -287,5 +287,5 @@
   };
 
   // Útil para testes; não dá acesso a nenhuma informação do banco ou do usuário.
-  window.tomLouvoresGraus = Object.freeze({ grauDaNota, grauDoAcorde, formatarSufixo, relativoMaior });
+  window.tomLouvoresGraus = Object.freeze({ grauDaNota, grauDoAcorde, formatarSufixo, relativoMaior, tonicaDeReferencia });
 })();

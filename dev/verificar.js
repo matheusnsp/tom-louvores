@@ -26,6 +26,8 @@ async function verificar(opcoes = {}) {
       "culto-seletor.js": "cultoProximaOcorrencia",
       "sons.js": "somTocar",
     };
+    //  o detalhe do acorde só carrega depois do graus.js: ele depende dele
+    t("carregou acorde-detalhes.js", !!(window.tomLouvoresDetalhes && window.tomLouvoresGraus));
     Object.entries(modulos).forEach(([arq, fn]) =>
       t(`carregou ${arq}`, typeof window[fn] === "function"));
   
