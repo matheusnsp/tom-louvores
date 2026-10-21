@@ -1125,7 +1125,30 @@
    .lyra-btn:disabled:hover{background:var(--black5);border-color:var(--gray3)}
    
    /* corpo: cifra e letra */
-   .lyra-corpo{overflow:auto;overscroll-behavior:contain;padding:18px 16px 28px;flex:1}
+   .lyra-corpo{
+     overflow:auto;overscroll-behavior:contain;padding:18px 16px 28px;
+     flex:1;min-height:0;min-width:0;
+     background:#070708;
+   }
+   .lyra-box.claro .lyra-corpo{background:#FAF9F7}
+   /* A quebra deve respeitar a largura disponível, sem esticar o fundo. */
+   .lyra-pre{max-width:100%;box-sizing:border-box}
+   .lyra-pre.quebra{width:100%;white-space:pre-wrap;overflow-wrap:anywhere}
+   .lyra-zoom-indicador{
+     position:absolute;left:50%;top:52%;transform:translate(-50%,-50%) scale(.95);
+     z-index:70;pointer-events:none;opacity:0;
+     padding:13px 22px;border-radius:15px;
+     background:rgba(25,23,20,.94);color:var(--gold-hi);
+     border:1px solid rgba(var(--gold-rgb),.36);
+     box-shadow:0 12px 40px rgba(0,0,0,.32);
+     font:800 26px/1 var(--font-ui);font-variant-numeric:tabular-nums;
+     transition:opacity .16s ease,transform .16s ease;
+   }
+   .lyra-zoom-indicador.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+   .lyra-box.claro .lyra-zoom-indicador{
+     background:rgba(250,249,247,.96);color:var(--cifra-claro);
+     border-color:rgba(0,0,0,.15);
+   }
    .lyra-pre{
      margin:0;white-space:pre;line-height:1.55;
      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;

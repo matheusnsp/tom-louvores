@@ -1579,6 +1579,20 @@ function lyraLigarArraste(corpo) {
 function lyraLigarPinca(corpo) {
   if (!corpo || corpo.dataset.pincaLigada === "1") return;
   corpo.dataset.pincaLigada = "1";
+  // Indicador flutuante de zoom, independente da rolagem.
+  const indicador = document.createElement("div");
+  indicador.id = "lyraZoomIndicador";
+  indicador.className = "lyra-zoom-indicador";
+  indicador.setAttribute("aria-hidden", "true");
+  indicador.textContent = lyraZoom + "%";
+  document.getElementById("lyraBox").appendChild(indicador);
+  let timerIndicador = 0;
+  const mostrarIndicador = valor => {
+    indicador.textContent = Math.round(valor) + "%";
+    indicador.classList.add("on");
+    clearTimeout(timerIndicador);
+    timerIndicador = setTimeout(() => indicador.classList.remove("on"), 950);
+  };
   let inicio = null;
   let frame = 0;
   let pendente = null;
@@ -1589,6 +1603,7 @@ function lyraLigarPinca(corpo) {
   );
   const aplicar = valor => {
     pendente = limitar(valor);
+    mostrarIndicador(pendente);
     if (frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
