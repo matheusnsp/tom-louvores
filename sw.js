@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v98";
+const CACHE = "tom-louvores-v99";
 
 const APP = [
   "./js/tons-mobile.js",
@@ -162,6 +162,19 @@ self.addEventListener("fetch", e => {
   //  Dados: a rede manda. Só se ela falhar é que vale o que estava
   //  guardado — melhor um culto de ontem do que nada.
   if (ehBanco(url)) {
+    const authHeader = req.headers.get("Authorization") || "";
+    let usuarioPrivado = false;
+    if (authHeader.startsWith("Bearer ")) {
+      try {
+        const jwt = authHeader.slice(7);
+        const payload = JSON.parse(atob(jwt.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+        usuarioPrivado = payload.role === "authenticated";
+      } catch (_) { usuarioPrivado = true; }
+    }
+    if (usuarioPrivado) {
+      e.respondWith(fetch(req));
+      return;
+    }
     e.respondWith((async () => {
       try {
         return guardar(req, await fetch(req));

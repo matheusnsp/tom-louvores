@@ -131,120 +131,62 @@
     return sessao.access_token;
   }
 
+  function paresMinistrantes() {
+    const pessoas = typeof window.tlObterTonsMinistrantes === "function"
+      ? window.tlObterTonsMinistrantes() : [];
+    if (!pessoas.length) throw new Error("Adicione ao menos um ministrante e tom.");
+    const grupos = new Map();
+    for (const p of pessoas) {
+      if (!p.tom || !p.min) continue;
+      const nomes = grupos.get(p.tom) || [];
+      if (!nomes.includes(p.min)) nomes.push(p.min);
+      grupos.set(p.tom, nomes);
+    }
+    if (!grupos.size) throw new Error("Defina os tons dos ministrantes.");
+    const pares = [...grupos].map(([tom, nomes]) => ({tom, min:nomes.join(", ")}));
+    if (pares.length === 1) {
+      pares[0].min_orig = pares[0].min;
+      pares[0].min = "Todos";
+    }
+    return { pares, ministrante: [...new Set(pessoas.map(p => p.min).filter(Boolean))].join(", ") };
+  }
+
   async function publicar() {
     const titulo = $("titulo")?.value.trim();
     const artista = $("artista")?.value.trim();
     const tom = $("tom")?.value;
     const cifra = $("cifra")?.value;
-
-    if (!titulo || !artista || !tom || !cifra?.trim()) {
-      throw new Error(
-        "Preencha nome, artista, tom original e a cifra completa."
-      );
-    }
-
+    if (!titulo || !artista || !tom || !cifra?.trim())
+      throw new Error("Preencha nome, artista, tom original e a cifra completa.");
+    const { pares, ministrante } = paresMinistrantes();
     const token = await autenticar();
-
-    // Primeiro confirma que a música existe no repertório.
-    const musicas = await requisicao(
-      "musicas?select=id,nome",
-      token
-    );
-
-    const encontradas = musicas.filter(
-      m => normalizar(m.nome) === normalizar(titulo)
-    );
-
-    if (encontradas.length !== 1) {
-      throw new Error(
-        encontradas.length === 0
-          ? "Essa música ainda não existe no repertório. " +
-            "O cadastro de novas músicas será integrado separadamente."
-          : "Há mais de uma música com esse nome. " +
-            "Não é seguro escolher qual atualizar."
-      );
-    }
-
-    // Busca por título exato normalizado, independentemente do slug.
-    const cifras = await requisicao(
-      "cifras?select=id,slug,title,artist",
-      token
-    );
-
-    const correspondentes = cifras.filter(
-      c => normalizar(c.title) === normalizar(titulo)
-    );
-
-    if (correspondentes.length > 1) {
-      throw new Error(
-        "Há várias cifras com esse título. " +
-        "A atualização precisa ser resolvida manualmente."
-      );
-    }
-
-    const existente = correspondentes[0];
-
-    if (
-      existente &&
-      existente.artist &&
-      normalizar(existente.artist) !== normalizar(artista)
-    ) {
-      const confirmado = confirm(
-        `A cifra "${titulo}" está registrada como ` +
-        `"${existente.artist}". Atualizar para "${artista}"?`
-      );
-
-      if (!confirmado) return false;
-    }
-
-    const dados = {
-      title: titulo,
-      artist: artista,
-      base_key: tom,
-      chords: cifra
-    };
-
-    let resultado;
-
-    if (existente) {
-      resultado = await requisicao(
-        `cifras?id=eq.${existente.id}`,
-        token,
-        {
-          method: "PATCH",
-          body: JSON.stringify(dados)
-        }
-      );
-    } else {
-      const slug = slugificar(titulo);
-
-      if (cifras.some(c => c.slug === slug)) {
-        throw new Error(
-          "Já existe uma cifra usando esse identificador."
-        );
-      }
-
-      resultado = await requisicao(
-        "cifras",
-        token,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            id: crypto.randomUUID(),
-            slug,
-            ...dados
-          })
-        }
-      );
-    }
-
-    if (!Array.isArray(resultado) || resultado.length !== 1) {
-      throw new Error(
-        "O banco não confirmou a gravação de um registro."
-      );
-    }
-
+    let vinculo = null;
+    try { vinculo = JSON.parse(sessionStorage.getItem("tl_editor_vinculo") || "null"); }
+    catch (_) {}
+    const resultado = await requisicao("rpc/salvar_louvor_com_cifra", token, {
+      method: "POST",
+      body: JSON.stringify({
+        p_repertorio_id: vinculo?.repertorioId || null,
+        p_nome: titulo,
+        p_artista: artista,
+        p_tom_original: tom,
+        p_chords: cifra,
+        p_slug: slugificar(titulo),
+        p_tons: JSON.stringify(pares),
+        p_ministrante: ministrante
+      })
+    });
+    if (!resultado?.musica_id || !resultado?.cifra_id)
+      throw new Error("O banco não confirmou ambos os registros.");
+    sessionStorage.setItem("tl_editor_vinculo", JSON.stringify({
+      repertorioId: resultado.musica_id, titulo,
+      tonsMinistrantes: pessoasParaEditor(pares), modo: "editar"
+    }));
     return true;
+  }
+
+  function pessoasParaEditor(pares) {
+    return pares.map(p => ({tom:p.tom, mins:(p.min_orig || p.min).split(",").map(x=>x.trim()).filter(x=>x !== "Todos")}));
   }
 
   window.tlPublicarCifra = async function () {

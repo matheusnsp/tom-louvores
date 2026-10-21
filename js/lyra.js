@@ -1212,8 +1212,24 @@ async function lyraCarregarCifra(slug, tomLyra, grafia = null) {
 
 }
 
+// A letra é derivada da mesma cifra publicada em public.cifras.
+function lyraExtrairLetraDosAcordes(texto) {
+  if (!texto) return "";
+  const acorde = /^(?:[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add|º|°|\+|\-)?\d*(?:\([^)]*\))?(?:\/[A-G](?:#|b)?)?)$/i;
+  return String(texto).split(/\r?\n/).map(linha => {
+    const t = linha.trim();
+    if (!t) return "";
+    if (/^(?:Tom|Capo|Afinação)\s*:/i.test(t)) return "";
+    const partes = t.replace(/[|:]/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (partes.length && partes.every(x => acorde.test(x) || /^\d+x$/i.test(x))) return "";
+    return linha.replace(/\[([A-G][#b]?(?:m|maj|dim|sus|add)?\d*(?:\/[A-G][#b]?)?)\]/gi, "");
+  }).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 async function lyraCarregarLetra(slug) {
-  return (await lyraCarregarMusica(slug)).lyrics;
+  const musica = await lyraCarregarMusica(slug);
+  const original = musica.base_key && musica.porTom.get(lyraKeySlug(musica.base_key));
+  return lyraExtrairLetraDosAcordes(original || "") || musica.lyrics || "";
 }
 
 // ── Montagem do texto na tela ────────────────────────────────

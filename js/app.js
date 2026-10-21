@@ -256,6 +256,13 @@ async function restaurarLoginAdmin() {
   render(musicas);
 }
 
+async function tokenAdmin() {
+  if (!adminSession?.refresh_token) throw new Error("Faça login como admin.");
+  if (!isAdmin() && !(await renovarLoginAdmin()))
+    throw new Error("Sua sessão expirou. Entre novamente.");
+  return adminSession.access_token;
+}
+
 document.addEventListener("DOMContentLoaded", restaurarLoginAdmin);
 
 setInterval(async () => {
@@ -397,11 +404,15 @@ function tonsParaHTML(m, expandir = true) {
 // ============================================================
 
 async function req(path, opts = {}) {
+  const metodo = (opts.method || "GET").toUpperCase();
+  // Toda escrita legado precisa da sessão administrativa real.
+  const token = ["GET", "HEAD", "OPTIONS"].includes(metodo)
+    ? KEY : await tokenAdmin();
   const r = await fetch(`${URL_BASE}/rest/v1/${path}`, {
     ...opts,
     headers: {
       apikey: KEY,
-      Authorization: `Bearer ${KEY}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
       ...(opts.headers || {}),

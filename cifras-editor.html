@@ -279,7 +279,6 @@
   }
 }
 </style>
-<link rel="stylesheet" href="css/cifras-layout-final.css">
   <link rel="stylesheet" href="css/seletores-unificados.css">
   <link rel="stylesheet" href="css/responsivo-global.css">
 <link rel="stylesheet" href="css/editor-mobile-fix.css">
@@ -605,6 +604,7 @@ Cole ou digite sua cifra aqui..."></textarea>
   ];
 
   const lista = [];
+  window.tlObterTonsMinistrantes = () => lista.map(p => ({...p}));
 
   function opcao(select, valor) {
     const o = document.createElement("option");
@@ -676,9 +676,10 @@ Cole ou digite sua cifra aqui..."></textarea>
       for (const min of pessoas) {
         if (!nomes.includes(min)) continue;
 
-        const anterior = lista.find(x => x.min === min);
-        if (anterior) anterior.tom = par.tom;
-        else lista.push({ min, tom: par.tom });
+        const jaExiste = lista.some(
+          x => x.min === min && x.tom === par.tom
+        );
+        if (!jaExiste) lista.push({ min, tom: par.tom });
       }
     }
   }
@@ -692,10 +693,16 @@ Cole ou digite sua cifra aqui..."></textarea>
       return;
     }
 
-    const anterior = lista.find(x => x.min === min);
+    const jaExiste = lista.some(
+      x => x.min === min && x.tom === tom
+    );
 
-    if (anterior) anterior.tom = tom;
-    else lista.push({ min, tom });
+    if (jaExiste) {
+      alert("Essa ministrante já possui esse tom cadastrado.");
+      return;
+    }
+
+    lista.push({ min, tom });
 
     $("ceMin").value = "";
     $("ceTomMin").value = "";
@@ -854,7 +861,6 @@ Cole ou digite sua cifra aqui..."></textarea>
   });
 })();
 </script>
-<script src="js/cifras-layout-final.js"></script>
 <script src="js/cifras-publicar.js"></script>
 <script src="js/editor-origem-sugestoes.js"></script>
 <script src="js/tons-mobile.js"></script>
