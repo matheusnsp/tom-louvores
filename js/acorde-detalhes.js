@@ -35,7 +35,8 @@
 
   // Qualidade natural de cada grau da escala maior.
   const NATURAL = ["maior", "menor", "menor", "maior", "maior", "menor", "dim"];
-  const FUNCAO_GRAU = ["Tônica", "Subdominante", "Tônica", "Subdominante", "Dominante", "Tônica", "Dominante"];
+  // Funções são tendências, não propriedades absolutas do acorde isolado.
+  const FUNCAO_GRAU = ["Tônica (provável)", "Predominante (comum)", "Prolongamento de tônica (possível)", "Predominante (comum)", "Dominante (comum)", "Tônica relativa (possível)", "Dominante (possível)"];
   const NOME_GRAU = ["tônica", "supertônica", "mediante", "subdominante", "dominante", "superdominante", "sensível"];
 
   const esc = s => String(s).replace(/[&<>"]/g,
@@ -144,37 +145,36 @@
     let tipo = "cromatico";
     let alvo = null;           // para secundário e passagem
 
+    // Pertencimento: TODAS as notas reais precisam pertencer à escala,
+    // inclusive 7ª e extensões. Um F7 em C, por exemplo, contém Eb: NÃO é diatônico.
+    const escalaPcs = new Set(ESCALA.map(v => (lyraPc(ref) + v) % 12));
+    const notasNoCampo = pcs.every(v => escalaPcs.has((raizPc + v) % 12));
     const qualidadeBate = natural && (
       NATURAL[grau.idx] === triade ||
       (NATURAL[grau.idx] === "dim" && (ac.dim || meioDim)) ||
       ((ac.sus || poder) && NATURAL[grau.idx] !== "dim")
     );
-    // Num acorde natural maior, o 7m só é "da casa" no V (G7 em C).
-    const septimaFora = natural && dom && grau.idx !== 4 && NATURAL[grau.idx] === "maior";
 
-    if (qualidadeBate && !septimaFora) {
+    if (qualidadeBate && notasNoCampo) {
       tipo = "diatonico";
     } else {
-      // dominante secundário: acorde maior (ou dominante) que aponta uma quinta abaixo
+      // Uma dominante secundária exige alvo tonal plausível. Sem progressão
+      // não se pode afirmar que ela realmente toniciza o acorde indicado.
       const alvoIdx = ESCALA.indexOf((((raizPc + 5) % 12) - lyraPc(ref) + 12) % 12);
-      const emGrauMenor = natural && [1, 2, 5, 6].includes(grau.idx);     // II, III, VI, VII maiores
-      const tonicaComSetima = natural && grau.idx === 0 && dom;           // C7 em C aponta para o IV
-      if (triade === "maior" && !ac.sus && !poder && !maj7 && (emGrauMenor || tonicaComSetima) &&
-          alvoIdx >= 1 && alvoIdx <= 5) {
+      if (triade === "maior" && !ac.sus && !poder && !maj7 &&
+          (tem(4) && (tem(7) || m7)) && alvoIdx >= 1 && alvoIdx <= 5) {
         tipo = "secundario";
         alvo = { idx: alvoIdx, nome: nomeDoGrau(alvoIdx, 0, NATURAL[alvoIdx] === "menor" ? "m" : "") };
       } else if (ac.dim && grau.alt === 1 && [0, 1, 3, 4].includes(grau.idx)) {
-        // #1°, #2°, #4°, #5°: sobem meio tom até o acorde do grau seguinte
         const subIdx = grau.idx + 1;
-        tipo = "passagem";
+        tipo = "passagem"; // possível: só confirmável ao ver a resolução
         alvo = { idx: subIdx, nome: nomeDoGrau(subIdx, 0, NATURAL[subIdx] === "menor" ? "m" : "") };
       } else if (
-        (triade === "maior" && [-1].includes(grau.alt) && [2, 5, 6].includes(grau.idx)) ||   // bIII, bVI, bVII
-        (triade === "maior" && grau.alt === -1 && grau.idx === 1) ||                           // bII (napolitana)
-        (triade === "menor" && natural && [0, 3, 4].includes(grau.idx)) ||                     // i, iv, v
-        ((ac.dim || meioDim) && natural && grau.idx === 1)                                     // ii°
+        (triade === "maior" && grau.alt === -1 && [1, 2, 5, 6].includes(grau.idx)) ||
+        (triade === "menor" && natural && [0, 3, 4].includes(grau.idx)) ||
+        ((ac.dim || meioDim) && natural && grau.idx === 1)
       ) {
-        tipo = "emprestimo";
+        tipo = "emprestimo"; // hipótese de origem modal
       }
     }
 
@@ -216,16 +216,16 @@
     let linha2;
     switch (a.tipo) {
       case "diatonico":
-        linha2 = `Acorde <b>diatônico</b>: está dentro do campo harmônico de ${esc(a.ref)}. É o ${a.grau.idx + 1}º grau, a ${NOME_GRAU[a.grau.idx]}.`;
+        linha2 = `Acorde <b>diatônico</b>: está dentro do campo harmônico de ${esc(a.ref)}. Sua fundamental está no ${a.grau.idx + 1}º grau (${NOME_GRAU[a.grau.idx]}).`;
         break;
       case "secundario":
-        linha2 = `<b>Dominante secundário</b>: fica fora do campo, mas traz a tensão do V para apontar ao ${a.alvo.idx + 1}º grau (${esc(a.alvo.nome)}).`;
+        linha2 = `<b>Dominante secundário</b>: fica fora do campo, e pode produzir a sensação de V apontando ao ${a.alvo.idx + 1}º grau (${esc(a.alvo.nome)}).`;
         break;
       case "passagem":
-        linha2 = `<b>Diminuto de passagem</b>: sobe meio tom até ${esc(a.alvo.nome)} (${a.alvo.idx + 1}º grau), ligando dois acordes do campo.`;
+        linha2 = `<b>Diminuto de passagem</b>: pode subir meio tom até ${esc(a.alvo.nome)} (${a.alvo.idx + 1}º grau), ligando dois acordes do campo.`;
         break;
       case "emprestimo":
-        linha2 = `<b>Empréstimo modal</b>: não existe no campo de ${esc(a.ref)} maior, vem do ${a.grau.alt < 0 && a.grau.idx === 6
+        linha2 = `<b>Empréstimo modal</b>: não existe no campo de ${esc(a.ref)} maior, pode vir do ${a.grau.alt < 0 && a.grau.idx === 6
           ? "modo mixolídio ou do tom menor paralelo" : "tom menor paralelo (" + esc(a.ref) + "m)"}.`;
         break;
       default:
@@ -256,44 +256,34 @@
     return `<p><b>${notas}</b></p><p>Fórmula: ${formula}</p><p>${esc(qualidadeFrase(a))}.</p>${baixo}`;
   }
 
+  function rotuloFuncao(a) {
+    if (a.menorTom) return "Depende da progressão";
+    if (a.tipo === "diatonico") return FUNCAO_GRAU[a.grau.idx];
+    if (a.tipo === "secundario") return "Dominante secundário possível";
+    if (a.tipo === "passagem") return "Passagem cromática possível";
+    if (a.tipo === "emprestimo") return "Função a confirmar";
+    return "Função a confirmar";
+  }
+
   function textoFuncao(a) {
     const g = a.grau.idx;
-    switch (a.tipo) {
-      case "diatonico": {
-        const f = FUNCAO_GRAU[g];
-        const desc = {
-          "Tônica": g === 0
-            ? "É a <b>casa</b> do tom: repouso, chegada. Aqui a música se sente em paz."
-            : "Faz papel de tônica (" + (g === 5 ? "a relativa menor" : "a mediante") + "): repousa, mas com menos firmeza que o grau 1. Dá para trocar pelo 1 sem perder o rumo.",
-          "Subdominante": g === 3
-            ? "Afasta da casa: dá movimento e abertura. Costuma ir para o 5 ou voltar ao 1 (cadência plagal, o “amém”)."
-            : "Prepara o caminho para o 5. É a subdominante em versão menor, comum no encadeamento 2m → 5 → 1.",
-          "Dominante": g === 4
-            ? "Cria tensão e pede resolução, normalmente no 1. É o acorde que “empurra” a música para a casa."
-            : "Sensível do tom: instável, funciona como um 5(7) sem a fundamental e resolve no 1.",
-        }[f];
-        return `<p><b>${f}.</b> ${desc}</p>`;
-      }
-      case "secundario":
-        return `<p><b>Dominante (secundário).</b> Cria uma tensão passageira que “puxa” para o ${a.alvo.idx + 1}º grau (${esc(a.alvo.nome)}), como se ele fosse a casa por um instante. Depois a música volta ao tom.</p>`;
-      case "passagem":
-        return `<p><b>Dominante (de passagem).</b> Instável de propósito: dura pouco e resolve meio tom acima, em ${esc(a.alvo.nome)}.</p>`;
-      case "emprestimo": {
-        const i = a.grau.idx, bemol = a.grau.alt < 0;
-        let titulo, desc;
-        if (i === 1 && bemol) { titulo = "Subdominante (napolitana)"; desc = "Substitui a subdominante com um tom de surpresa, bem dramático."; }
-        else if (i === 1) { titulo = "Subdominante (ii° emprestado)"; desc = "Prepara o 5 com um tom mais escuro, como no tom menor."; }
-        else if (i === 0) { titulo = "Tônica menor"; desc = "Troca o 1 maior pelo menor: a mesma casa, com outra cor."; }
-        else if (i === 2) { titulo = "Tônica relativa do modo menor"; desc = "Traz a cor do modo menor para dentro do tom, sem mudar a tônica."; }
-        else if (i === 3) { titulo = "Subdominante menor"; desc = "É o empréstimo mais clássico: um toque de emoção antes de voltar ao 1."; }
-        else if (i === 4) { titulo = "Dominante menor"; desc = "Tem a função do 5, mas sem a força da sensível. Resolve com suavidade."; }
-        else if (i === 5) { titulo = "Subdominante"; desc = "Soa grandioso e épico, comum antes do bVII e do 1."; }
-        else { titulo = "Subdominante/dominante suave"; desc = "Volta à tônica com suavidade, sem a tensão da sensível."; }
-        return `<p><b>${titulo}.</b> ${desc}</p>`;
-      }
-      default:
-        return `<p><b>Função aberta.</b> Não tem função clara no tom: é um acorde de cor. Para entender o papel dele, veja o acorde que vem logo depois.</p>`;
+    if (a.menorTom) return `<p>A música está em <b>${esc(a.tom)}</b>. Os graus exibidos usam o relativo maior (${esc(a.ref)}) como convenção de numeração, mas <b>isso não muda o centro tonal menor</b>. Para definir tônica, predominante ou dominante com segurança, precisamos examinar a progressão e as alterações da escala menor usadas na música.</p>`;
+    if (a.tipo === "diatonico") {
+      const exemplos = [
+        "O I costuma representar chegada e repouso, especialmente em cadências conclusivas.",
+        "O ii frequentemente prepara V ou V7; o papel depende do encadeamento.",
+        "O iii pode prolongar a região de tônica ou fazer conexão entre outros acordes.",
+        "O IV costuma atuar como predominante e também participa da cadência plagal IV–I.",
+        "O V frequentemente encaminha para I; a sétima de dominante reforça essa direção.",
+        "O vi pode compartilhar a região de tônica, mas também iniciar progressões ou integrar cadências deceptivas.",
+        "O vii°/viiø frequentemente atua como acorde de sensível em direção ao I, dependendo da condução das vozes."
+      ];
+      return `<p><b>${esc(FUNCAO_GRAU[g])}.</b> ${exemplos[g]} <span class="acd-mudo">Função sugerida: depende dos acordes vizinhos, da melodia e do centro tonal percebido.</span></p>`;
     }
+    if (a.tipo === "secundario") return `<p><b>Possível V/${a.alvo.idx + 1}.</b> Este acorde pode atuar como dominante secundário de ${esc(a.alvo.nome)}, <b>se a progressão confirmar essa resolução</b>. Fora desse contexto, pode ter outra função.</p>`;
+    if (a.tipo === "passagem") return `<p><b>Possível diminuto de aproximação.</b> Pode conduzir cromaticamente até ${esc(a.alvo.nome)}, mas só é correto chamá-lo de passagem quando a progressão mostrar esse movimento.</p>`;
+    if (a.tipo === "emprestimo") return `<p><b>Possível empréstimo modal.</b> O acorde pode ter sido tomado de uma escala ou modo paralelo. A origem exata e sua função dependem da progressão; não são demonstradas apenas pela cifra.</p>`;
+    return `<p><b>Função não determinada.</b> O nome do acorde, isoladamente, não permite identificar uma única função harmônica. Confira os acordes anterior e seguinte e a melodia.</p>`;
   }
 
   function textoCarater(a) {
@@ -316,10 +306,10 @@
     else q = "Aberto, estável e brilhante: o acorde maior soa afirmativo e cheio.";
 
     const colorido = {
-      emprestimo: " Por ser emprestado do modo menor, traz um toque de emoção ou de grandeza.",
-      secundario: " Como puxa para outro acorde, a sensação é de expectativa.",
+      emprestimo: " Se funcionar como empréstimo modal, pode trazer um toque de emoção ou de grandeza.",
+      secundario: " Quando atua como dominante secundário, pode criar expectativa.",
       passagem: " Soa como um suspiro entre dois acordes.",
-      cromatico: " Como é cromático, chama atenção no meio da harmonia.",
+      cromatico: " Por usar notas fora do campo, pode chamar atenção na harmonia.",
       diatonico: "",
     }[a.tipo];
     return `<p>${q}${colorido}</p>`;
@@ -436,13 +426,13 @@
   function textoDica(a) {
     if (a.baixoNome) return `<p>Com baixista, deixe o baixo na nota ${esc(a.baixoNome)}. Sozinho no violão, comece a corda mais grave por ela e o resto do acorde já soa certo.</p>`;
     if (a.poder) return `<p>Evite carregar demais na distorção: sem terça o acorde fica vazio. Deixe o teclado ou a segunda guitarra definirem se é maior ou menor.</p>`;
-    if (a.ac.dim) return `<p>Passe rápido: dura um ou dois tempos. Se segurar, a tensão cansa; a graça é chegar logo ao acorde seguinte.</p>`;
-    if (a.ac.sus) return `<p>Resolva sempre: segure o sus por um ou dois tempos e depois toque o acorde com a terça. Se ficar no sus para sempre, o ouvido fica esperando.</p>`;
+    if (a.ac.dim) return `<p>Ouça a condução das vozes: diminutos frequentemente aproximam outro acorde, mas podem também sustentar passagens mais longas.</p>`;
+    if (a.ac.sus) return `<p>Uma resolução comum é trocar a suspensão pela terça; mas acordes sus também podem permanecer sem resolução.</p>`;
     if (a.maj7) return `<p>No violão, não aperte demais as cordas de cima e deixe a sétima soar leve. No teclado, a sétima fica acima da fundamental. Combina com músicas em ambiente de oração.</p>`;
     if (a.dom) return `<p>Se estiver apertado, toque só a tríade e deixe a sétima para o teclado ou o baixo. Cresça a dinâmica nele e solte na resolução.</p>`;
     if (a.tem(2) && a.ctx.terca) return `<p>Toque mais leve que na tríade: a 9ª é para dar espaço, não para ser destacada. No violão, soltar uma corda aberta ajuda.</p>`;
     if (a.tipo === "emprestimo") return `<p>Capriche na dinâmica: esse acorde é o momento “diferente” da harmonia. Vale uma respirada antes e voltar ao tom com calma.</p>`;
-    if (a.tipo === "secundario") return `<p>Veja para onde ele vai: o acorde seguinte é o ${esc(a.alvo.nome)}. Se ele não vier, o dominante fica solto e soa estranho.</p>`;
+    if (a.tipo === "secundario") return `<p>Confira o próximo acorde: ${esc(a.alvo.nome)} é uma resolução possível, não obrigatória. A melodia ajuda a confirmar a análise.</p>`;
     if (a.tipo === "diatonico" && a.grau.idx === 4) return `<p>Faça um pequeno crescendo e solte na resolução. É nele que a música pede o final da frase.</p>`;
     if (a.tipo === "diatonico" && a.grau.idx === 0) return `<p>É o lugar de respirar. Se a banda estiver ensaiando um final ou uma pausa, é aqui que ela cai.</p>`;
     return `<p>Escute o acorde antes de tocar: ouvir como ele soa no tom ajuda a decorar a música sem depender da cifra.</p>`;
@@ -634,9 +624,9 @@
       </div></div>`;
     } else {
       const grauApp = T.grauDoAcorde(nome, tom) || a.grauTxt;
-      const familia = a.tipo === "diatonico" ? "Acorde diatônico" : a.tipo === "secundario" ? "Dominante secundário"
-        : a.tipo === "emprestimo" ? "Empréstimo modal" : a.tipo === "passagem" ? "Acorde de passagem" : "Acorde cromático";
-      const funcoes = ["Tônica", "Subdominante", "Tônica", "Subdominante", "Dominante", "Tônica", "Dominante"];
+      const familia = a.tipo === "diatonico" ? "Pertence ao campo" : a.tipo === "secundario" ? "Possível dominante secundário"
+        : a.tipo === "emprestimo" ? "Possível empréstimo modal" : a.tipo === "passagem" ? "Possível diminuto de passagem" : "Fora do campo";
+      
       const sufixos = ["", "m", "m", "", "", "m", "dim"];
       const campo = sufixos.map((s,i) => {
         const nota = notaDoGrau(a.ref,i) + s;
@@ -650,28 +640,24 @@
       const notas = a.notas.map(n => `<div class="acd-nota"><span class="acd-intervalo">${esc(n.rot === "T" ? "1" : n.rot)}</span>
         <small>${esc(nomesIntervalos[n.rot] || n.rot)}</small><strong>${esc(n.nota)}</strong></div>`).join("");
       const context = textoContexto(a).replace(/<p><span class="acd-mudo">Campo de [\s\S]*?<\/p>/, "");
-      const estabilidade = a.ac.dim || a.tipo === "passagem" ? 1 : a.dom || a.tipo === "secundario" ? 2
-        : a.triade === "menor" ? 4 : 5;
-      const tensao = 6 - estabilidade;
-      const barras = (valor, classe) => `<div class="acd-meter ${classe}">${Array.from({length:5},(_,i)=>`<i class="${i<valor?"on":""}"></i>`).join("")}</div>`;
-      const caracter = a.ac.dim ? "Instável" : a.triade === "menor" ? "Menor · introspectivo" : "Maior · brilhante";
+      const caracter = a.ac.dim ? "Diminuto · cor tensa" : a.ac.sus ? "Suspenso · sem terça" :
+        a.triade === "menor" ? "Menor · sonoridade introspectiva" : "Maior · sonoridade aberta";
       f.innerHTML = hd(`Grau ${esc(grauApp)} · ${esc(tom)}`,esc(qualidadeFrase(a))) + `
         <div class="acd-scroll"><div class="acd-scroll-inner">
           <div class="acd-lead acd-wide"><div class="acd-tags"><span class="acd-tag">${esc(familia)}</span>
-            <span class="acd-degree">Grau ${esc(grauApp)} · ${esc(a.ref)}</span></div>
+            <span class="acd-degree">Grau ${esc(grauApp)} · referência ${esc(a.ref)}</span></div>
             <span class="acd-tonalidade">TONALIDADE ATUAL<strong>${esc(tom)}</strong></span></div>
           <section class="acd-sec acd-wide"><h4>Como o acorde é formado</h4>
             <div class="acd-notas">${notas}</div><p>${esc(qualidadeFrase(a))}.</p></section>
           <section class="acd-sec acd-wide"><h4>No campo harmônico de ${esc(a.ref)}</h4>
             <div class="acd-campo">${campo}</div><div class="acd-context">${context}</div></section>
-          <section class="acd-sec"><h4>Função harmônica</h4>
-            <div class="acd-funcao-box">${esc(a.tipo === "diatonico" ? funcoes[a.grau.idx] : familia)}</div>
+          <section class="acd-sec"><h4>Função harmônica provável</h4>
+            <div class="acd-funcao-box">${esc(rotuloFuncao(a))}</div>
             ${textoFuncao(a)}</section>
           <section class="acd-sec"><h4>Caráter sonoro</h4>
             <div class="acd-character">${esc(caracter)}</div>${textoCarater(a)}
-            <div class="acd-meters"><div class="acd-meter-row"><span>Estabilidade</span>${barras(estabilidade, "estabilidade")}</div>
-            <div class="acd-meter-row"><span>Tensão</span>${barras(tensao, "tensao")}</div></div></section>
-          <section class="acd-sec acd-wide"><h4>Substituições possíveis</h4>${textoSubstituicoes(a)}</section>
+            <p class="acd-mudo">O caráter sonoro é descritivo; tensão e estabilidade dependem do contexto musical.</p></section>
+          <section class="acd-sec acd-wide"><h4>Alternativas para experimentar</h4><p class="acd-mudo">Não são trocas automáticas: confira a melodia, o baixo e a progressão antes de substituir.</p>${textoSubstituicoes(a)}</section>
           <section class="acd-sec acd-tip acd-wide"><h4>Dica rápida</h4>${textoDica(a)}</section>
         </div></div>`;
     }
