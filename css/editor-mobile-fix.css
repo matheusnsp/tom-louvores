@@ -1,0 +1,138 @@
+/* Editor Tom Louvores: celulares e tablets */
+
+.ce-page,
+.ce-page * {
+  box-sizing: border-box;
+}
+
+.ce-page .ce-wrap,
+.ce-page .ce-panel,
+.ce-page .ce-panel-body,
+.ce-page .ce-field {
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+
+  /* Cabeçalho */
+  .ce-page header .logo {
+    min-width: 0;
+    flex: 0 1 auto;
+    overflow: hidden;
+  }
+
+  .ce-page header .logo picture,
+  .ce-page header .logo-img {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ce-page header .logo-img {
+    width: auto !important;
+    height: auto !important;
+    max-width: min(34vw, 125px) !important;
+    max-height: 34px !important;
+    object-fit: contain;
+  }
+
+  .ce-page header .logo-sub {
+    font-size: 9px;
+    letter-spacing: .08em;
+  }
+
+  .ce-page header .logo-sep {
+    height: 22px;
+  }
+
+  .ce-page .ce-editor-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+  }
+
+  .ce-page #ceVoltar,
+  .ce-page #ceHeaderSalvar {
+    font-size: 12px;
+    padding: 10px 12px;
+    white-space: nowrap;
+  }
+
+  /* Conteúdo */
+  .ce-page .ce-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 20px 14px 40px !important;
+  }
+
+  .ce-page .ce-heading {
+    padding: 0 2px;
+    margin-bottom: 22px;
+  }
+
+  .ce-page .ce-heading h1 {
+    font-size: clamp(25px, 7vw, 34px);
+    line-height: 1.15;
+  }
+
+  .ce-page .ce-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px;
+  }
+
+  .ce-page .ce-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .ce-page .ce-panel-head,
+  .ce-page .ce-panel-body {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .ce-page input,
+  .ce-page select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .ce-page #ceAdicionarMin {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .ce-page #ceListaMin > div {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .ce-page #cifra {
+    width: 100%;
+    max-width: 100%;
+    min-height: 55dvh;
+    overflow-x: auto;
+    font-family: monospace;
+    white-space: pre;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1024px) {
+  .ce-page .ce-wrap {
+    width: min(100% - 40px, 880px);
+    margin: 0 auto;
+  }
+
+  .ce-page .ce-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ce-page .ce-panel {
+    max-width: 100%;
+  }
+}

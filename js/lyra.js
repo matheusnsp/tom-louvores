@@ -230,7 +230,7 @@ function lyraMarcarGrafia() {
 //  resposta enxuta), lemos a tabela uma vez e resolvemos o slug
 //  aqui dentro. A API só é usada para o texto da cifra, por slug.
 
-const LYRA_TABELA  = "musicas_lyra";
+const LYRA_TABELA  = "cifras";
 const LYRA_COLUNAS = "slug,title,artist,base_key,available_keys,updated_at";
 
 // ── O id de cada música no Lyra ──────────────────────────────
@@ -279,21 +279,25 @@ const lyraIdPendente = new Map();
 
 async function lyraGarantirId(slug) {
   if (!slug) return null;
+
   const ja = lyraIdDoSlug(slug);
   if (ja) return ja;
-  if (lyraIdPendente.has(slug)) return lyraIdPendente.get(slug);
+
+  if (lyraIdPendente.has(slug))
+    return lyraIdPendente.get(slug);
 
   const busca = (async () => {
     try {
-      const r = await lyraFetch(`${LYRA_API}/songs/${slug}`);
-      if (!r.ok) return null;
-      const d = await r.json();
-      //  Os três nomes prováveis do campo. Se a resposta não
-      //  trouxer nenhum, o atalho apenas cai na lista do painel.
-      const id = d && (d.id || d.song_id || d.uuid);
-      if (id) { lyraGuardarId(slug, id); return id; }
-    } catch (e) { /* sem rede: fica para a próxima */ }
-    return null;
+      const dados = await req(
+        `cifras?select=id&slug=eq.${encodeURIComponent(slug)}&limit=1`
+      );
+      const id = dados && dados[0] && dados[0].id;
+      if (id) lyraGuardarId(slug, id);
+      return id || null;
+    } catch (e) {
+      console.warn("Não foi possível consultar o ID da cifra:", e);
+      return null;
+    }
   })();
 
   lyraIdPendente.set(slug, busca);
@@ -327,8 +331,8 @@ function lyraChaveCurta(s = "") {
   return lyraNorm(s).replace(/\(.*?\)/g, " ").replace(/\s+/g, " ").trim();
 }
 
-async function lyraCarregarIndice() {
-  if (lyraIndice) return lyraIndice;
+async function lyraCarregarIndice(forcar = false) {
+  if (lyraIndice && !forcar) return lyraIndice;
   if (lyraIndiceEmCurso) return lyraIndiceEmCurso;
 
   lyraIndiceEmCurso = (async () => {
@@ -359,6 +363,7 @@ async function lyraCarregarIndice() {
       });
 
       lyraIndice = idx;
+      if (forcar) lyraCacheMusica.clear();
       // o índice é a fonte da verdade: o cache de buscas antigas
       // (que pode ter gravado "sem cifra" por falha de rede) sai de cena
       lyraCacheBusca.clear();
@@ -419,41 +424,9 @@ async function lyraBuscar(nome) {
   await lyraCarregarIndice();
   if (lyraIndice) return lyraNoIndice(nome);   // caminho normal
 
-  // Sem acesso à tabela: cai na busca por nome da API pública.
-  if (lyraCacheBusca.has(chave)) return lyraCacheBusca.get(chave);
-  if (lyraPendentes.has(chave))  return lyraPendentes.get(chave);
-
-  const busca = (async () => {
-    let achada = null;
-    try {
-      const url = `${LYRA_API}/songs?q=${encodeURIComponent(nome)}&limit=8`;
-      const r = await lyraFetch(url);
-      if (r.ok) {
-        const data = await r.json();
-        const res  = data.results || [];
-        const curta = lyraChaveCurta(nome);
-        achada = res.find(s => lyraNorm(s.title) === chave)
-              || res.find(s => lyraChaveCurta(s.title) === curta)
-              || null;
-        // resposta enxuta às vezes não traz has_chords: não invente "não tem"
-        if (achada && achada.has_chords === undefined) achada.has_chords = true;
-      } else {
-        return null;                    // erro do servidor não vira cache
-      }
-    } catch (e) {
-      if (lyraEhErroDeChave(e)) throw e;
-      console.warn("Cifras indisponíveis:", e);
-      return null;                      // sem rede: tenta de novo depois
-    }
-
-    lyraCacheBusca.set(chave, lyraEnxugar(achada));
-    lyraGravarCache();
-    return lyraCacheBusca.get(chave);
-  })();
-
-  lyraPendentes.set(chave, busca);
-  try { return await busca; }
-  finally { lyraPendentes.delete(chave); }
+  // Sem o índice local, não consultar fontes externas.
+  console.warn("Índice de cifras indisponível no Supabase.");
+  return null;
 }
 
 // ── Pré-carregamento ─────────────────────────────────────────
@@ -511,8 +484,8 @@ function lyraPreCarregarCultos() {
 //  O leitor lê primeiro da memória, depois do disco e só então
 //  vai à rede — então cifra já baixada abre sem internet.
 
-const LYRA_DISCO_PREFIXO = "lyra_m_";
-const LYRA_DISCO_INDICE  = "lyra_baixadas_v1";
+const LYRA_DISCO_PREFIXO = "louvores_cifra_v1_";
+const LYRA_DISCO_INDICE  = "louvores_cifras_baixadas_v1";
 
 // quanto foi baixado de verdade (bytes na rede, já comprimidos
 // pelo servidor) e quanto está ocupado no aparelho
@@ -610,29 +583,8 @@ function lyraVersaoDoSlug(slug) {
 //  musicas_lyra. Uma lista só, sem o texto: o botão compara com o
 //  que já está no aparelho e baixa só o que for mais novo.
 async function lyraAtualizarVersoes() {
-  if (!lyraIndice) return;
-  const porSlug = new Map();
-  for (const song of lyraIndice.values()) {
-    if (song.slug && !porSlug.has(song.slug)) porSlug.set(song.slug, song);
-  }
-
-  let since = "";
-  for (let pagina = 0; pagina < 20; pagina++) {
-    const qs = new URLSearchParams({ limit: "500" });
-    if (since) qs.set("since", since);
-    const r = await lyraFetch(`${LYRA_API}/sync?${qs}`);
-    if (!r.ok) throw new Error(`Resposta ${r.status}`);
-    const d = await r.json();
-    const songs = d.songs || [];
-    songs.forEach(s => {
-      const song = s && porSlug.get(s.slug);
-      if (song && s.updated_at) song.versao = s.updated_at;
-      if (s && s.slug && s.updated_at) lyraHerdarVersao(s.slug, s.updated_at);
-    });
-    const proximo = d.next_since || "";
-    if (!d.has_more || !songs.length || !proximo || proximo === since) break;
-    since = proximo;
-  }
+  // As versões já vêm de public.cifras.updated_at.
+  return;
 }
 
 //  Cópias baixadas antes desta data do Lyra têm o carimbo da tabela
@@ -662,7 +614,7 @@ function lyraCopiaAtual(slug) {
   try { reg = JSON.parse(bruto); } catch (e) { return false; }
   if (!reg || reg.d == null || reg.v === undefined || reg.v === null) return false;
   const atual = lyraVersaoDoSlug(slug);
-  return atual === null || reg.v === atual;
+  return atual !== null && reg.v === atual;
 }
 
 async function lyraDoDisco(slug) {
@@ -850,7 +802,11 @@ function lyraAtualizarBotaoBaixar(txt) {
 
 async function lyraBaixarTudo() {
   if (lyraBaixando) return;
-  await lyraCarregarIndice();
+  const indiceAtualizado = await lyraCarregarIndice(true);
+  if (!indiceAtualizado) {
+    toast("Não foi possível verificar atualizações no Supabase.", true);
+    return;
+  }
 
   const slugs = lyraSlugsDoIndice();
   if (!slugs.length) {
@@ -1182,58 +1138,56 @@ const lyraMusicaPendente = new Map();   // slug → carregamento em andamento
 //  É o que o botão "Baixar cifras" faz: sem isso ele relia o disco,
 //  regravava a mesma coisa e a edição feita no banco nunca chegava.
 async function lyraCarregarMusica(slug, forcar = false) {
-  if (!forcar && lyraCacheMusica.has(slug))   return lyraCacheMusica.get(slug);
-  if (!forcar && lyraMusicaPendente.has(slug)) return lyraMusicaPendente.get(slug);
+  if (!forcar && lyraCacheMusica.has(slug))
+    return lyraCacheMusica.get(slug);
+
+  if (lyraMusicaPendente.has(slug))
+    return lyraMusicaPendente.get(slug);
 
   const carga = (async () => {
     const salva = forcar ? null : await lyraDoDisco(slug);
-    //  Cópia antiga, sem a grafia do Lyra: com rede, busca de novo
-    //  (uma vez); sem rede, usa a cópia mesmo.
-    const velha = salva && salva.key_spelling === undefined &&
-                  typeof navigator !== "undefined" && navigator.onLine;
-    if (salva && salva.porTom.size && !velha) {
-      lyraRefazerTons(salva);            // o que foi salvo antes da correção também sai certo
+
+    // Confere a versão publicada antes de aproveitar o cache.
+    if (salva && salva.porTom.size) {
+      lyraRefazerTons(salva);
       lyraCacheMusica.set(slug, salva);
       return salva;
     }
 
-    const url = `${LYRA_API}/songs/${slug}`;
-    let d;
     try {
-      const r = await lyraFetch(url);
-      if (!r.ok) throw new Error(`Resposta ${r.status}`);
-      d = await r.json();
+      const dados = await req(
+        `cifras?select=id,slug,chords,base_key,updated_at` +
+        `&slug=eq.${encodeURIComponent(slug)}&limit=1`
+      );
+
+      const d = dados && dados[0];
+      if (!d) throw new Error("Cifra não encontrada: " + slug);
+
+      lyraGuardarId(slug, d.id);
+
+      const porTom = new Map();
+      if (d.chords && d.base_key) {
+        porTom.set(lyraKeySlug(d.base_key), d.chords);
+      }
+
+      const musica = lyraRefazerTons({
+        lyrics: "",
+        porTom,
+        base_key: d.base_key || "",
+        key_spelling: null,
+      });
+
+      lyraCacheMusica.set(slug, musica);
+      lyraGravarNoDisco(slug, musica).catch(console.warn);
+      return musica;
     } catch (e) {
-      if (lyraEhErroDeChave(e)) throw e;     // 401 não é falta de rede
-      if (salva && salva.porTom.size) {      // a rede falhou: fica com a cópia antiga
+      if (salva && salva.porTom.size) {
         lyraRefazerTons(salva);
         lyraCacheMusica.set(slug, salva);
         return salva;
       }
       throw e;
     }
-    lyraContarBytes(url);
-    //  Toda música aberta passa por aqui, então o id do Lyra é
-    //  colhido de graça — sem uma requisição só para isso.
-    lyraGuardarId(slug, d.id || d.song_id || d.uuid);
-
-    const porTom = new Map();
-    (d.keys || []).forEach(k => {
-      if (!k || !k.chords) return;
-      const chave = String(k.key_slug || lyraKeySlug(k.key || "")).toLowerCase();
-      if (chave) porTom.set(chave, k.chords);
-    });
-    // resposta sem all_keys: ao menos o tom base vem em "chords"
-    if (!porTom.size && d.chords) porTom.set(lyraKeySlug(d.base_key || ""), d.chords);
-
-    const musica = lyraRefazerTons({
-      lyrics: d.lyrics || "", porTom, base_key: d.base_key || "",
-      key_spelling: lyraGrafiaValida(d.key_spelling),
-    });
-    lyraCacheMusica.set(slug, musica);
-    // o que foi aberto uma vez fica guardado, sem depender do botão
-    lyraGravarNoDisco(slug, musica).catch(() => {});
-    return musica;
   })();
 
   lyraMusicaPendente.set(slug, carga);
@@ -1253,16 +1207,9 @@ async function lyraCarregarCifra(slug, tomLyra, grafia = null) {
     if (texto !== null) return texto;
   }
 
-  // reserva: sem o original, usa o que o servidor mandou
   const chave = lyraKeySlug(tomLyra);
-  if (musica.porTom.has(chave)) return musica.porTom.get(chave);
+  return musica.porTom.get(chave) || "";
 
-  const r = await lyraFetch(`${LYRA_API}/songs/${slug}/chords/${chave}`);
-  if (!r.ok) return "";
-  const d = await r.json();
-  const texto = d.chords || "";
-  if (texto) musica.porTom.set(chave, texto);
-  return texto;
 }
 
 async function lyraCarregarLetra(slug) {

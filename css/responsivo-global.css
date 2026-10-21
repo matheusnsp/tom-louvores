@@ -1,0 +1,466 @@
+
+/*
+  TOM LOUVORES — RESPONSIVO GLOBAL
+  Mobile, iPhone, Android, iPad e tablet.
+  Não modifica a lógica de cifras, letras ou cultos.
+*/
+
+/* Base segura */
+html {
+  width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  width: 100%;
+  min-width: 0;
+}
+
+img, video, canvas {
+  max-width: 100%;
+}
+
+:where(
+  .header-inner,
+  .hero,
+  .repertorio,
+  .cultos-wrap,
+  .cultos-grid,
+  .culto-col,
+  .grid,
+  .grid-wrap,
+  .toolbar,
+  .modal,
+  .ce-wrap,
+  .ce-panel
+) {
+  min-width: 0;
+}
+
+:where(input, select, textarea, button) {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Não deixar botões e palavras compridas estourarem */
+:where(.modal, .ce-panel, .sug-form) {
+  overflow-wrap: break-word;
+}
+
+/* =====================================
+   IPAD / TABLET
+   ===================================== */
+
+@media (min-width: 701px) and (max-width: 1180px) {
+
+  .header-inner,
+  .hero,
+  .toolbar,
+  .cultos-wrap,
+  .repertorio {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .hero {
+    gap: 24px;
+    padding-top: 38px;
+    padding-bottom: 34px;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .hero-stats {
+    min-width: 190px;
+  }
+
+  /* Três colunas ficavam espremidas no iPad */
+  .cultos-grid:not(.solo) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cultos-grid.solo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .culto-col {
+    min-width: 0;
+  }
+
+  .culto-louvor-nome {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .grid {
+    grid-template-columns:
+      repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  }
+
+  /* Editor de cifras */
+  .ce-page .ce-wrap {
+    width: min(100% - 48px, 960px);
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .ce-page .ce-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ce-page textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* =====================================
+   TABLET PEQUENO / IPAD VERTICAL
+   ===================================== */
+
+@media (min-width: 601px) and (max-width: 820px) {
+
+  .cultos-grid:not(.solo) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .culto-col {
+    width: 100%;
+  }
+
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-right-col {
+    width: 100%;
+  }
+
+  .hero-stats {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ce-page .ce-wrap {
+    width: calc(100% - 40px);
+  }
+
+  .ce-page .ce-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+/* =====================================
+   CELULAR
+   ===================================== */
+
+@media (max-width: 600px) {
+
+  .header-inner {
+    padding-left: 16px;
+    padding-right: 16px;
+    gap: 8px;
+  }
+
+  .header-right {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 28px 16px 24px;
+    gap: 20px;
+  }
+
+  .hero-h1 {
+    font-size: clamp(30px, 8vw, 43px);
+    line-height: 1.12;
+  }
+
+  .hero-sub {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .hero-right-col,
+  .hero-stats {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .cultos-wrap,
+  .repertorio {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .cultos-wrap {
+    margin-top: 22px;
+  }
+
+  .cultos-grid,
+  .cultos-grid:not(.solo),
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .culto-col {
+    border-radius: 12px;
+  }
+
+  .culto-col-hd {
+    padding: 16px 14px;
+    gap: 8px;
+  }
+
+  .culto-col-titulo {
+    font-size: 22px;
+  }
+
+  .culto-col-count {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .culto-escala {
+    padding: 12px 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Continua compactando conforme o nome escolhido */
+  .culto-escala .culto-escala-sel {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    max-width: min(100%, 240px) !important;
+  }
+
+  .culto-louvor {
+    min-width: 0;
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .culto-louvor-info,
+  .culto-louvor-txt {
+    min-width: 0;
+  }
+
+  .culto-louvor-nome {
+    font-size: 14px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .culto-louvor-badge {
+    min-width: 36px;
+    padding: 7px 6px;
+    font-size: 14px;
+  }
+
+  /* Filtros e pesquisa */
+  .search-row,
+  .filtros-row {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .filtros-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filtros-row .sel {
+    min-width: 0;
+    flex: 1 1 130px;
+  }
+
+  .inp-search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Modal de edição */
+  .overlay-bg {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .overlay-bg .modal {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-bd {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-ft {
+    flex-shrink: 0;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .tom-add-row,
+  .cifra-add-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Página completa do editor de cifras */
+  .ce-page .ce-wrap {
+    width: 100%;
+    max-width: none;
+    padding: 16px 12px 28px;
+    margin: 0;
+  }
+
+  .ce-page .ce-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .ce-page .ce-panel {
+    min-width: 0;
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .ce-page .ce-panel-head,
+  .ce-page .ce-panel-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .ce-page .ce-field {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ce-page input,
+  .ce-page select,
+  .ce-page textarea {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .ce-page #cifra {
+    display: block;
+    width: 100%;
+    min-height: 52dvh;
+    resize: vertical;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre;
+    tab-size: 4;
+  }
+
+  /* Não alterar os espaços entre os acordes */
+  .ce-page textarea {
+    font-family: monospace;
+  }
+
+  .ce-page #ceHeaderSalvar,
+  .ce-page #ceVoltar {
+    white-space: nowrap;
+  }
+
+  .ce-page #ceListaMin > div {
+    flex-wrap: wrap;
+  }
+
+  /* Formulário de sugestões */
+  .sug-wrap {
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .sug-form,
+  .sug-lista {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Impede zoom automático no foco no iPhone */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* =====================================
+   CELULARES ESTREITOS
+   ===================================== */
+
+@media (max-width: 380px) {
+
+  .header-inner {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .hero {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .cultos-wrap,
+  .repertorio {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .culto-col-hd {
+    padding: 13px 10px;
+  }
+
+  .culto-col-titulo {
+    font-size: 20px;
+  }
+
+  .culto-louvor {
+    padding: 8px 7px;
+  }
+
+  .ce-page .ce-panel-head,
+  .ce-page .ce-panel-body {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+/* =====================================
+   ACESSIBILIDADE E IPAD
+   ===================================== */
+
+@media (pointer: coarse) {
+  :where(button, a, select) {
+    touch-action: manipulation;
+  }
+}
+
+/* Respeita a posição segura da barra inferior */
+@supports (padding: max(0px)) {
+  .ce-page main {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}

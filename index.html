@@ -16,6 +16,8 @@
   <link rel="apple-touch-icon" href="img/logo3.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0A0A0B">
+  <link rel="stylesheet" href="css/seletores-unificados.css">
+  <link rel="stylesheet" href="css/responsivo-global.css">
 </head>
 <body class="read-only" data-pagina="cultos">
 
@@ -36,7 +38,7 @@
         <span id="statusTxt">Conectando</span>
       </div>
       <button class="btn-add btn-entrar" id="btnLoginShow" onclick="abrirLogin()" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Entrar</span></button>
-      <button class="btn-add" id="btnNovaMusica" onclick="abrirModal()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
+      <button class="btn-add" id="btnNovaMusica" onclick="tlAbrirEditor()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
       <button class="btn-logout" id="btnLogout" onclick="logout()" style="display:none">Sair</button>
     </div>
   </div>
@@ -269,6 +271,7 @@
 <script src="js/config.js"></script>
 <script src="js/lyra-chave.js"></script>
 <script src="js/app.js"></script>
+<script src="js/cifras-tonalidades.js"></script>
 <script src="js/lyra.js"></script>
 <script src="js/acordes.js"></script>
 <script src="js/sons.js"></script>
@@ -334,5 +337,8 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+<script src="js/editor-navegacao.js?v=2"></script>
+<script src="js/remover-atalho-cifras.js"></script>
+<script src="js/ministrante-largura.js"></script>
 </body>
 </html>

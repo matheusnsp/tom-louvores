@@ -6,9 +6,11 @@ const URL_BASE = CONFIG.SUPABASE_URL;
 const KEY      = CONFIG.SUPABASE_KEY;
 const TABLE    = CONFIG.TABLE_NAME;
 
-// ── Credenciais admin (client-side) ──────────────────────────
+// Login exibido ao usuário.
 const ADMIN_USER = "admin";
-const ADMIN_PASS = "louvor123";
+
+// Identidade interna da conta criada no Supabase.
+const ADMIN_EMAIL = "matheusnevessp@gmail.com";
 
 let musicas    = [];
 let editandoId = null;
@@ -36,18 +38,29 @@ const CHIP_CLASS = Object.fromEntries(MINISTRANTES.map(n => [n,
 //  AUTH — Login / Logout
 // ============================================================
 
+
+const ADMIN_SESSION_KEY = "tl_supabase_admin_session_v1";
+let adminSession = null;
+
 function isAdmin() {
-  return sessionStorage.getItem("tl_admin") === "1";
+  return Boolean(
+    adminSession?.access_token &&
+    adminSession.expires_at * 1000 > Date.now() + 10000
+  );
 }
 
 function aplicarEstadoAuth() {
   const admin = isAdmin();
-  // body class controla visibilidade dos botões de edição via CSS
+
   document.body.classList.toggle("read-only", !admin);
 
-  document.getElementById("btnLoginShow").style.display  = admin ? "none"  : "";
-  document.getElementById("btnNovaMusica").style.display = admin ? ""      : "none";
-  document.getElementById("btnLogout").style.display     = admin ? ""      : "none";
+  const login = document.getElementById("btnLoginShow");
+  const nova = document.getElementById("btnNovaMusica");
+  const sair = document.getElementById("btnLogout");
+
+  if (login) login.style.display = admin ? "none" : "";
+  if (nova) nova.style.display = admin ? "" : "none";
+  if (sair) sair.style.display = admin ? "" : "none";
 }
 
 function abrirLogin() {
@@ -55,7 +68,10 @@ function abrirLogin() {
   document.getElementById("loginPass").value = "";
   document.getElementById("loginError").textContent = "";
   document.getElementById("loginOverlay").classList.add("open");
-  setTimeout(() => document.getElementById("loginUser").focus(), 80);
+
+  setTimeout(() => {
+    document.getElementById("loginUser").focus();
+  }, 80);
 }
 
 function fecharLogin() {
@@ -66,29 +82,190 @@ function loginFecharFora(e) {
   if (e.target.id === "loginOverlay") fecharLogin();
 }
 
-function tentarLogin() {
-  const user = document.getElementById("loginUser").value.trim();
-  const pass = document.getElementById("loginPass").value;
+function limparLoginAdmin() {
+  adminSession = null;
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  sessionStorage.removeItem("tl_admin");
+}
 
-  if (user === ADMIN_USER && pass === ADMIN_PASS) {
-    sessionStorage.setItem("tl_admin", "1");
-    fecharLogin();
-    aplicarEstadoAuth();
-    toast("Bem-vindo, admin ✓");
-    render(musicas); // re-renderiza com botões de edição visíveis
-  } else {
-    document.getElementById("loginError").textContent = "Usuário ou senha incorretos.";
-    document.getElementById("loginPass").value = "";
-    document.getElementById("loginPass").focus();
+async function authAdmin(endpoint, body) {
+  const r = await fetch(
+    `${CONFIG.SUPABASE_URL}/auth/v1/${endpoint}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: CONFIG.SUPABASE_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }
+  );
+
+  if (!r.ok) {
+    throw new Error("Falha na autenticação");
+  }
+
+  return r.json();
+}
+
+async function verificarAutorizacaoAdmin(token) {
+  const headers = {
+    apikey: CONFIG.SUPABASE_KEY,
+    Authorization: `Bearer ${token}`
+  };
+
+  const r = await fetch(
+    `${CONFIG.SUPABASE_URL}/auth/v1/user`,
+    { headers }
+  );
+
+  if (!r.ok) return false;
+
+  const usuario = await r.json();
+
+  if (!usuario.id) return false;
+
+  const p = await fetch(
+    `${CONFIG.SUPABASE_URL}/rest/v1/cifras_admins` +
+      `?select=user_id&user_id=eq.${usuario.id}&limit=1`,
+    { headers }
+  );
+
+  if (!p.ok) return false;
+
+  const registros = await p.json();
+
+  return Array.isArray(registros) && registros.length === 1;
+}
+
+function guardarLoginAdmin(s) {
+  adminSession = {
+    access_token: s.access_token,
+    refresh_token: s.refresh_token,
+    expires_at: s.expires_at ||
+      Math.floor(Date.now() / 1000) + s.expires_in
+  };
+
+  sessionStorage.setItem(
+    ADMIN_SESSION_KEY,
+    JSON.stringify(adminSession)
+  );
+}
+
+async function renovarLoginAdmin() {
+  if (!adminSession?.refresh_token) return false;
+
+  try {
+    const sessao = await authAdmin(
+      "token?grant_type=refresh_token",
+      { refresh_token: adminSession.refresh_token }
+    );
+
+    if (!(await verificarAutorizacaoAdmin(sessao.access_token))) {
+      limparLoginAdmin();
+      return false;
+    }
+
+    guardarLoginAdmin(sessao);
+    return true;
+  } catch (erro) {
+    console.warn("Não foi possível renovar o login:", erro);
+    limparLoginAdmin();
+    return false;
   }
 }
 
-function logout() {
-  sessionStorage.removeItem("tl_admin");
-  aplicarEstadoAuth();
-  toast("Sessão encerrada.");
-  render(musicas); // re-renderiza sem botões de edição
+async function tentarLogin() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value;
+  const erro = document.getElementById("loginError");
+
+  if (user !== ADMIN_USER || !pass) {
+    erro.textContent = "Usuário ou senha incorretos.";
+    return;
+  }
+
+  try {
+    const sessao = await authAdmin(
+      "token?grant_type=password",
+      { email: ADMIN_EMAIL, password: pass }
+    );
+
+    if (!(await verificarAutorizacaoAdmin(sessao.access_token))) {
+      throw new Error("Conta não autorizada");
+    }
+
+    guardarLoginAdmin(sessao);
+
+    fecharLogin();
+    aplicarEstadoAuth();
+    render(musicas);
+    toast("Bem-vindo, admin ✓");
+  } catch (e) {
+    console.error("Erro de autenticação:", e.message);
+    erro.textContent = "Usuário, senha ou autorização inválidos.";
+  } finally {
+    document.getElementById("loginPass").value = "";
+  }
 }
+
+async function logout() {
+  const token = adminSession?.access_token;
+
+  limparLoginAdmin();
+  aplicarEstadoAuth();
+  render(musicas);
+  toast("Sessão encerrada.");
+
+  if (token) {
+    try {
+      await fetch(`${CONFIG.SUPABASE_URL}/auth/v1/logout`, {
+        method: "POST",
+        headers: {
+          apikey: CONFIG.SUPABASE_KEY,
+          Authorization: `Bearer ${token}`
+        }
+      });
+    } catch (e) {
+      console.warn("Logout remoto indisponível:", e);
+    }
+  }
+}
+
+async function restaurarLoginAdmin() {
+  // Ignora o login antigo: ele não autoriza operações no Supabase.
+  sessionStorage.removeItem("tl_admin");
+
+  try {
+    adminSession = JSON.parse(
+      sessionStorage.getItem(ADMIN_SESSION_KEY) || "null"
+    );
+
+    if (adminSession) {
+      const valido = isAdmin()
+        ? await verificarAutorizacaoAdmin(adminSession.access_token)
+        : await renovarLoginAdmin();
+
+      if (!valido) limparLoginAdmin();
+    }
+  } catch {
+    limparLoginAdmin();
+  }
+
+  aplicarEstadoAuth();
+  render(musicas);
+}
+
+document.addEventListener("DOMContentLoaded", restaurarLoginAdmin);
+
+setInterval(async () => {
+  if (!adminSession) return;
+
+  if (adminSession.expires_at * 1000 < Date.now() + 300000) {
+    await renovarLoginAdmin();
+    aplicarEstadoAuth();
+  }
+}, 60000);
 
 // ============================================================
 //  Serialização
@@ -883,38 +1060,23 @@ function abrirViewCulto(chave, idx) {
 // ============================================================
 
 function abrirModal(m = null) {
-  if (!isAdmin()) { abrirLogin(); return; }
-  editandoId  = m ? m.id : null;
-  tomMinList  = m ? paresParaEdicao(m.tom) : [];
+  if (!isAdmin()) {
+    abrirLogin();
+    return;
+  }
 
-  document.getElementById("modalTitulo").textContent = m ? "Editar música" : "Nova música";
-  document.getElementById("fNome").value = m?.nome        || "";
+  const pares = m ? paresParaEdicao(m.tom) : [];
 
-  // separa os links da observação para os campos próprios
-  const obsCompleta = m?.observacoes || "";
-  cifraList         = extrairCifras(obsCompleta);             // várias cifras
-  const comuns      = extrairLinks(obsCompleta);
-  const spotifyUrl  = comuns.find(ehSpotify) || "";
-  const youtubeUrl  = comuns.find(ehYoutube) || "";
-  // observação textual = sem nenhum link (cifras, spotify, youtube e outros saem do texto)
-  let obsTexto = obsSemLinks(obsCompleta);
-  // links comuns que não sejam spotify nem youtube voltam ao texto da obs
-  comuns.filter(u => !ehSpotify(u) && !ehYoutube(u)).forEach(u => {
-    obsTexto = (obsTexto + "\n" + u).trim();
-  });
+  sessionStorage.setItem("tl_editor_vinculo", JSON.stringify({
+    repertorioId: m?.id || null,
+    titulo: m?.nome || "",
+    tonsMinistrantes: pares,
+    modo: m ? "editar" : "criar"
+  }));
 
-  document.getElementById("fObs").value     = obsTexto;
-  document.getElementById("fCifra").value   = "";
-  document.getElementById("fYoutube").value = youtubeUrl;
-  document.getElementById("fSpotify").value = spotifyUrl;
-  document.getElementById("fTom").value  = "";
-  document.getElementById("fMin").value  = "";
-  document.getElementById("btnSalvar").textContent = m ? "Salvar alterações" : "Salvar";
-
-  renderTomList();
-  renderCifraList();
-  document.getElementById("overlay").classList.add("open");
-  setTimeout(() => document.getElementById("fNome").focus(), 80);
+  const modo = m ? "editar" : "criar";
+  window.location.href =
+    "cifras-editor.html?origem=repertorio&modo=" + modo;
 }
 
 function editar(id) {

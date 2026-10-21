@@ -448,15 +448,49 @@ async function sugAnalisar(id, status) {
 
 //  Aprovada e ainda fora do repertório: abre o "Nova música" já
 //  com o nome e o link. O resto (tom, ministrante) é com a equipe.
+
 function sugParaRepertorio(id) {
-  const s = sugLista.find(x => String(x.id) === String(id));
-  if (!s) return;
-  abrirModal();                       // pede login se precisar
-  if (!isAdmin()) return;
-  sugEl("fNome").value = s.nome;
-  if (ehYoutube(s.link))      sugEl("fYoutube").value = s.link;
-  else if (ehSpotify(s.link)) sugEl("fSpotify").value = s.link;
-  else                        sugEl("fObs").value = s.link;
+  const sugestao = sugLista.find(
+    x => String(x.id) === String(id)
+  );
+
+  if (!sugestao) return;
+
+  if (!isAdmin()) {
+    abrirLogin();
+    return;
+  }
+
+  // Evita misturar a nova música com um rascunho anterior.
+  const chave = "tom_louvores_editor_rascunho_v1";
+  const anterior = localStorage.getItem(chave);
+
+  if (anterior) {
+    localStorage.setItem(
+      "tl_rascunho_anterior_sugestoes_v1",
+      anterior
+    );
+    localStorage.removeItem(chave);
+  }
+
+  sessionStorage.setItem(
+    "tl_sugestao_para_editor_v1",
+    JSON.stringify({
+      titulo: sugestao.nome,
+      link: sugestao.link || "",
+      sugestaoId: sugestao.id
+    })
+  );
+
+  sessionStorage.setItem(
+    "tl_editor_origem",
+    "sugestoes.html"
+  );
+
+  sessionStorage.removeItem("tl_editor_vinculo");
+
+  location.href =
+    "cifras-editor.html?origem=sugestoes&modo=criar";
 }
 
 // ============================================================

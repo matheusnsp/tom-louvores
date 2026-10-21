@@ -16,6 +16,8 @@
   <link rel="apple-touch-icon" href="img/logo3.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0A0A0B">
+  <link rel="stylesheet" href="css/seletores-unificados.css">
+  <link rel="stylesheet" href="css/responsivo-global.css">
 </head>
 <body class="read-only" data-pagina="repertorio">
 
@@ -36,7 +38,7 @@
         <span id="statusTxt">Conectando</span>
       </div>
       <button class="btn-add btn-entrar" id="btnLoginShow" onclick="abrirLogin()" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Entrar</span></button>
-      <button class="btn-add" id="btnNovaMusica" onclick="abrirModal()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
+      <button class="btn-add" id="btnNovaMusica" onclick="tlAbrirEditor()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
       <button class="btn-logout" id="btnLogout" onclick="logout()" style="display:none">Sair</button>
     </div>
   </div>
@@ -226,6 +228,53 @@
         </div>
         <div class="tom-list" id="tomList"></div>
       </div>
+      <!-- CIFRA INTEGRADA AO REPERTÓRIO -->
+      <div class="cifra-integrada">
+        <div class="cifra-integrada-titulo">
+          <strong>Cifra da música</strong>
+          <span id="cifraEstado">Rascunho local</span>
+        </div>
+
+        <div class="cifra-integrada-grid">
+          <div>
+            <label class="flabel" for="cifraArtistaIntegrado">
+              Cantor / artista
+            </label>
+            <input id="cifraArtistaIntegrado"
+                   class="finput"
+                   placeholder="Nome do artista">
+          </div>
+          <div>
+            <label class="flabel" for="cifraTomIntegrado">
+              Tom original
+            </label>
+            <select id="cifraTomIntegrado"
+                    class="finput"></select>
+          </div>
+        </div>
+
+        <div id="cifraDeteccaoIntegrada"
+             class="cifra-integrada-hint">
+          Cole a cifra para detectar o tom automaticamente.
+        </div>
+
+        <label class="flabel" for="cifraTextoIntegrado">
+          Acordes e versos
+        </label>
+        <textarea id="cifraTextoIntegrado"
+                  class="finput cifra-integrada-texto"
+                  spellcheck="false"
+                  placeholder="[Intro] G   D/F#   Em   C
+
+G                  D
+Cole ou digite a cifra aqui..."></textarea>
+
+        <p class="cifra-integrada-aviso">
+          Os acordes e o cantor ficam em rascunho neste
+          navegador até ativarmos a gravação protegida.
+          O botão Salvar continua salvando o repertório.
+        </p>
+      </div>
       <div>
         <label class="flabel">Links de Cifra</label>
         <div class="cifra-add-row">
@@ -250,6 +299,7 @@
     </div>
     <div class="modal-ft">
       <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      
       <button class="btn-save" id="btnSalvar" onclick="salvar()">Salvar</button>
     </div>
   </div>
@@ -285,6 +335,9 @@
 <script src="js/config.js"></script>
 <script src="js/lyra-chave.js"></script>
 <script src="js/app.js"></script>
+<script src="js/cifras-tonalidades.js"></script>
+<script src="js/cifras-modal.js"></script>
+<script src="js/cifras-vinculo.js"></script>
 <script src="js/lyra.js"></script>
 <script src="js/acordes.js"></script>
 <script src="js/sons.js"></script>
@@ -348,5 +401,7 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+<script src="js/editor-navegacao.js?v=2"></script>
+<script src="js/remover-atalho-cifras.js"></script>
 </body>
 </html>

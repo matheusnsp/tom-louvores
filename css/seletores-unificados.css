@@ -1,0 +1,42 @@
+
+/*
+ * Tom Louvores — padronização de seletores
+ * Mantém o leitor de cifras com seu controle próprio.
+ */
+select:not([multiple]):not(.lyra-tom select) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23dddddd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+
+  background-repeat: no-repeat !important;
+  background-size: 12px 12px !important;
+  background-position: right 11px center !important;
+
+  padding-right: 34px !important;
+  box-sizing: border-box;
+}
+
+/* O tom do leitor já possui uma seta própria. */
+.lyra-tom select {
+  background-image: none !important;
+}
+
+/* Nos cultos, a largura segue o nome selecionado. */
+.culto-escala .culto-escala-sel {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  border-radius: 999px !important;
+  padding-left: 13px !important;
+  padding-right: 30px !important;
+  background-position: right 10px center !important;
+}
+
+/* Campos do editor de músicas. */
+#ceMin,
+#ceTomMin,
+.ce-page #tom {
+  background-position: right 13px center !important;
+  padding-right: 38px !important;
+}

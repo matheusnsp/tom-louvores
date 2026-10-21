@@ -1,0 +1,74 @@
+/* Layout definitivo do campo de cifra */
+.ce-page .ce-editor-toolbar-final {
+  display: flex;
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.ce-page .ce-editor-toolbar-final .ce-field {
+  flex: 0 0 190px;
+  max-width: 100%;
+  margin: 0;
+}
+
+.ce-page .ce-editor-toolbar-final select {
+  width: 100%;
+}
+
+.ce-page .ce-editor-status-final {
+  flex: 1;
+  padding-bottom: 12px;
+  color: #F6D27A;
+  font-size: 12px;
+}
+
+.ce-page .ce-editor-status-final[hidden] {
+  display: none !important;
+}
+
+.ce-page .ce-editor-status-final #resultado {
+  margin: 0;
+  font-size: 12px;
+}
+
+.ce-page .ce-panel-body:has(#cifra) > label[for="cifra"] {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.ce-page #cifra {
+  display: block;
+  width: 100%;
+  min-height: 440px;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .ce-page .ce-editor-toolbar-final {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .ce-page .ce-editor-status-final {
+    padding: 0;
+  }
+}
+
+
+/* Ajuste correto do espaçamento do campo de tom */
+@media (max-width: 768px) {
+  .ce-page .ce-editor-toolbar-final .ce-field {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .ce-page .ce-editor-toolbar-final {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+}
