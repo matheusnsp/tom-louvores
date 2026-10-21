@@ -9,7 +9,7 @@
 //    · o próprio app (html, css, js) → do cache primeiro, e a rede
 //      atualiza por trás para a próxima abertura
 //    · as amostras de som → do cache, e só busca se faltar
-//    · o banco de dados (Supabase, Lyra) → sempre da rede, com o
+//    · o banco de dados (Supabase) → sempre da rede, com o
 //      cache como rede de segurança quando ela falha
 //
 //  IMPORTANTE: troque o número do CACHE a cada publicação. É ele
@@ -18,9 +18,26 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v77";
+const CACHE = "tom-louvores-v99";
 
 const APP = [
+  "./js/tons-mobile.js",
+  "./css/tons-mobile.css",
+  "./css/editor-mobile-fix.css",
+  "./js/editor-origem-sugestoes.js",
+  "./css/responsivo-global.css",
+  "./css/seletores-unificados.css",
+  "./js/cifras-publicar.js",
+  "./css/cifras-layout-final.css",
+  "./js/cifras-layout-final.js",
+  "./css/cifras-layout.css",
+  "./js/cifras-layout.js",
+  "./js/remover-atalho-cifras.js",
+  "./js/editor-navegacao.js",
+  "./js/cifras-vinculo.js",
+  "./js/cifras-modal.js",
+  "./js/cifras-tonalidades.js",
+  "./cifras-editor.html",
   "./",
   "./index.html",
   "./repertorio.html",
@@ -145,6 +162,19 @@ self.addEventListener("fetch", e => {
   //  Dados: a rede manda. Só se ela falhar é que vale o que estava
   //  guardado — melhor um culto de ontem do que nada.
   if (ehBanco(url)) {
+    const authHeader = req.headers.get("Authorization") || "";
+    let usuarioPrivado = false;
+    if (authHeader.startsWith("Bearer ")) {
+      try {
+        const jwt = authHeader.slice(7);
+        const payload = JSON.parse(atob(jwt.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+        usuarioPrivado = payload.role === "authenticated";
+      } catch (_) { usuarioPrivado = true; }
+    }
+    if (usuarioPrivado) {
+      e.respondWith(fetch(req));
+      return;
+    }
     e.respondWith((async () => {
       try {
         return guardar(req, await fetch(req));

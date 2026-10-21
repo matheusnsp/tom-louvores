@@ -1,0 +1,149 @@
+/* Campo de tom sem espaçamento herdado das versões antigas */
+.ce-page .ce-tom-organizado {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.ce-page .ce-tom-organizado .ce-field {
+  flex: 0 0 190px;
+  max-width: 100%;
+  margin: 0 !important;
+}
+
+.ce-page .ce-tom-organizado .ce-field select {
+  width: 100%;
+}
+
+.ce-page .ce-resultado-tom {
+  flex: 1;
+  min-width: 150px;
+  padding-bottom: 11px;
+  margin: 0 !important;
+  color: #e8b948;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ce-page .ce-panel-body:has(#cifra) > label[for="cifra"] {
+  display: block;
+  margin: 0 0 10px !important;
+}
+
+.ce-page #cifra {
+  margin-top: 0 !important;
+}
+
+/* Seletor mobile */
+.tl-tons-aberto {
+  overflow: hidden !important;
+}
+
+.tl-tons-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0,0,0,.72);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.tl-tons-painel {
+  width: min(100%, 560px);
+  max-height: min(85dvh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #151517;
+  border: 1px solid #38383b;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 18px max(22px, env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 50px rgba(0,0,0,.4);
+}
+
+.tl-tons-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  font-size: 18px;
+  color: #fff;
+}
+
+.tl-tons-fechar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #454548;
+  background: #202023;
+  color: #fff;
+  cursor: pointer;
+}
+
+.tl-tons-subtitulo {
+  color: #b9b9bd;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 18px 0 10px;
+}
+
+.tl-tons-grade {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tl-tons-opcao {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 46px;
+  padding: 7px 3px;
+  background: #222225;
+  border: 1px solid #39393d;
+  border-radius: 10px;
+  color: #f1f1f1;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tl-tons-opcao.selecionado {
+  color: #161616;
+  background: #f0b93a;
+  border-color: #f0b93a;
+}
+
+@media (max-width: 600px) {
+  .ce-page .ce-tom-organizado {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    margin-bottom: 15px;
+  }
+
+  .ce-page .ce-tom-organizado .ce-field {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .ce-page .ce-resultado-tom {
+    flex: none;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .tl-tons-grade {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .tl-tons-painel {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}

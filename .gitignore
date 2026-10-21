@@ -1,2 +1,15 @@
 *.bak*
 js/lyra-chave.js
+
+# Backups e arquivos temporários
+*.bak
+*.bak-*
+*.backup-*
+backups-responsive/
+*.backup
+
+# Configurações e segredos locais
+.env
+.env.local
+.env.*
+!.env.example
