@@ -605,6 +605,7 @@ img, video, canvas {
 }
 .view-tons .card-ton-row.ton-abre:active { transform: scale(.99); }
 
-.view-lyra { flex-direction: row; }
+/* Cifra e Letra com o mesmo tamanho e espaçamento de YouTube e
+   Spotify: as quatro formam uma grade só */
+.view-lyra { flex-direction: row; gap: 8px; margin-top: 0; }
 .view-lyra .view-yt-btn { flex: 1 1 0; min-width: 0; padding-left: 12px; padding-right: 12px; }
-.view-lyra .view-cf-btn { flex-grow: 1.4; }
