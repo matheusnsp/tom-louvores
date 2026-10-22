@@ -385,7 +385,10 @@ async function sugEnviar(ev) {
     });
     sugMudancas++;
 
-    try { localStorage.setItem("tl_sug_quem", quem); } catch { /* sem armazenamento: só não lembra */ }
+    //  O nome não é mais guardado no aparelho: o iPad da equipe é
+    //  usado por várias pessoas, e o próximo a sugerir via o nome de
+    //  quem sugeriu antes. Na mesma visita ele continua no campo,
+    //  para quem vai mandar mais de uma sugestão seguida.
     sugEl("sugNome").value = "";
     sugEl("sugLink").value = "";
     sugSucesso();
@@ -698,8 +701,10 @@ function sugIniciar() {
     }));
   sugEl("sugLista").addEventListener("click", sugClique);
 
-  //  Quem já sugeriu antes não precisa escrever o nome de novo.
-  try { sugEl("sugQuem").value = localStorage.getItem("tl_sug_quem") || ""; } catch { /* sem armazenamento */ }
+  //  O campo "Seu nome" começa sempre vazio. Apaga o nome que versões
+  //  anteriores guardavam no aparelho.
+  sugEl("sugQuem").value = "";
+  try { localStorage.removeItem("tl_sug_quem"); } catch { /* sem armazenamento */ }
 }
 
 //  Entrou ou saiu: a equipe vê outras listas (com quem sugeriu e

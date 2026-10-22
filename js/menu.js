@@ -480,17 +480,23 @@ MN_MQ.addEventListener?.("change", e => { if (!e.matches) mnFechar(); });
 
 // ── botão no cabeçalho ──────────────────────────────────────
 function mnMontarBotao() {
-  if (document.getElementById("mnBtn")) return;
+  //  O ☰ já vem no HTML, para o header do celular nascer completo.
+  //  Aqui ele só ganha o clique (ou é criado, se faltar).
+  let b = document.getElementById("mnBtn");
+  if (b && b.dataset.ligado) return;
   const barra = document.querySelector(".header-right");
-  if (!barra) return;
+  if (!barra && !b) return;
 
-  const b = document.createElement("button");
-  b.id = "mnBtn";
-  b.type = "button";
-  b.setAttribute("aria-label", "Abrir menu");
-  b.innerHTML = MN_ICO.menu;
+  if (!b) {
+    b = document.createElement("button");
+    b.id = "mnBtn";
+    b.type = "button";
+    b.setAttribute("aria-label", "Abrir menu");
+    b.innerHTML = MN_ICO.menu;
+    barra.appendChild(b);
+  }
+  b.dataset.ligado = "1";
   b.addEventListener("click", mnAbrir);
-  barra.appendChild(b);
 
   //  A gaveta é montada já, e não no primeiro toque: assim ela
   //  começa a observar o cabeçalho e o ponto de conexão caída

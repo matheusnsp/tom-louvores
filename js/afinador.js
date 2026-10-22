@@ -372,6 +372,14 @@ function afPintarBase() {
       //  ganho, esta parecia baixa demais. O baixo sobe mais ainda,
       //  porque grave é ouvido como mais fraco na mesma potência.
       const forca = afInst === "baixo" ? 3.4 : 2.6;
+      //  Espera a amostra (baixo ou violão) em vez de soltar a síntese
+      //  antiga no primeiro toque; a síntese só entra se a rede falhar.
+      if (typeof somTocarQuandoPronto === "function") {
+        somTocarQuandoPronto(afInst === "baixo" ? "baixo" : "violao", m, 2.2, forca,
+          quando => typeof somVozViolaoSintetica === "function"
+            ? somVozViolaoSintetica(m, quando, 2.2, 1.3) : null, b);
+        return;
+      }
       if (typeof somTocar === "function" &&
           somTocar(afInst === "baixo" ? "baixo" : "violao", m, t, 2.2, forca)) return;
       if (typeof acVozViolao === "function") acVozViolao(m, t, 2.2, 1.3);

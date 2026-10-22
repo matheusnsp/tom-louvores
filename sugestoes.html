@@ -18,6 +18,7 @@
   <meta name="theme-color" content="#0A0A0B">
   <link rel="stylesheet" href="css/seletores-unificados.css">
   <link rel="stylesheet" href="css/responsivo-global.css">
+  <link rel="stylesheet" href="css/header.css">
   <!-- Navegação rápida: no Chrome/Android a próxima aba começa a
        carregar escondida assim que o dedo encosta (ou o mouse para em
        cima). Ao soltar, ela já está pronta. Outros navegadores ignoram. -->
@@ -60,12 +61,33 @@
         <span class="dot"></span>
         <span id="statusTxt">Conectando</span>
       </div>
+      <button type="button" id="lyraBaixar" class="btn-logout lyra-dl" title="Baixar todas as cifras para abrir sem internet."><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/></svg><span class="lyra-dl-txt">Baixar cifras</span></button>
       <button class="btn-add btn-entrar" id="btnLoginShow" onclick="abrirLogin()" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Entrar</span></button>
       <button class="btn-add" id="btnNovaMusica" onclick="tlAbrirEditor()" style="display:none">+<span class="btn-lbl"> Nova música</span></button>
       <button class="btn-logout" id="btnLogout" onclick="logout()" style="display:none">Sair</button>
+      <button type="button" id="mnBtn" aria-label="Abrir menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
   </div>
 </header>
+
+<!-- Login antes da primeira pintura: quem já entrou vê o header de
+     admin desde o primeiro quadro, em vez do de visitante trocando
+     por ele depois. O app.js confere o login na rede logo depois e
+     desfaz isto se a sessão não valer mais. -->
+<script>
+(function () {
+  var admin = false;
+  try {
+    var s = JSON.parse(sessionStorage.getItem("tl_supabase_admin_session_v1") || "null");
+    admin = !!(s && s.access_token && s.expires_at * 1000 > Date.now() + 10000);
+  } catch (e) {}
+  document.body.classList.toggle("read-only", !admin);
+  var mostrar = function (id, sim) { var el = document.getElementById(id); if (el) el.style.display = sim ? "" : "none"; };
+  mostrar("btnLoginShow", !admin);
+  mostrar("btnNovaMusica", admin);
+  mostrar("btnLogout", admin);
+})();
+</script>
 
 <!-- HERO -->
 <section class="hero-outer">
@@ -97,7 +119,7 @@
 
     <div class="sug-campo">
       <label class="flabel" for="sugQuem">Seu nome</label>
-      <input type="text" id="sugQuem" class="finput" maxlength="80" autocomplete="name"
+      <input type="text" id="sugQuem" class="finput" maxlength="80" autocomplete="off"
              autocapitalize="words" placeholder="Quem está sugerindo" required />
     </div>
 

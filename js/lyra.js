@@ -634,9 +634,13 @@ function lyraSlugsDoIndice() {
 }
 
 function lyraMontarBotaoBaixar() {
-  if (document.getElementById("lyraBaixar")) return;
+  //  O botão já vem pronto no HTML (o header nasce completo, sem
+  //  pular). Aqui ele só ganha o clique; nas páginas sem o botão
+  //  no HTML, ele é criado como antes.
+  const pronto = document.getElementById("lyraBaixar");
+  if (pronto && pronto.dataset.ligado) return;
   const barra = document.querySelector(".header-right");
-  if (!barra) return;
+  if (!barra && !pronto) return;
 
   const estilo = document.createElement("style");
   estilo.textContent = `
@@ -672,13 +676,16 @@ function lyraMontarBotaoBaixar() {
     @media(max-width:600px){.lyra-dl-txt{display:none}.lyra-dl{padding:9px 11px}}`;
   document.head.appendChild(estilo);
 
-  const btn = document.createElement("button");
-  btn.id = "lyraBaixar";
-  btn.className = "btn-logout lyra-dl";
-  btn.innerHTML = `${LYRA_ICO_BAIXAR}<span class="lyra-dl-txt">Baixar cifras</span>`;
+  let btn = pronto;
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.id = "lyraBaixar";
+    btn.className = "btn-logout lyra-dl";
+    btn.innerHTML = `${LYRA_ICO_BAIXAR}<span class="lyra-dl-txt">Baixar cifras</span>`;
+    barra.insertBefore(btn, document.getElementById("btnLoginShow") || null);
+  }
+  btn.dataset.ligado = "1";
   btn.addEventListener("click", lyraBaixarTudo);
-
-  barra.insertBefore(btn, document.getElementById("btnLoginShow") || null);
   lyraAtualizarBotaoBaixar();
 }
 

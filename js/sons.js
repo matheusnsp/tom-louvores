@@ -87,9 +87,6 @@ async function somCarregar(inst, midi) {
   finally { somPendentes.delete(chave); }
 }
 
-//  Toca a amostra. Se ela ainda não chegou, o pedido é feito e a
-//  nota sai pela síntese antiga — melhor um som imperfeito na
-//  hora do que silêncio esperando a rede.
 //  Saída comum de todas as amostras. O limitador segura os picos:
 //  sem ele, subir o ganho para a nota solta ficar audível faria o
 //  acorde de seis cordas estourar, porque lá os volumes somam.
@@ -170,3 +167,116 @@ acDesenhar = function (...a) {
   }
   return r;
 };
+
+// ── primeiro toque já com o som certo ───────────────────────
+//  Antes: se a amostra ainda não estava na memória, a nota saía pela
+//  síntese antiga e o pedido de download só começava ali. Por isso o
+//  primeiro "Ouvir" soava como o som velho e o segundo, certo — e
+//  num acorde com parte das notas carregadas, saía metade de cada.
+//
+//  Agora o toque espera as amostras que faltam (do aparelho, quase
+//  instantâneo; da rede, na primeira vez) e só então toca, tudo com
+//  o som gravado. Se a rede não responder em SOM_ESPERA, toca com a
+//  síntese mesmo, para nunca ficar mudo.
+
+const SOM_ESPERA = 2500;
+const somChave = (inst, midi) => {
+  const cfg = SOM_INSTRUMENTOS[inst];
+  return `${inst}:${Math.max(cfg.min, Math.min(cfg.max, midi))}`;
+};
+const somFaltam = (inst, midis) => midis.filter(m => !somBuffers.has(somChave(inst, m)));
+
+//  Resolve true quando todas chegaram; false se o tempo acabou.
+function somGarantir(inst, midis) {
+  const faltam = somFaltam(inst, midis);
+  if (!faltam.length) return Promise.resolve(true);
+  return Promise.race([
+    Promise.all(faltam.map(m => somCarregar(inst, m))).then(() => !somFaltam(inst, midis).length),
+    new Promise(ok => setTimeout(() => ok(false), SOM_ESPERA)),
+  ]);
+}
+
+const somInstAtual = () => (typeof acAba !== "undefined" && acAba === "teclado") ? "piano" : "violao";
+
+//  Enquanto espera, o botão mostra que está carregando.
+(function somEstilo() {
+  const st = document.createElement("style");
+  st.textContent = `
+    .som-carregando{position:relative;opacity:.75;pointer-events:none}
+    .som-carregando::after{content:"";position:absolute;inset:-3px;border-radius:inherit;
+      border:2px solid transparent;border-top-color:var(--gold, #F0B93A);
+      animation:somGira .7s linear infinite}
+    @keyframes somGira{to{transform:rotate(360deg)}}`;
+  document.head.appendChild(st);
+})();
+
+if (typeof acOuvir === "function") {
+  const somOuvirOriginal = acOuvir;
+  acOuvir = function (nome, botao, variacao) {
+    const inst = somInstAtual();
+    let notas = [];
+    try { notas = acNotasParaTocar(nome, variacao); } catch {}
+    if (!somFaltam(inst, notas).length) return somOuvirOriginal.call(this, nome, botao, variacao);
+
+    //  Destrava o áudio AGORA, dentro do toque (o iPhone só deixa
+    //  tocar som que começou num gesto da pessoa), e toca depois.
+    acCtx();
+    acParar();
+    botao?.classList.add("som-carregando");
+    somGarantir(inst, notas).then(() => {
+      botao?.classList.remove("som-carregando");
+      somOuvirOriginal.call(this, nome, botao, variacao);
+    });
+  };
+}
+
+//  Para o afinador (e quem mais tocar uma nota só): espera a amostra
+//  e, se não vier a tempo, chama a síntese que foi passada.
+function somTocarQuandoPronto(inst, midi, dur, ganho, sintese, botao) {
+  const t = () => acCtx().currentTime + 0.05;
+  if (somBuffers.has(somChave(inst, midi))) { somTocar(inst, midi, t(), dur, ganho); return; }
+  acCtx();
+  botao?.classList.add("som-carregando");
+  somGarantir(inst, [midi]).then(ok => {
+    botao?.classList.remove("som-carregando");
+    if (!(ok && somTocar(inst, midi, t(), dur, ganho)) && sintese) sintese(t());
+  });
+}
+
+// ── adianta as amostras da música aberta ────────────────────
+//  Ao abrir uma cifra, busca em segundo plano as notas de todos os
+//  acordes dela, no instrumento escolhido. Da segunda vez em diante
+//  elas vêm do aparelho e o primeiro toque já sai na hora.
+const somOcioso = window.requestIdleCallback || (fn => setTimeout(fn, 400));
+let somPreparadoPara = "";
+
+function somPrepararMusica() {
+  const corpo = document.getElementById("lyraCorpo");
+  if (!corpo || typeof acNotasParaTocar !== "function") return;
+  const acordes = [...new Set([...corpo.querySelectorAll("button.ac-tk[data-ac]")].map(b => b.dataset.ac))];
+  if (!acordes.length) return;
+  const inst = somInstAtual();
+  const marca = inst + "|" + acordes.join(",");
+  if (marca === somPreparadoPara) return;
+  somPreparadoPara = marca;
+
+  const notas = new Set();
+  acordes.forEach(a => { try { acNotasParaTocar(a, 0).forEach(m => notas.add(m)); } catch {} });
+  const fila = [...notas].filter(m => !somBuffers.has(somChave(inst, m)));
+  //  Aos poucos, três por vez, para não disputar a rede com a cifra.
+  const proximo = () => {
+    const lote = fila.splice(0, 3);
+    if (!lote.length) return;
+    Promise.all(lote.map(m => somCarregar(inst, m))).finally(() => somOcioso(proximo));
+  };
+  somOcioso(proximo);
+}
+
+if (typeof lyraRenderConteudo === "function") {
+  const somRenderOriginal = lyraRenderConteudo;
+  lyraRenderConteudo = async function (...a) {
+    const r = await somRenderOriginal.apply(this, a);
+    setTimeout(somPrepararMusica, 800);
+    return r;
+  };
+}

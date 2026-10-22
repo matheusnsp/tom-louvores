@@ -1179,7 +1179,12 @@ lyraFecharLeitor = function (...a) {
     @media(max-width:600px){#adminLyraBtn .admin-lbl{display:none}}`;
   document.head.appendChild(estilo);
 
+  //  O botão "Cifras" no header não é mais montado: o
+  //  remover-atalho-cifras.js o tirava logo depois, e esse vai-e-vem
+  //  era um dos tremores do header ao trocar de página. O painel do
+  //  Lyra continua no menu de opções do leitor ("Editar cifras").
   const montar = () => {
+    return;
     if (document.getElementById("adminLyraBtn")) return;
     const barra = document.querySelector(".header-right");
     if (!barra) return;

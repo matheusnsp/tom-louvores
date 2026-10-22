@@ -263,6 +263,14 @@ async function tokenAdmin() {
   return adminSession.access_token;
 }
 
+//  Antes de conferir na rede, a sessão guardada (se ainda não venceu)
+//  já vale para a tela: o header e o chat aparecem no estado certo
+//  desde o começo. A conferência abaixo desfaz se ela não valer.
+try {
+  const guardada = JSON.parse(sessionStorage.getItem(ADMIN_SESSION_KEY) || "null");
+  if (guardada?.access_token && guardada.expires_at * 1000 > Date.now() + 10000) adminSession = guardada;
+} catch { /* sem armazenamento */ }
+document.addEventListener("DOMContentLoaded", () => aplicarEstadoAuth());
 document.addEventListener("DOMContentLoaded", restaurarLoginAdmin);
 
 setInterval(async () => {
