@@ -49,7 +49,7 @@
 // ============================================================
 
 const SN_SALA   = "tom-louvores-leitor";
-const SN_ENVIOS = 100;      // no mínimo 100ms entre mensagens (~10/s)
+const SN_ENVIOS = 80;       // no mínimo 80ms entre mensagens (~12/s)
 const SN_PULSO  = 3000;     // um retrato completo a cada 3s
 const SN_MINIMO = 0.02;     // menos que isso de linha não vira mensagem
 //  Estes quatro são ajustáveis em tempo real pelo console, com
@@ -77,6 +77,22 @@ const SN_TETO = 400;      // latência acima disso não é compensada
 //  Para acompanhar cifra isso não se nota; o olho está na próxima
 //  linha, não no pixel.
 let SN_ATRASO  = 260;
+
+//  ── o colchão de amostras (versão nova) ──
+//  Cada mensagem agora leva a HORA EM QUE O LÍDER ESTAVA ALI (ts).
+//  Quem segue guarda as últimas posições e desenha o que o líder
+//  fazia SN_COLCHAO ms atrás, interpolando entre duas amostras que
+//  já chegaram. Não importa se a rede entregou as mensagens em
+//  rajada, atrasadas ou com intervalos tortos: a hora vem dentro
+//  delas, então o desenho sai liso. Era a rede instável (Wi-Fi da
+//  igreja) que fazia a tela do tablet engasgar e ir-e-voltar.
+//
+//  Os relógios dos dois aparelhos não batem, e não precisam: a
+//  diferença entre a hora de chegada e a hora de envio, no menor
+//  valor dos últimos segundos, já embute o relógio e a rede mais
+//  rápida. É o mesmo truque do "jitter buffer" de chamada de voz.
+let SN_COLCHAO = 160;
+let snColchaoAuto = true;   // snAjuste({ colchao: n }) fixa um valor
 let SN_ADIANTE = 200;     // nunca adivinhar mais que isso à frente
 
 //  Quem está logado lidera. É o mesmo portão que solta o "Nova
@@ -116,6 +132,13 @@ let snPre      = null;      // o <pre> medido — se trocar, remede
 let snLatencia = 0;         // metade do ida-e-volta, em ms
 let snEcoEm    = 0;
 let snNav      = null;      // fila de louvores que o líder mandou
+let snAmostras = [];        // [{ ts, pos, vel }] em ordem, hora do líder
+let snDifs     = [];        // [[chegada, chegada - ts]] dos últimos segundos
+let snDifMin   = null;      // menor diferença: relógio + rede mais rápida
+
+//  Hora absoluta com fração de milissegundo, comparável entre abas
+//  e aparelhos (o relógio de parede, não o da página).
+const snAgoraAbs = () => performance.timeOrigin + performance.now();
 
 const SN_CHAVE = "tl_seguir_tela";
 try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
@@ -200,9 +223,13 @@ async function snConectar() {
     });
 
     snCanal.on("broadcast", { event: "tela" }, ({ payload }) => {
+      //  O selo só é repintado quando muda de "aguardando" para
+      //  "seguindo". Antes era repintado a cada mensagem, doze vezes
+      //  por segundo, mexendo no DOM no meio da rolagem.
+      const estava = snVisto && Date.now() - snVisto < 12000;
       snVisto = Date.now();
       if (!snEhLider() && snLigado) snReceber(payload);
-      snPintarSelo();
+      if (!estava) snPintarSelo();
     });
 
     //  O líder apertou um botão do mapa da música ("Refrão", "Riff 2"):
@@ -410,13 +437,15 @@ function snObservar() {
   new MutationObserver(vigiar).observe(c, { childList: true });
 }
 
-//  E de vez em quando, por garantia. Duas vezes por segundo seria
-//  barato; o que não pode é medir dentro do laço de 60 quadros.
+//  E de vez em quando, por garantia. Os observadores acima já
+//  remedem quando a cifra muda; medir todas as linhas a cada 2s
+//  forçava o navegador a recalcular a página no meio da rolagem
+//  (no tablet, um tranco visível). A cada 8s basta.
 setInterval(() => {
   if (!snLigado || (!snEhLider() && snSolto)) return;
   if (!document.getElementById("lyraOverlay")?.classList.contains("open")) return;
   snMedir();
-}, 2000);
+}, 8000);
 
 // ── o que é transmitido ─────────────────────────────────────
 //  A posição é a linha que está no topo da tela.
@@ -467,6 +496,7 @@ function snEnviar(agora = false) {
     slug: lyraAtual.song.slug,
     tom:  lyraAtual.tom,
     modo: lyraAtual.modo,
+    ts:   +snAgoraAbs().toFixed(1),     // quando o líder estava aqui
     l:    +pos.toFixed(3),
     vel:  +snVel.toFixed(6),
     pos:  +snFracaoAtual().toFixed(4),   // versão antiga do site
@@ -494,7 +524,8 @@ function snEnviar(agora = false) {
         type: "broadcast", event: "tela",
         payload: {
           slug: lyraAtual.song.slug, tom: lyraAtual.tom,
-          modo: lyraAtual.modo, l: +snPosAtual().toFixed(3),
+          modo: lyraAtual.modo, ts: +snAgoraAbs().toFixed(1),
+          l: +snPosAtual().toFixed(3),
           pos: +snFracaoAtual().toFixed(4), vel: 0,
         },
       });
@@ -536,6 +567,7 @@ async function snReceber(p) {
   // música diferente (ou leitor fechado): abre a certa
   if (!aberto || outra) {
     snAlvo = null;
+    snAmostras = [];
     lyraAbrirLeitor(song, p.tom, [], snNav ? { ...snNav } : null, p.modo || "cifra");
     //  A cifra é carregada de forma assíncrona; a posição só faz
     //  sentido quando o texto já está na tela.
@@ -579,8 +611,64 @@ function snMirar(p) {
     pos = snPxParaLinha((p.pos || 0) * snMax);
     vel = 0;
   }
-  snAlvo = { pos, vel, em: performance.now() };
+  if (typeof p.ts === "number" && typeof p.l === "number") {
+    snGuardarAmostra(p.ts, pos, vel);
+    snAlvo = { colchao: true, pos, vel, em: performance.now() };
+  } else {
+    //  Líder com a versão antiga do site (sem hora): o jeito antigo.
+    snAlvo = { pos, vel, em: performance.now() };
+  }
   snRodarQuadros();
+}
+
+function snGuardarAmostra(ts, pos, vel) {
+  const chegada = snAgoraAbs();
+
+  //  Menor diferença chegada − envio nos últimos 8s. Janela móvel
+  //  para acompanhar a rede que melhora ou piora no meio do culto.
+  snDifs.push([chegada, chegada - ts]);
+  while (snDifs.length && chegada - snDifs[0][0] > 8000) snDifs.shift();
+  const difs = snDifs.map(d => d[1]);
+  snDifMin = Math.min(...difs);
+
+  //  O colchão se ajusta à rede: com Wi-Fi bom fica curto (a tela
+  //  anda quase junto); com Wi-Fi oscilando, cresce o suficiente
+  //  para quase nunca faltar amostra. Base: o atraso extra que 90%
+  //  das mensagens tiveram, com uma folga.
+  if (snColchaoAuto && difs.length >= 6) {
+    const extras = difs.map(d => d - snDifMin).sort((a, b) => a - b);
+    const p90 = extras[Math.floor(extras.length * 0.9)];
+    const alvo = Math.min(700, Math.max(110, p90 + SN_ENVIOS + 20));
+    //  sobe rápido (rede piorou), desce devagar (pode ser só sorte)
+    SN_COLCHAO = alvo > SN_COLCHAO ? alvo : SN_COLCHAO * 0.9 + alvo * 0.1;
+  }
+
+  const ult = snAmostras[snAmostras.length - 1];
+  if (ult && ts <= ult.ts) return;                 // repetida ou fora de ordem
+  //  Depois de uma pausa, a próxima amostra não pode ser ligada à
+  //  anterior por uma rampa lenta: a tela ficaria escorregando a
+  //  pausa inteira. Um ponto parado logo antes resolve.
+  if (ult && ts - ult.ts > 400) snAmostras.push({ ts: ts - SN_ENVIOS, pos: ult.pos, vel: 0 });
+  snAmostras.push({ ts, pos, vel });
+  while (snAmostras.length > 2 && ts - snAmostras[0].ts > 4000) snAmostras.shift();
+}
+
+//  Onde o líder estava na hora t (relógio dele): entre duas amostras,
+//  interpola; depois da última, segue a velocidade por no máximo
+//  250ms (rede segurou uma mensagem) e então para.
+function snPosNaHora(t) {
+  const A = snAmostras;
+  if (!A.length) return null;
+  if (t <= A[0].ts) return A[0].pos;
+  const ult = A[A.length - 1];
+  if (t >= ult.ts) return ult.pos + ult.vel * Math.min(250, t - ult.ts);
+  let lo = 0, hi = A.length - 1;
+  while (hi - lo > 1) {
+    const m = (lo + hi) >> 1;
+    if (A[m].ts <= t) lo = m; else hi = m;
+  }
+  const a = A[lo], b = A[hi];
+  return a.pos + (b.pos - a.pos) * ((t - a.ts) / (b.ts - a.ts));
 }
 
 // ── o laço que desenha a rolagem ────────────────────────────
@@ -611,9 +699,16 @@ function snRodarQuadros() {
     //  da mensagem, menos o atraso de propósito. O resultado é
     //  limitado: passado esse limite estaríamos inventando, e
     //  inventar é o que fazia a tela passar do ponto e voltar.
-    const adiante = Math.min(SN_ADIANTE, Math.max(0,
-      (agora - snAlvo.em) + snLatencia - SN_ATRASO));
-    const alvo = Math.min(nLinhas, Math.max(0, snAlvo.pos + snAlvo.vel * adiante));
+    let alvo, horaDesenho = 0;
+    if (snAlvo.colchao && snDifMin !== null) {
+      horaDesenho = snAgoraAbs() - snDifMin - SN_COLCHAO;
+      const p = snPosNaHora(horaDesenho);
+      alvo = Math.min(nLinhas, Math.max(0, p === null ? snAlvo.pos : p));
+    } else {
+      const adiante = Math.min(SN_ADIANTE, Math.max(0,
+        (agora - snAlvo.em) + snLatencia - SN_ATRASO));
+      alvo = Math.min(nLinhas, Math.max(0, snAlvo.pos + snAlvo.vel * adiante));
+    }
 
     //  Em páginas: vira para a página que tem a linha, e pronto.
     if (snEmPaginas()) {
@@ -624,7 +719,7 @@ function snRodarQuadros() {
         if (typeof lpPintarPaginas === "function") lpPintarPaginas();
         setTimeout(() => { snIgnorar = false; }, 600);
       }
-      if (snAlvo.vel !== 0) snQuadro = requestAnimationFrame(passo);
+      if (snAlvo.vel !== 0 || snAlvo.colchao) snQuadro = requestAnimationFrame(passo);
       return;
     }
 
@@ -634,6 +729,13 @@ function snRodarQuadros() {
     snIgnorar = true;
     if (Math.abs(erro) > SN_PULO) {
       c.scrollTop = snLinhaParaPx(alvo);         // longe demais: corta caminho
+    } else if (snAlvo.colchao) {
+      //  O alvo já é uma curva lisa (interpolada): segue-se ele. Só um
+      //  desvio grande (a cifra foi remedida, por exemplo) é corrigido
+      //  aos poucos, na mesma proporção a 60 ou a 120 quadros/s.
+      const novo = Math.abs(erro) < 1 ? alvo
+        : atual + erro * Math.min(1, dtQuadro * 0.012);
+      if (Math.abs(novo - atual) > 0.0005) c.scrollTop = snLinhaParaPx(novo);
     } else {
       //  Duas parcelas: a velocidade do líder (é ela que elimina o
       //  atraso em regime — sem esta linha a tela ficaria sempre
@@ -651,7 +753,10 @@ function snRodarQuadros() {
     //  ir (tela maior que a do líder, no fim da música).
     const max = c.scrollHeight - c.clientHeight;
     const travado = (erro > 0 && c.scrollTop >= max - 1) || (erro < 0 && c.scrollTop <= 0);
-    const quieto = snAlvo.vel === 0 && (Math.abs(erro) < 0.01 || travado);
+    const ultAmostra = snAmostras[snAmostras.length - 1];
+    const quieto = snAlvo.colchao
+      ? (!ultAmostra || horaDesenho > ultAmostra.ts + 260) && (Math.abs(erro) < 0.01 || travado)
+      : snAlvo.vel === 0 && (Math.abs(erro) < 0.01 || travado);
     if (!quieto) snQuadro = requestAnimationFrame(passo);
   };
 
@@ -671,6 +776,7 @@ function snSoltar() {
   if (snEhLider() || !snLigado || snSolto) return;
   snSolto = true;
   snAlvo  = null;
+  snAmostras = [];
   snPararQuadros();
   snPintarSelo();
 }
@@ -835,6 +941,7 @@ async function snAlternar(ligar) {
     snDesconectar();
     snAlvo = null;
     snNav  = null;
+    snAmostras = []; snDifs = []; snDifMin = null;
     snVel  = 0;
     snUltPos = null;
     snPintarLinha();
@@ -973,6 +1080,8 @@ lyraFecharLeitor = function (...a) {
 //
 //    snAjuste({ atraso: 400 })   → mais atraso, menos adivinhação
 //    snAjuste({ cola: 0.18 })    → correção mais macia
+//    snAjuste({ colchao: 300 })  → (versão nova) mais folga para
+//                                   Wi-Fi ruim, um tico mais atrás
 //    snAjuste({ pulo: 0.5 })     → tolera mais desvio antes de
 //                                   cortar caminho de uma vez
 //    snAjuste()                  → mostra o que está valendo
@@ -986,7 +1095,9 @@ window.snAjuste = (o = {}) => {
   if (typeof o.adiante === "number") SN_ADIANTE = o.adiante;
   if (typeof o.cola    === "number") SN_COLA    = o.cola;
   if (typeof o.pulo    === "number") SN_PULO    = o.pulo;
-  return { atraso: SN_ATRASO, adiante: SN_ADIANTE, cola: SN_COLA, pulo: SN_PULO };
+  if (typeof o.colchao === "number") { SN_COLCHAO = o.colchao; snColchaoAuto = false; }
+  if (o.colchao === "auto") snColchaoAuto = true;
+  return { atraso: SN_ATRASO, adiante: SN_ADIANTE, cola: SN_COLA, pulo: SN_PULO, colchao: SN_COLCHAO };
 };
 
 //  Saída de emergência pelo console, sem depender de clique
@@ -1004,6 +1115,8 @@ window.snEstado = () => ({
   temAlvo:  !!snAlvo,
   laco:     !!snQuadro,
   latencia: Math.round(snLatencia) + "ms",
+  amostras: snAmostras.length,
+  colchao:  Math.round(SN_COLCHAO) + "ms" + (snColchaoAuto ? " (auto)" : ""),
   fila:     snNav?.itens?.length || 0,
 });
 

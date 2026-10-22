@@ -464,3 +464,147 @@ img, video, canvas {
     padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
 }
+
+/* =====================================
+   AJUSTES FINAIS (revisão de responsividade)
+   ===================================== */
+
+/* iPad vertical: os números do repertório numa linha só,
+   como no celular, em vez de três faixas altas */
+@media (min-width: 601px) and (max-width: 820px) {
+  .hero-stats { flex-direction: row; }
+  .stat-row {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-bottom: none;
+    border-right: 1px solid var(--black4);
+    padding: 14px 8px;
+  }
+  .stat-row:last-child { border-right: none; }
+  .stat-n { font-size: 34px; }
+  .stat-l { font-size: 10px; letter-spacing: 0.06em; text-align: center; }
+}
+
+@media (max-width: 820px) {
+  /* o índice A–Z fica fixo na direita: o conteúdo abre espaço
+     para ele, senão as letras passavam por cima do texto */
+  body:has(#lstAZ) .hero,
+  body:has(#lstAZ) .repertorio {
+    padding-right: 30px;
+  }
+  /* "A–Z", "Tom", "Recentes" nunca quebram dentro da pílula */
+  .lst-seg button { white-space: nowrap; }
+}
+
+@media (max-width: 600px) {
+  /* dois seletores por linha; Revisar e Cards descem juntos,
+     em vez de um botão sair cortado pela direita */
+  .filtros-row { flex-wrap: wrap; }
+  .filtros-row .sel { flex: 1 1 calc(50% - 4px); min-width: 0; }
+
+  .lst-wrap { padding: 0 12px; }
+
+  /* (o .lst-wrap na frente vence o estilo que o vista-lista.js injeta)
+     a contagem sobe e a pílula de agrupar ganha a linha toda,
+     sem "Uso" cortado na direita */
+  .lst-wrap .lst-bar { flex-wrap: wrap; row-gap: 10px; }
+  .lst-wrap .lst-seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .lst-wrap .lst-seg::-webkit-scrollbar { display: none; }
+  .lst-seg button { min-height: 36px; }
+}
+
+/* telas bem estreitas (iPhone SE, Android pequeno) */
+@media (max-width: 380px) {
+  .header-inner { padding-left: 12px; padding-right: 12px; }
+  .hero-h1 { font-size: 30px; }
+  .stat-n { font-size: 26px; }
+}
+
+/* entalhe e barra inferior do iPhone */
+@supports (padding: max(0px)) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* =====================================
+   TROCA DE PÁGINA SEM PISCAR
+   Cultos ↔ Repertório ↔ Sugestões ↔ Editor: a página nova entra
+   por cima da antiga num esmaecer curto e o topo fica parado.
+   Chrome 126+ e Safari 18.2+; nos outros, troca como antes.
+   ===================================== */
+@view-transition { navigation: auto; }
+
+.header { view-transition-name: topo; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 160ms;
+  animation-timing-function: ease-out;
+}
+::view-transition-group(topo) { animation-duration: 0s; }
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
+
+/* =====================================
+   LEITOR: CIFRA / LETRA NO TOPO
+   (o visual da chave continua o do style.css: pílula com a
+   pastilha dourada que desliza; aqui só o lugar e o tamanho)
+   ===================================== */
+.lyra-hd { gap: 10px; }
+.lyra-hd-txt { flex: 1 1 auto; min-width: 0; }
+#lyraBox .lyra-hd #lyraSeg { flex: 0 0 auto; }
+
+/* No celular tudo o mais da barra já mora no menu de opções:
+   sem o Cifra/Letra ela ficou vazia, e sai de cena. */
+@media (max-width: 820px), (pointer: coarse) {
+  #lyraOverlay .lyra-barra { display: none; }
+}
+/* No computador com o painel de opções fixo ao lado, também:
+   a barra só guardava o botão "Opções", que ali fica escondido. */
+#lyraBox.op-fixo .lyra-barra { display: none; }
+/* telas estreitas: só os ícones, para o título caber */
+@media (max-width: 430px) {
+  #lyraBox .lyra-hd #lyraSeg button,
+  #lyraBox .lyra-hd #lyraSeg button:hover,
+  #lyraBox .lyra-hd #lyraSeg button.on { padding: 0 13px; gap: 0; }
+  #lyraBox .lyra-hd #lyraSeg button span { display: none; }
+}
+
+/* =====================================
+   MODAL DA MÚSICA: ABRIR CIFRA OU LETRA
+   · cada tom da lista é um atalho: abre a cifra naquele tom
+   · Cifra e Letra lado a lado, numa linha só
+   ===================================== */
+.view-tons .card-ton-row.ton-abre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.view-tons .card-ton-row.ton-abre .ton-row-right { margin-left: auto; }
+.view-tons .card-ton-row.ton-abre .ton-abre-ico {
+  flex-shrink: 0;
+  color: var(--gray2);
+  transition: color .15s, transform .15s;
+}
+.view-tons .card-ton-row.ton-abre:hover,
+.view-tons .card-ton-row.ton-abre:focus-visible {
+  border-color: rgba(var(--gold-rgb), 0.55);
+  background: rgba(var(--gold-rgb), 0.06);
+  outline: none;
+}
+.view-tons .card-ton-row.ton-abre:hover .ton-abre-ico,
+.view-tons .card-ton-row.ton-abre:focus-visible .ton-abre-ico {
+  color: var(--gold);
+  transform: translateX(2px);
+}
+.view-tons .card-ton-row.ton-abre:active { transform: scale(.99); }
+
+.view-lyra { flex-direction: row; }
+.view-lyra .view-yt-btn { flex: 1 1 0; min-width: 0; padding-left: 12px; padding-right: 12px; }
+.view-lyra .view-cf-btn { flex-grow: 1.4; }

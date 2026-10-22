@@ -159,8 +159,19 @@
 
   // ---------- Integração com o leitor ----------
 
+  //  A escolha mora no aparelho, não na página. Antes ela era lida
+  //  uma vez só, ao carregar: ligar Graus no Repertório e voltar para
+  //  Cultos (o iPhone devolve a página antiga da memória, sem
+  //  recarregar) deixava as outras músicas em acordes. Agora cada
+  //  desenho relê a escolha.
+  function lerPreferencia() {
+    try { emGraus = localStorage.getItem(PREF) === "1"; }
+    catch (_) { /* modo privado: fica o valor da sessão */ }
+    return emGraus;
+  }
+
   function grauAtivoNoLeitor() {
-    return emGraus && typeof lyraAtual !== "undefined" && lyraAtual &&
+    return lerPreferencia() && typeof lyraAtual !== "undefined" && lyraAtual &&
       lyraAtual.song && lyraAtual.modo === "cifra";
   }
 
@@ -285,6 +296,17 @@
     atualizarSeletor();
     return res;
   };
+
+  //  Voltou para uma página guardada na memória, ou mudou em outra
+  //  aba: o seletor e a cifra aberta acompanham na hora.
+  function sincronizar() {
+    lerPreferencia();
+    atualizarSeletor();
+    atualizarAcordesVisiveis();
+  }
+  window.addEventListener("pageshow", sincronizar);
+  window.addEventListener("storage", e => { if (e.key === PREF) sincronizar(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) sincronizar(); });
 
   // Útil para testes; não dá acesso a nenhuma informação do banco ou do usuário.
   window.tomLouvoresGraus = Object.freeze({ grauDaNota, grauDoAcorde, formatarSufixo, relativoMaior, tonicaDeReferencia });
