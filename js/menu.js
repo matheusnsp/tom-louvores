@@ -277,16 +277,8 @@ function mnMontar() {
       // a gaveta fica aberta: é aqui que a faixa de progresso corre
       aoTocar: () => { if (typeof lyraBaixarTudo === "function") lyraBaixarTudo(); },
     }),
-    mnLinha({
-      ico: MN_ICO.editar, nome: "Editar cifras",
-      //  A senha é avisada aqui porque o portão é do outro lado:
-      //  quem não tem acesso cairia na tela de login sem entender
-      //  por quê.
-      sub: "Painel do Lyra · exige senha", id: "mnAdmin",
-      //  Mesma aba: com o app instalado, abrir outra deixa a pessoa
-      //  fora do atalho e sem botão de voltar.
-      aoTocar: () => { location.href = MN_ADMIN_URL; },
-    }),
+    //  "Editar cifras" (painel do Lyra) saiu do menu: as cifras
+    //  agora são editadas no editor do próprio site.
   ));
 
   g.appendChild(mnGrupo(
@@ -374,9 +366,6 @@ function mnSincronizar() {
   mnMostrar("mnNova",   mnVisivel("btnNovaMusica"));
   mnMostrar("mnEntrar", mnVisivel("btnLoginShow"));
   mnMostrar("mnSair",   mnVisivel("btnLogout"));
-  //  O painel do Lyra fica para todos: ele tem senha própria, e o
-  //  portão é do lado dele.
-  mnMostrar("mnAdmin",  true);
 
   //  Seção sem nenhuma linha visível deixaria um fio solto no meio
   //  da gaveta. Ela sai junto.

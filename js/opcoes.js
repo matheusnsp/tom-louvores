@@ -599,13 +599,8 @@ function opMontar() {
                       "opLinhaTema", "", "opTemaSub"),
   ));
 
-  //  Último grupo: sai do site. Fica no fim porque não muda nada
-  //  na tela — é uma saída, não um ajuste de leitura. O "order"
-  //  segura ele lá embaixo mesmo com o afinador, o metrônomo e o
-  //  acompanhar entrando depois.
-  const fim = opGrupo(opLinhaAdmin());
-  fim.style.order = "97";
-  p.appendChild(fim);
+  //  O atalho "Editar cifras / Editar esta cifra" (painel do Lyra)
+  //  saiu: as cifras agora são editadas no editor do próprio site.
 
   const rodape = document.createElement("div");
   rodape.className = "op-rodape";

@@ -229,7 +229,9 @@ function chatNoCabecalho(logado) {
 function chatNoMenu(logado) {
   const atual = document.getElementById("mnChat");
   if (!logado) { if (atual) atual.remove(); return; }
-  const vizinho = document.getElementById("mnAdmin");
+  //  Entra logo depois do "Baixar cifras" (antes ficava depois do
+  //  "Editar cifras" do Lyra, que saiu do menu).
+  const vizinho = document.getElementById("mnAdmin") || document.getElementById("mnBaixar");
   if (atual || !vizinho || typeof mnLinha !== "function") return;
   vizinho.after(mnLinha({
     ico: chatIco(18, 2.2), nome: "Chat",
