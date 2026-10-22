@@ -5,12 +5,13 @@
 //  Ao tocar num acorde da cifra, o balão (celular e hover no
 //  computador) e o painel (computador) ganham um botão
 //  "Detalhes". Ele abre uma folha por cima com:
-//    1. contexto harmônico do acorde no tom
-//    2. como o acorde é formado
-//    3. função harmônica
-//    4. caráter sonoro
-//    5. substituições possíveis
-//    6. dica rápida
+//    1. resumo: grau, função e se o acorde é do tom
+//    2. notas no teclado, com o nome de cada intervalo
+//    3. lugar no campo harmônico (e o alvo, quando aponta para outro)
+//    4. função, com medidores de tensão e repouso
+//    5. como soa
+//    6. alternativas: tocar para ouvir, tocar no nome para ver detalhes
+//    7. dica
 //
 //  Tudo é calculado na hora a partir do nome do acorde e do tom
 //  do leitor: não há tabela por música. Em tom menor a referência
@@ -35,8 +36,6 @@
 
   // Qualidade natural de cada grau da escala maior.
   const NATURAL = ["maior", "menor", "menor", "maior", "maior", "menor", "dim"];
-  // Funções são tendências, não propriedades absolutas do acorde isolado.
-  const FUNCAO_GRAU = ["Tônica (provável)", "Predominante (comum)", "Prolongamento de tônica (possível)", "Predominante (comum)", "Dominante (comum)", "Tônica relativa (possível)", "Dominante (possível)"];
   const NOME_GRAU = ["tônica", "supertônica", "mediante", "subdominante", "dominante", "superdominante", "sensível"];
 
   const esc = s => String(s).replace(/[&<>"]/g,
@@ -206,85 +205,9 @@
     return partes[0] + (extras.length ? " + " + extras.join(" + ") : "");
   }
 
-  function textoContexto(a) {
-    const tomTxt = a.menorTom
-      ? `${esc(a.tom)} (relativo de ${esc(a.ref)}, que vale como grau 1)`
-      : esc(a.tom);
-    const romanoTxt = romano(a.grau, a.ac.dim || a.meioDim ? "dim" : a.triade === "menor" ? "menor" : a.triade);
-    let linha1 = `<b>${esc(T.grauDoAcorde(a.nome, a.tom) || a.grauTxt)}</b> (${romanoTxt}) no tom de ${tomTxt}.`;
 
-    let linha2;
-    switch (a.tipo) {
-      case "diatonico":
-        linha2 = `Acorde <b>diatônico</b>: está dentro do campo harmônico de ${esc(a.ref)}. Sua fundamental está no ${a.grau.idx + 1}º grau (${NOME_GRAU[a.grau.idx]}).`;
-        break;
-      case "secundario":
-        linha2 = `<b>Dominante secundário</b>: fica fora do campo, e pode produzir a sensação de V apontando ao ${a.alvo.idx + 1}º grau (${esc(a.alvo.nome)}).`;
-        break;
-      case "passagem":
-        linha2 = `<b>Diminuto de passagem</b>: pode subir meio tom até ${esc(a.alvo.nome)} (${a.alvo.idx + 1}º grau), ligando dois acordes do campo.`;
-        break;
-      case "emprestimo":
-        linha2 = `<b>Empréstimo modal</b>: não existe no campo de ${esc(a.ref)} maior, pode vir do ${a.grau.alt < 0 && a.grau.idx === 6
-          ? "modo mixolídio ou do tom menor paralelo" : "tom menor paralelo (" + esc(a.ref) + "m)"}.`;
-        break;
-      default:
-        linha2 = `<b>Fora do campo</b>: uma cor cromática. Vale ouvir para onde ele resolve.`;
-    }
 
-    // campo harmônico do tom de referência
-    const sufCampo = ["", "m", "m", "", "", "m", "°"];
-    const campo = sufCampo.map((s, i) => {
-      const n = esc(notaDoGrau(a.ref, i) + s);
-      return a.tipo === "diatonico" && i === a.grau.idx ? `<b class="acd-hl">${n}</b>` : n;
-    }).join(" · ");
-    const linha3 = `<span class="acd-mudo">Campo de ${esc(a.ref)}:</span> ${campo}`;
 
-    return `<p>${linha1}</p><p>${linha2}</p><p>${linha3}</p>`;
-  }
-
-  function textoFormacao(a) {
-    const notas = a.notas.map(n => esc(n.nota)).join(" – ");
-    const formula = a.notas.map(n => n.rot === "T" ? "1" : esc(n.rot)).join(" · ");
-    let baixo = "";
-    if (a.baixoNome) {
-      const s = (lyraPc(a.baixoNome) - a.raizPc + 12) % 12;
-      const nomeI = { 0: "fundamental", 3: "3ª menor", 4: "3ª maior", 7: "quinta", 10: "7ª menor", 11: "7ª maior", 2: "9ª" }[s];
-      const gb = T.grauDaNota(a.baixoNome, a.tom);
-      baixo = `<p><b>Baixo:</b> ${esc(a.baixoNome)}${nomeI ? ` (a ${nomeI} do acorde)` : ""}${gb ? `, grau ${esc(gb)} do tom` : ""}. É uma inversão: as notas são as mesmas, só muda quem toca por baixo.</p>`;
-    }
-    return `<p><b>${notas}</b></p><p>Fórmula: ${formula}</p><p>${esc(qualidadeFrase(a))}.</p>${baixo}`;
-  }
-
-  function rotuloFuncao(a) {
-    if (a.menorTom) return "Depende da progressão";
-    if (a.tipo === "diatonico") return FUNCAO_GRAU[a.grau.idx];
-    if (a.tipo === "secundario") return "Dominante secundário possível";
-    if (a.tipo === "passagem") return "Passagem cromática possível";
-    if (a.tipo === "emprestimo") return "Função a confirmar";
-    return "Função a confirmar";
-  }
-
-  function textoFuncao(a) {
-    const g = a.grau.idx;
-    if (a.menorTom) return `<p>A música está em <b>${esc(a.tom)}</b>. Os graus exibidos usam o relativo maior (${esc(a.ref)}) como convenção de numeração, mas <b>isso não muda o centro tonal menor</b>. Para definir tônica, predominante ou dominante com segurança, precisamos examinar a progressão e as alterações da escala menor usadas na música.</p>`;
-    if (a.tipo === "diatonico") {
-      const exemplos = [
-        "O I costuma representar chegada e repouso, especialmente em cadências conclusivas.",
-        "O ii frequentemente prepara V ou V7; o papel depende do encadeamento.",
-        "O iii pode prolongar a região de tônica ou fazer conexão entre outros acordes.",
-        "O IV costuma atuar como predominante e também participa da cadência plagal IV–I.",
-        "O V frequentemente encaminha para I; a sétima de dominante reforça essa direção.",
-        "O vi pode compartilhar a região de tônica, mas também iniciar progressões ou integrar cadências deceptivas.",
-        "O vii°/viiø frequentemente atua como acorde de sensível em direção ao I, dependendo da condução das vozes."
-      ];
-      return `<p><b>${esc(FUNCAO_GRAU[g])}.</b> ${exemplos[g]} <span class="acd-mudo">Função sugerida: depende dos acordes vizinhos, da melodia e do centro tonal percebido.</span></p>`;
-    }
-    if (a.tipo === "secundario") return `<p><b>Possível V/${a.alvo.idx + 1}.</b> Este acorde pode atuar como dominante secundário de ${esc(a.alvo.nome)}, <b>se a progressão confirmar essa resolução</b>. Fora desse contexto, pode ter outra função.</p>`;
-    if (a.tipo === "passagem") return `<p><b>Possível diminuto de aproximação.</b> Pode conduzir cromaticamente até ${esc(a.alvo.nome)}, mas só é correto chamá-lo de passagem quando a progressão mostrar esse movimento.</p>`;
-    if (a.tipo === "emprestimo") return `<p><b>Possível empréstimo modal.</b> O acorde pode ter sido tomado de uma escala ou modo paralelo. A origem exata e sua função dependem da progressão; não são demonstradas apenas pela cifra.</p>`;
-    return `<p><b>Função não determinada.</b> O nome do acorde, isoladamente, não permite identificar uma única função harmônica. Confira os acordes anterior e seguinte e a melodia.</p>`;
-  }
 
   function textoCarater(a) {
     let q;
@@ -415,13 +338,6 @@
     return itens.slice(0, 5).map(i => ({ ...i, grau: grauApp(i.nome) }));
   }
 
-  function textoSubstituicoes(a) {
-    const lista = substituicoes(a);
-    if (!lista.length) return `<p class="acd-mudo">Sem substituição direta que valha a pena sugerir.</p>`;
-    return `<ul class="acd-lista">${lista.map(i =>
-      `<li><span class="acd-chip">${esc(i.nome)}${i.grau ? `<i>${esc(i.grau)}</i>` : ""}</span>${esc(i.motivo)}</li>`
-    ).join("")}</ul>`;
-  }
 
   function textoDica(a) {
     if (a.baixoNome) return `<p>Com baixista, deixe o baixo na nota ${esc(a.baixoNome)}. Sozinho no violão, comece a corda mais grave por ela e o resto do acorde já soa certo.</p>`;
@@ -439,152 +355,326 @@
   }
 
   // ---------- Folha de detalhes ----------
+  //  Ordem pensada para quem está tocando: primeiro o resumo em três
+  //  números (grau, função, se é do tom), depois as notas no teclado,
+  //  o lugar no campo harmônico, como soa, o que dá para trocar e a
+  //  dica. Cada termo técnico tem a explicação logo abaixo.
 
   let nomeAberto = null;
+  const historico = [];   // acordes abertos a partir das alternativas
+
+  //  Nome da função no vocabulário da harmonia funcional ensinada no
+  //  Brasil (T, S, D) e o que ela faz, em poucas palavras.
+  const FUNCAO = [
+    { nome: "Tônica",          sigla: "T",  faz: "repouso, chegada" },
+    { nome: "Subdominante",    sigla: "S",  faz: "prepara o dominante" },
+    { nome: "Tônica",          sigla: "Ta", faz: "prolonga o repouso" },
+    { nome: "Subdominante",    sigla: "S",  faz: "sai do repouso" },
+    { nome: "Dominante",       sigla: "D",  faz: "tensão que pede a tônica" },
+    { nome: "Tônica relativa", sigla: "Tr", faz: "repouso mais emotivo" },
+    { nome: "Dominante",       sigla: "D",  faz: "sensível, quer subir ao I" },
+  ];
+
+  const TIPO = {
+    diatonico: {
+      rotulo: "Do campo", curto: "dentro do tom",
+      def: "Diatônico: usa só notas da escala do tom. É o “material da casa” da música, e por isso soa natural.",
+    },
+    secundario: {
+      rotulo: "Secundário", curto: "dominante emprestado",
+      def: "Dominante secundário: um acorde maior com sétima menor que se comporta como o V de outro acorde do campo, e não da tônica. Ele cria um pequeno “caminho” até esse acorde.",
+    },
+    passagem: {
+      rotulo: "Passagem", curto: "liga dois acordes",
+      def: "Diminuto de passagem: sobe meio tom até o acorde seguinte. A tensão é curta e resolve logo; serve de ponte.",
+    },
+    emprestimo: {
+      rotulo: "Emprestado", curto: "do tom menor",
+      def: "Empréstimo modal: acorde tomado do tom menor (ou de outro modo) com a mesma tônica. Dá uma cor diferente sem trocar de tom.",
+    },
+    cromatico: {
+      rotulo: "Fora do tom", curto: "cor cromática",
+      def: "Cromático: tem notas fora da escala e não se encaixa nos casos comuns. Vale ouvir de onde ele vem e para onde vai.",
+    },
+  };
+
+  const NOME_INTERVALO = {
+    "T": "funda\u00ADmental", "3m": "terça menor", "3M": "terça maior",
+    "5J": "quinta justa", "b5": "quinta diminuta", "5ª dim": "quinta diminuta", "5ª aum": "quinta aumentada",
+    "7m": "sétima menor", "7M": "sétima maior", "7ª dim": "sétima diminuta",
+    "9ª": "nona", "b9": "nona menor", "#9": "nona aumentada",
+    "2ª": "segunda", "4ª": "quarta", "6ª": "sexta",
+    "11ª": "décima primeira", "#11": "décima primeira aumentada",
+    "13ª": "décima terceira", "b13": "décima terceira menor",
+  };
+
+  function funcaoDe(a) {
+    if (a.menorTom) return { nome: "Depende", sigla: "?", faz: "tom menor: veja a progressão" };
+    if (a.tipo === "diatonico") return FUNCAO[a.grau.idx];
+    if (a.tipo === "secundario") return { nome: "Dominante", sigla: `V/${a.alvo.idx + 1}`, faz: `prepara ${a.alvo.nome}` };
+    if (a.tipo === "passagem") return { nome: "Passagem", sigla: "°", faz: `leva a ${a.alvo.nome}` };
+    if (a.tipo === "emprestimo") return { nome: "Cor", sigla: "MI", faz: "empréstimo do menor" };
+    return { nome: "Cor", sigla: "—", faz: "depende do contexto" };
+  }
+
+  //  Explicação da função em uma ou duas frases, sem repetir o título.
+  function funcaoTexto(a) {
+    if (a.menorTom) return `A música está em <b>${esc(a.tom)}</b>. Os números usam o relativo maior (${esc(a.ref)}) só como régua; a função de cada acorde depende de como a progressão anda.`;
+    if (a.tipo === "diatonico") return [
+      "É o centro do tom: onde as frases terminam e a música “chega em casa”.",
+      "Costuma vir antes do V (o famoso ii–V–I). Afasta da tônica e prepara a tensão.",
+      "Divide notas com o I e pode ficar no lugar dele, com uma cor mais suave.",
+      "Afasta do repouso sem criar tensão forte. O IV–I é o “amém” das cadências.",
+      "Cria a tensão que pede resolução no I. Com a sétima, o pedido fica ainda mais forte.",
+      "Divide notas com o I, mas é menor: um repouso mais emotivo. Também aparece no lugar do I em finais “enganosos”.",
+      "Funciona como um V sem a fundamental: tensão que sobe meio tom até o I.",
+    ][a.grau.idx];
+    if (a.tipo === "secundario") return `Funciona como o V de <b>${esc(a.alvo.nome)}</b>: quando vem logo antes dele, a resolução soa natural. Se vier antes de outro acorde, a leitura muda.`;
+    if (a.tipo === "passagem") return `Sobe meio tom até <b>${esc(a.alvo.nome)}</b>, ligando dois acordes do campo.`;
+    if (a.tipo === "emprestimo") return `Traz uma nota do tom menor de ${esc(a.ref)}. Costuma cair onde a música quer um momento de emoção ou grandeza.`;
+    return "Sozinho, o nome do acorde não diz a função. Os acordes de antes e de depois e a melodia é que decidem.";
+  }
+
+  //  1 a 5. Aproximação para orientar, não medida acústica.
+  function tensaoDe(a) {
+    let t;
+    if (a.ac.dim) t = 5;
+    else if (a.ac.aum) t = 4;
+    else if (a.tipo === "secundario" || a.tipo === "passagem") t = 4;
+    else if (a.tipo === "diatonico") t = [1, 2, 2, 2, 4, 1, 5][a.grau.idx];
+    else t = 3;
+    if (a.dom && t < 5) t++;
+    if (a.ac.sus && t < 3) t = 3;
+    if (a.meioDim) t = Math.max(t, 4);
+    return Math.min(5, Math.max(1, t));
+  }
+
+  function medidor(rotulo, n, classe = "") {
+    return `<div class="acd-med"><span>${rotulo}</span>
+      <span class="acd-med-barra ${classe}" role="img" aria-label="${rotulo}: ${n} de 5">${
+        [1, 2, 3, 4, 5].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span></div>`;
+  }
+
+  function nomeEmPalavras(a) {
+    const NOTA = { C: "Dó", D: "Ré", E: "Mi", F: "Fá", G: "Sol", A: "Lá", B: "Si" };
+    const nota = n => NOTA[n[0]] + (n.slice(1) === "#" ? " sustenido" : n.slice(1) === "b" ? " bemol" : n.slice(1));
+    let s = nota(a.raizNome);
+    if (a.poder) s += " (só quinta)";
+    else if (a.ac.dim) s += " diminuto";
+    else if (a.meioDim) s += " meio-diminuto";
+    else if (a.ac.aum) s += " aumentado";
+    else if (a.triade === "menor") s += " menor";
+    else s += " maior";
+    const ext = [];
+    if (a.ac.sus) ext.push(a.tem(2) ? "2ª no lugar da terça" : "4ª no lugar da terça");
+    if (a.maj7) ext.push("sétima maior");
+    else if (a.m7 && !a.meioDim) ext.push("sétima");
+    if (a.tem(2) && a.ctx.terca) ext.push("nona");
+    if (a.tem(9) && !a.ctx.setima && !a.ac.dim) ext.push("sexta");
+    if (ext.length) s += " com " + ext.join(" e ");
+    if (a.baixoNome) s += `, baixo em ${nota(a.baixoNome)}`;
+    return s;
+  }
+
+  const ICO_SOM = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6.5 9H3v6h3.5L11 19V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>`;
+  const ICO_VOLTAR = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>`;
+  const ICO_SETA = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>`;
 
   (function estilo() {
     const st = document.createElement("style");
     st.textContent = `
+    /* botão "Detalhes do acorde" no balão e no painel */
     .acd-abrir{
       display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
-      margin-top:8px;padding:7px 10px;background:none;border:1px solid var(--gray3);
-      border-radius:8px;color:#d8d8d8;font-family:var(--font-ui);font-size:11.5px;
-      font-weight:700;cursor:pointer;transition:all .15s;
+      margin-top:8px;padding:8px 12px;background:none;border:1px solid var(--fio);
+      border-radius:999px;color:var(--gold-hi);font-family:var(--font-ui);font-size:11.5px;
+      font-weight:700;letter-spacing:.02em;cursor:pointer;transition:all .15s;
     }
-    .acd-abrir:hover{border-color:var(--cifra);color:var(--cifra)}
-    .claro .acd-abrir{color:#3a3a3a;border-color:rgba(0,0,0,.2)}
-    .claro .acd-abrir:hover{border-color:var(--cifra-claro);color:var(--cifra-claro)}
+    .acd-abrir:hover{border-color:var(--gold);background:rgba(var(--gold-rgb),.08)}
+    .claro .acd-abrir{color:var(--cifra-claro);border-color:rgba(0,0,0,.18)}
     .ac-painel .acd-abrir{width:auto;margin-top:0;padding:8px 16px;font-size:12.5px}
-    @media (max-width:820px),(pointer:coarse){.ac-balao .acd-abrir{padding:9px 10px;font-size:12.5px}}
+    @media (max-width:820px),(pointer:coarse){.ac-balao .acd-abrir{padding:10px 12px;font-size:12.5px}}
 
-    /* Design nativo do Tom Louvores: carvão, dourado e linhas discretas. */
+    /* ── folha ── */
     .acd-folha{
       position:absolute;inset:0;z-index:120;display:flex;flex-direction:column;
-      max-height:none;padding:0;overflow:hidden;overscroll-behavior:contain;
-      background:#0d0d0e;color:#f4f2ed;font-family:var(--font-ui);
-      transform:translateY(103%);transition:transform .24s ease,visibility .24s;
+      overflow:hidden;overscroll-behavior:contain;
+      background:#0B0B0C;color:var(--paper);font-family:var(--font-ui);
+      transform:translateY(103%);transition:transform .26s cubic-bezier(.22,1,.36,1),visibility .26s;
       visibility:hidden;
     }
     .acd-folha.on{transform:none;visibility:visible}
+
     .acd-hd{
-      width:100%;max-width:none!important;flex:none;display:flex;align-items:center;
-      gap:13px;padding:18px 20px 14px;border-bottom:1px solid var(--fio);
-      background:#0d0d0e;
+      flex:none;display:flex;align-items:center;gap:12px;
+      padding:16px 18px 14px;border-bottom:1px solid var(--fio);
+      background:linear-gradient(180deg,rgba(var(--gold-rgb),.07),transparent);
     }
-    .acd-hd-main{flex:1;min-width:0}
-    .acd-voltar{display:flex;align-items:center;width:max-content;gap:5px;padding:0;
-      margin-bottom:8px;border:0;background:none;color:var(--gold);
-      font:600 12px var(--font-ui);cursor:pointer}
-    .acd-nome{display:block;color:var(--paper);font-size:clamp(24px,4.5vw,31px);font-weight:800;line-height:1.15}
-    .acd-grau{display:block;color:#9e9b95;font-size:12px;line-height:1.5;margin-top:4px}
-    .acd-x{width:42px;height:42px;flex:none;border:1px solid var(--fio);
-      background:#19191a;border-radius:50%;color:var(--paper);font-size:20px;cursor:pointer}
-    .acd-x:hover,.acd-x:focus-visible{border-color:var(--gold);color:var(--gold)}
+    .acd-hd-txt{flex:1;min-width:0}
+    .acd-nome{display:block;font-family:var(--font-display);font-size:clamp(30px,7vw,40px);
+      font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--gold-hi);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acd-sub{display:block;margin-top:7px;font-size:13px;color:var(--dim);line-height:1.35}
+    .acd-ctl{width:42px;height:42px;flex:none;display:grid;place-items:center;
+      border:1px solid var(--fio);background:rgba(255,255,255,.04);border-radius:50%;
+      color:var(--paper);font-size:18px;cursor:pointer;transition:all .15s}
+    .acd-ctl:hover,.acd-ctl:focus-visible{border-color:var(--gold);color:var(--gold);outline:none}
+    .acd-ouvir{display:inline-flex;align-items:center;gap:7px;height:42px;padding:0 16px;
+      border:1px solid rgba(var(--gold-rgb),.5);border-radius:999px;background:rgba(var(--gold-rgb),.1);
+      color:var(--gold-hi);font:700 13px var(--font-ui);cursor:pointer;flex:none;transition:all .15s}
+    .acd-ouvir:hover,.acd-ouvir.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+
     .acd-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-      -webkit-overflow-scrolling:touch;padding:20px 20px max(28px,env(safe-area-inset-bottom))}
-    .acd-scroll-inner{max-width:710px;margin:0 auto;display:grid;gap:12px}
-    .acd-lead{display:flex;justify-content:space-between;align-items:center;gap:12px;
-      flex-wrap:wrap;padding:2px 2px 6px}
-    .acd-tags{display:flex;gap:7px;flex-wrap:wrap}
-    .acd-tag,.acd-degree{display:inline-flex;align-items:center;padding:7px 11px;
-      border:1px solid rgba(var(--gold-rgb),.25);background:rgba(var(--gold-rgb),.09);
-      border-radius:999px;font-size:11px;font-weight:800;color:var(--gold-hi)}
-    .acd-degree{color:#d2c7ad;border-color:var(--fio);background:rgba(255,255,255,.045)}
-    .acd-tonalidade{font-size:10px;letter-spacing:.06em;color:#928d84;text-transform:uppercase}
-    .acd-tonalidade strong{display:block;margin-top:3px;color:#f4f2ed;font-size:14px;letter-spacing:0;text-transform:none}
-    .acd-sec{min-width:0;border:1px solid var(--fio);border-radius:13px;
-      background:#181819;padding:16px 17px}
-    .acd-sec h4{margin:0 0 13px;font-family:var(--font-ui);font-size:11px;
-      font-weight:800;letter-spacing:.065em;text-transform:uppercase;color:var(--gold)}
-    .acd-sec p{margin:0 0 9px;font-family:var(--font-ui);font-size:12.5px;
-      line-height:1.65;color:#d7d5d1}
+      -webkit-overflow-scrolling:touch;padding:18px 18px max(28px,env(safe-area-inset-bottom))}
+    .acd-grid{max-width:720px;margin:0 auto;display:grid;gap:12px}
+
+    /* resumo em três números, como os números do repertório */
+    .acd-resumo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+      border:1px solid var(--line, rgba(var(--gold-rgb),.35));border-radius:14px;overflow:hidden;
+      background:rgba(var(--gold-rgb),.07)}
+    .acd-res{padding:14px 10px 13px;text-align:center;min-width:0;
+      border-right:1px solid rgba(255,255,255,.08)}
+    .acd-res:last-child{border-right:0}
+    .acd-res small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--gold)}
+    .acd-res strong{display:block;margin:7px 0 5px;font-family:var(--font-display);
+      font-size:clamp(14px,4.3vw,22px);font-weight:800;line-height:1.1;color:var(--paper);
+      word-break:normal;overflow-wrap:normal;hyphens:manual}
+    .acd-res span{display:block;font-size:11px;line-height:1.35;color:var(--gray2)}
+
+    .acd-sec{min-width:0;border:1px solid var(--fio);border-radius:14px;
+      background:rgba(255,255,255,.025);padding:16px}
+    .acd-sec h4{margin:0 0 12px;font:700 11px var(--font-ui);letter-spacing:.16em;
+      text-transform:uppercase;color:var(--gold)}
+    .acd-sec p{margin:0 0 10px;font-size:13.5px;line-height:1.65;color:var(--dim)}
     .acd-sec p:last-child{margin-bottom:0}
-    .acd-sec b{color:#f5f0e7}
-    .acd-mudo{color:#a49f96}
-    .acd-hl{color:var(--gold)!important;font-weight:800}
-    .acd-notas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:7px 0 13px}
-    .acd-nota{min-width:0;border:1px solid rgba(255,255,255,.065);border-radius:9px;
-      background:#222122;text-align:center;padding:12px 4px 10px}
-    .acd-nota .acd-intervalo{display:block;font-size:14px;font-weight:800;color:#eae5db}
-    .acd-nota small{display:block;font-size:10px;color:#918c84;margin-top:4px;line-height:1.3}
-    .acd-nota strong{display:block;font-size:19px;color:var(--gold-hi);margin-top:9px;font-weight:800}
-    .acd-campo{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:4px 0 11px}
-    .acd-campo-item{min-width:0;display:grid;place-content:center;text-align:center;
-      border:1px solid var(--fio);border-radius:9px;background:#222122;
-      padding:10px 2px;font-size:12px;font-weight:800;overflow-wrap:anywhere;color:#eee9df}
-    .acd-campo-item small{display:block;margin-top:5px;font-size:10px;font-weight:600;color:#96918b}
-    .acd-campo-item.on{color:#15120b;background:var(--gold);border-color:var(--gold)}
-    .acd-campo-item.on small{color:#4c3914}
-    .acd-context{padding-top:11px;border-top:1px solid var(--fio)}
-    .acd-context p{font-size:12px;color:#b9b5ae}
-    .acd-funcao-box{display:flex;align-items:center;gap:9px;margin-bottom:11px;
-      color:var(--gold-hi);font-size:13px;font-weight:800}
-    .acd-funcao-box::before{content:'◉';font-size:17px}
-    .acd-character{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;
-      margin-bottom:10px;border-radius:8px;background:rgba(var(--gold-rgb),.08);
-      color:var(--gold-hi);font-size:12px;font-weight:800}
-    .acd-meters{display:grid;gap:6px;margin-top:14px}
-    .acd-meter-row{display:flex;align-items:center;gap:9px;font-size:11px;color:#aca8a0}
-    .acd-meter-row>span{min-width:76px}
-    .acd-meter{display:flex;gap:4px;flex:1;max-width:145px}
-    .acd-meter i{height:6px;flex:1;border-radius:8px;background:#35332f}
-    .acd-meter i.on{background:var(--gold)}
-    .acd-meter.tensao i.on{background:#ba8b45}
-    .acd-lista{list-style:none;margin:0;padding:0}
-    .acd-lista li{display:flex;align-items:center;gap:12px;padding:9px 0;
-      border-bottom:1px solid var(--fio);font-size:12px;line-height:1.5;color:#d7d3cb}
-    .acd-lista li:last-child{border-bottom:0;padding-bottom:0}
-    .acd-chip{display:inline-flex;flex:none;flex-direction:column;justify-content:center;
-      min-width:75px;max-width:112px;padding:8px 10px;border-radius:9px;
-      border:1px solid rgba(var(--gold-rgb),.2);background:rgba(var(--gold-rgb),.06);
-      color:var(--gold-hi);text-align:center;font-size:14px;font-weight:800}
-    .acd-chip i{display:block;font-style:normal;font-size:10px;font-weight:600;color:#aaa49b}
-    .acd-tip{background:rgba(var(--gold-rgb),.055);border-color:rgba(var(--gold-rgb),.2)}
-    .acd-tip h4::before{content:'✦';margin-right:8px}
-    /* Modo claro continua quente/neutro, sem azul, roxo ou verde. */
-    .lyra-box.claro .acd-folha,.lyra-box.claro .acd-hd{background:#faf9f7;color:#171512}
-    .lyra-box.claro .acd-hd{border-color:rgba(0,0,0,.12)}
-    .lyra-box.claro .acd-nome,.lyra-box.claro .acd-tonalidade strong{color:#171512}
-    .lyra-box.claro .acd-grau,.lyra-box.claro .acd-tonalidade{color:#77716a}
-    .lyra-box.claro .acd-x{background:#efebe5;color:#302820;border-color:rgba(0,0,0,.13)}
-    .lyra-box.claro .acd-sec{background:#fffdf9;border-color:#e4dfd5}
-    .lyra-box.claro .acd-sec p,.lyra-box.claro .acd-lista li{color:#4a4640}
-    .lyra-box.claro .acd-sec b{color:#25211c}
-    .lyra-box.claro .acd-tag{color:#8d6009;background:#fff5da}
-    .lyra-box.claro .acd-degree{color:#706558;background:#f4eee4;border-color:#e4dfd5}
-    .lyra-box.claro .acd-nota,.lyra-box.claro .acd-campo-item{background:#f5f1eb;border-color:#e6e0d8;color:#332c24}
-    .lyra-box.claro .acd-nota .acd-intervalo{color:#302b25}
-    .lyra-box.claro .acd-nota small,.lyra-box.claro .acd-campo-item small{color:#797169}
-    .lyra-box.claro .acd-nota strong,.lyra-box.claro .acd-chip,.lyra-box.claro .acd-funcao-box,
-    .lyra-box.claro .acd-character{color:var(--cifra-claro)}
-    .lyra-box.claro .acd-campo-item.on{background:var(--gold);border-color:var(--gold);color:#1c150a}
-    .lyra-box.claro .acd-campo-item.on small{color:#493711}
-    .lyra-box.claro .acd-context,.lyra-box.claro .acd-lista li{border-color:#ebe4da}
-    .lyra-box.claro .acd-chip{background:#fff5e1;border-color:#edddb5}
-    .lyra-box.claro .acd-tip,.lyra-box.claro .acd-character{background:#fff8e9}
-    .lyra-box.claro .acd-meter i{background:#e4ded6}
-    .lyra-box.claro .acd-meter i.on{background:#c68d1d}
+    .acd-sec b{color:var(--paper);font-weight:700}
+    .acd-mudo{color:var(--gray2)!important;font-size:12px!important}
+
+    /* o que significa: definição recolhida */
+    .acd-def{margin-top:10px;border-top:1px solid var(--fio);padding-top:10px}
+    .acd-def summary{cursor:pointer;list-style:none;font-size:12.5px;font-weight:700;color:var(--gold-hi);
+      display:flex;align-items:center;gap:6px}
+    .acd-def summary::-webkit-details-marker{display:none}
+    .acd-def summary::before{content:"?";display:grid;place-items:center;width:18px;height:18px;
+      border-radius:50%;border:1px solid rgba(var(--gold-rgb),.5);font-size:11px}
+    .acd-def p{margin:9px 0 0;font-size:13px}
+
+    /* notas: teclado + pastilhas */
+    .acd-teclado{margin:2px 0 14px;padding:10px;border-radius:10px;background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06)}
+    .acd-teclado svg{display:block;width:100%;max-width:440px;height:auto;margin:0 auto}
+    .acd-notas{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+    .acd-nota{flex:1 1 64px;min-width:64px;max-width:120px;text-align:center;
+      border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.04);padding:10px 6px 9px}
+    .acd-nota strong{display:block;font-family:var(--font-display);font-size:21px;font-weight:800;color:var(--gold-hi);line-height:1}
+    .acd-nota b{display:block;margin-top:7px;font-size:12px;color:var(--paper)}
+    /* "fundamental" tem hífen opcional (funda-mental): em pastilha
+       estreita quebra no meio certo em vez de vazar para fora */
+    .acd-nota small{display:block;margin-top:2px;font-size:10.5px;color:var(--gray2);line-height:1.25;
+      hyphens:manual;-webkit-hyphens:manual;overflow-wrap:normal}
+    .acd-nota{overflow:hidden}
+    .acd-nota.raiz{border-color:rgba(var(--gold-rgb),.55);background:rgba(var(--gold-rgb),.1)}
+
+    /* campo harmônico */
+    .acd-campo{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:14px}
+    .acd-campo-item{position:relative;min-width:0;text-align:center;padding:10px 2px 8px;border-radius:10px;
+      border:1px solid var(--fio);background:rgba(255,255,255,.03);
+      font-size:13px;font-weight:800;color:var(--paper);overflow-wrap:anywhere}
+    .acd-campo-item small{display:block;margin-top:4px;font-size:10px;font-weight:600;color:var(--gray2)}
+    .acd-campo-item.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+    .acd-campo-item.on small{color:rgba(0,0,0,.6)}
+    .acd-campo-item.alvo{border-color:var(--gold);color:var(--gold-hi)}
+    .acd-campo-item.alvo::after{content:"alvo";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
+      white-space:nowrap;line-height:1.4;padding:0 5px;border-radius:999px;background:var(--gold);color:var(--on-gold);
+      font-size:8.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+
+    /* função + medidores */
+    .acd-funcao{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+    .acd-funcao strong{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--paper)}
+    .acd-sigla{padding:3px 9px;border-radius:999px;border:1px solid rgba(var(--gold-rgb),.45);
+      color:var(--gold-hi);font-size:11px;font-weight:800}
+    .acd-meds{display:grid;gap:8px;margin:12px 0 4px}
+    .acd-med{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--gray2)}
+    .acd-med>span:first-child{width:86px;flex:none}
+    .acd-med-barra{display:flex;gap:4px;flex:1;max-width:190px}
+    .acd-med-barra i{height:7px;flex:1;border-radius:6px;background:rgba(255,255,255,.1)}
+    .acd-med-barra i.on{background:var(--gold)}
+    .acd-med-barra.tensao i.on{background:#E39B4B}
+
+    /* alternativas: cartões tocáveis */
+    .acd-alts{display:grid;gap:8px}
+    .acd-alt{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;
+      border:1px solid var(--fio);background:rgba(255,255,255,.03);text-align:left;width:100%;
+      color:inherit;font:inherit;cursor:pointer;transition:border-color .15s,background .15s}
+    .acd-alt:hover,.acd-alt:focus-visible{border-color:rgba(var(--gold-rgb),.55);background:rgba(var(--gold-rgb),.06);outline:none}
+    .acd-alt-nome{flex:none;min-width:74px;max-width:118px;padding:8px 6px;border-radius:9px;text-align:center;
+      background:rgba(var(--gold-rgb),.1);border:1px solid rgba(var(--gold-rgb),.25)}
+    .acd-alt-nome strong{display:block;font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--gold-hi);overflow-wrap:anywhere}
+    .acd-alt-nome small{display:block;margin-top:2px;font-size:10px;color:var(--gray2)}
+    .acd-alt-txt{flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:var(--dim)}
+    .acd-alt-acoes{display:flex;align-items:center;gap:6px;flex:none;color:var(--gray2)}
+    .acd-alt-som{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;
+      border:1px solid var(--fio);background:none;color:var(--gold-hi);cursor:pointer}
+    .acd-alt-som:hover,.acd-alt-som.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+
+    .acd-dica{background:rgba(var(--gold-rgb),.07);border-color:rgba(var(--gold-rgb),.3)}
+    .acd-dica h4::before{content:"✦ "}
+    .acd-rodape{text-align:center;font-size:11.5px;color:var(--gray2);line-height:1.5;padding:4px 10px 0}
+
+    /* ── fundo claro ── */
+    .lyra-box.claro .acd-folha{background:#FAF8F4;color:#171512}
+    .lyra-box.claro .acd-hd{border-color:rgba(0,0,0,.1);background:linear-gradient(180deg,rgba(var(--gold-rgb),.12),transparent)}
+    .lyra-box.claro .acd-nome{color:var(--cifra-claro)}
+    .lyra-box.claro .acd-sub,.lyra-box.claro .acd-sec p,.lyra-box.claro .acd-alt-txt{color:#4a4640}
+    .lyra-box.claro .acd-sec b,.lyra-box.claro .acd-res strong,.lyra-box.claro .acd-funcao strong,
+    .lyra-box.claro .acd-nota b,.lyra-box.claro .acd-campo-item{color:#1d1a16}
+    .lyra-box.claro .acd-ctl{background:#fff;color:#302820;border-color:rgba(0,0,0,.14)}
+    .lyra-box.claro .acd-sec,.lyra-box.claro .acd-alt,.lyra-box.claro .acd-campo-item,
+    .lyra-box.claro .acd-nota,.lyra-box.claro .acd-teclado{background:#fff;border-color:#E6E0D6}
+    .lyra-box.claro .acd-res{border-color:rgba(0,0,0,.08)}
+    .lyra-box.claro .acd-nota strong,.lyra-box.claro .acd-alt-nome strong,.lyra-box.claro .acd-ouvir,
+    .lyra-box.claro .acd-sigla,.lyra-box.claro .acd-def summary{color:var(--cifra-claro)}
+    .lyra-box.claro .acd-campo-item.on{color:#1c150a}
+    .lyra-box.claro .acd-med-barra i{background:#E6E0D6}
+    .lyra-box.claro .acd-mudo,.lyra-box.claro .acd-res span,.lyra-box.claro .acd-rodape{color:#77716a!important}
+
+    /* computador: janela central em duas colunas */
     @media(min-width:821px) and (pointer:fine){
-      .acd-folha{inset:5% auto 5% 50%;width:min(760px,calc(100% - 48px));height:90%;
-        max-height:880px;transform:translate(-50%,105%);border:1px solid var(--fio);
-        border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.72)}
+      .acd-folha{inset:4% auto 4% 50%;width:min(820px,calc(100% - 48px));height:92%;
+        max-height:920px;transform:translate(-50%,105%);border:1px solid var(--fio);
+        border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.75)}
       .acd-folha.on{transform:translateX(-50%)}
-      .acd-scroll-inner{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .acd-wide{grid-column:1/-1}
+      .acd-grid{max-width:none;grid-template-columns:repeat(2,minmax(0,1fr))}
+      .acd-largo{grid-column:1/-1}
+      .acd-hd{padding:20px 24px 16px}
+      .acd-scroll{padding:20px 24px 28px}
     }
     @media(max-width:820px),(pointer:coarse){
-      .acd-folha{inset:0;width:100%;height:100%;border-radius:0}
-      .acd-hd{padding:calc(12px + env(safe-area-inset-top)) 16px 13px}
+      .acd-hd{padding:calc(12px + env(safe-area-inset-top)) 14px 12px}
       .acd-scroll{padding:14px 12px calc(24px + env(safe-area-inset-bottom))}
-      .acd-sec{padding:15px}
+      .acd-sec{padding:14px}
       .acd-campo{gap:4px}
-      .acd-campo-item{font-size:10px;padding:10px 1px}
-      .acd-campo-item small{font-size:9px}
-      .acd-notas{gap:5px}
-      .acd-nota{padding:10px 2px}
-      .acd-nota strong{font-size:17px}
+      .acd-campo-item{font-size:11px;padding:9px 1px 7px}
     }
-    @media(max-width:350px){.acd-notas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    /* celular estreito: o resumo vira três linhas (rótulo · valor · nota),
+       senão "Subdominante" e "Secundário" não cabem lado a lado */
+    @media(max-width:430px){
+      .acd-resumo{grid-template-columns:1fr}
+      .acd-res{display:grid;grid-template-columns:62px auto 1fr;align-items:baseline;
+        column-gap:10px;text-align:left;padding:11px 14px;border-right:0;
+        border-bottom:1px solid rgba(255,255,255,.08)}
+      .acd-res:last-child{border-bottom:0}
+      .acd-res strong{margin:0;font-size:17px;white-space:nowrap}
+      .acd-res span{text-align:right;font-size:11px}
+      .lyra-box.claro .acd-res{border-color:rgba(0,0,0,.08)}
+    }
+    @media(max-width:400px){
+      .acd-ouvir span{display:none}
+      .acd-ouvir{padding:0;width:42px;justify-content:center}
+      .acd-res strong{font-size:18px}
+      .acd-alt-acoes .acd-alt-seta{display:none}
+    }
     @media(prefers-reduced-motion:reduce){.acd-folha{transition:none}}
     `;
     document.head.appendChild(st);
@@ -599,66 +689,143 @@
     f.id = "acdFolha";
     f.className = "acd-folha";
     f.setAttribute("role", "dialog");
+    f.setAttribute("aria-modal", "true");
     f.setAttribute("aria-label", "Detalhes do acorde");
     box.appendChild(f);
     f.addEventListener("click", e => {
-      if (e.target.closest(".acd-x, .acd-voltar")) fechar();
+      //  O clique não sai da folha: ao trocar de acorde o conteúdo é
+      //  redesenhado, e o "clicou fora" do documento fecharia a folha.
+      e.stopPropagation();
+      const som = e.target.closest("[data-acd-som]");
+      if (som) {
+        e.stopPropagation();
+        if (typeof acOuvir === "function") acOuvir(som.dataset.acdSom, som);
+        return;
+      }
+      const alt = e.target.closest("[data-acd-abrir]");
+      if (alt) { historico.push(nomeAberto); abrir(alt.dataset.acdAbrir, true); return; }
+      if (e.target.closest(".acd-voltar")) {
+        const anterior = historico.pop();
+        anterior ? abrir(anterior, true) : fechar();
+        return;
+      }
+      if (e.target.closest(".acd-x")) fechar();
     });
     return f;
   }
 
-  function abrir(nome) {
+  function cabecalho(nome, sub) {
+    const voltar = historico.length
+      ? `<button type="button" class="acd-ctl acd-voltar" aria-label="Voltar ao acorde anterior">${ICO_VOLTAR}</button>`
+      : "";
+    return `<div class="acd-hd">${voltar}
+      <div class="acd-hd-txt"><span class="acd-nome">${esc(nome)}</span><span class="acd-sub">${sub}</span></div>
+      <button type="button" class="acd-ouvir" data-acd-som="${esc(nome)}" aria-label="Ouvir ${esc(nome)}">${ICO_SOM}<span>Ouvir</span></button>
+      <button type="button" class="acd-ctl acd-x" aria-label="Fechar detalhes">&#10005;</button></div>`;
+  }
+
+  function abrir(nome, navegando = false) {
     const f = folha();
     if (!f || !nome) return;
+    if (!navegando) historico.length = 0;
     const tom = typeof lyraAtual !== "undefined" && lyraAtual && lyraAtual.tom;
     const a = tom ? analisar(nome, tom) : null;
     nomeAberto = nome;
 
-    const hd = (detail,subtitle="") => `<div class="acd-hd"><div class="acd-hd-main">
-      <button type="button" class="acd-voltar">‹ Voltar</button>
-      <span class="acd-nome">${esc(nome)}</span><span class="acd-grau">${subtitle || detail}</span>
-      </div><button type="button" class="acd-x" aria-label="Fechar detalhes">&#10005;</button></div>`;
     if (!a) {
-      f.innerHTML = hd("") + `<div class="acd-scroll"><div class="acd-scroll-inner">
-        <section class="acd-sec"><p>Não consegui analisar este acorde no tom atual.</p></section>
+      f.innerHTML = cabecalho(nome, "Acorde") + `<div class="acd-scroll"><div class="acd-grid">
+        <section class="acd-sec acd-largo"><p>Não consegui analisar este acorde no tom atual.</p></section>
       </div></div>`;
     } else {
       const grauApp = T.grauDoAcorde(nome, tom) || a.grauTxt;
-      const familia = a.tipo === "diatonico" ? "Pertence ao campo" : a.tipo === "secundario" ? "Possível dominante secundário"
-        : a.tipo === "emprestimo" ? "Possível empréstimo modal" : a.tipo === "passagem" ? "Possível diminuto de passagem" : "Fora do campo";
+      const romanoTxt = romano(a.grau, a.ac.dim || a.meioDim ? "dim" : a.triade === "menor" ? "menor" : a.triade);
+      const fun = funcaoDe(a);
+      const tipo = TIPO[a.tipo] || TIPO.cromatico;
+      const tensao = tensaoDe(a);
 
-      const sufixos = ["", "m", "m", "", "", "m", "dim"];
-      const campo = sufixos.map((s,i) => {
-        const nota = notaDoGrau(a.ref,i) + s;
-        const ativo = a.tipo === "diatonico" && a.grau.idx === i;
-        const roman = NATURAL[i] === "menor" ? ROMANOS[i].toLowerCase() : i === 6 ? "vii°" : ROMANOS[i];
-        return `<span class="acd-campo-item${ativo ? " on" : ""}">${esc(nota)}<small>${roman}</small></span>`;
+      // notas: teclado + pastilhas
+      const ac = acLer(nome);
+      const teclado = ac && typeof acSvgTeclado === "function" ? acSvgTeclado(ac) : "";
+      const notas = a.notas.map(n => {
+        const rot = n.rot === "T" ? "1" : n.rot;
+        return `<div class="acd-nota${n.rot === "T" ? " raiz" : ""}"><strong>${esc(n.nota)}</strong>
+          <b>${esc(rot)}</b><small>${esc(NOME_INTERVALO[n.rot] || n.rot)}</small></div>`;
       }).join("");
-      const nomesIntervalos = {"T":"Fundamental","3m":"Terça menor","3M":"Terça maior",
-        "5J":"Quinta justa","7m":"Sétima menor","7M":"Sétima maior","5ª dim":"Quinta diminuta",
-        "5ª aum":"Quinta aumentada","9ª":"Nona","2ª":"Segunda","4ª":"Quarta","6ª":"Sexta"};
-      const notas = a.notas.map(n => `<div class="acd-nota"><span class="acd-intervalo">${esc(n.rot === "T" ? "1" : n.rot)}</span>
-        <small>${esc(nomesIntervalos[n.rot] || n.rot)}</small><strong>${esc(n.nota)}</strong></div>`).join("");
-      const context = textoContexto(a).replace(/<p><span class="acd-mudo">Campo de [\s\S]*?<\/p>/, "");
-      const caracter = a.ac.dim ? "Diminuto · cor tensa" : a.ac.sus ? "Suspenso · sem terça" :
-        a.triade === "menor" ? "Menor · sonoridade introspectiva" : "Maior · sonoridade aberta";
-      f.innerHTML = hd(`Grau ${esc(grauApp)} · ${esc(tom)}`,esc(qualidadeFrase(a))) + `
-        <div class="acd-scroll"><div class="acd-scroll-inner">
-          <div class="acd-lead acd-wide"><div class="acd-tags"><span class="acd-tag">${esc(familia)}</span>
-            <span class="acd-degree">Grau ${esc(grauApp)} · referência ${esc(a.ref)}</span></div>
-            <span class="acd-tonalidade">TONALIDADE ATUAL<strong>${esc(tom)}</strong></span></div>
-          <section class="acd-sec acd-wide"><h4>Como o acorde é formado</h4>
-            <div class="acd-notas">${notas}</div><p>${esc(qualidadeFrase(a))}.</p></section>
-          <section class="acd-sec acd-wide"><h4>No campo harmônico de ${esc(a.ref)}</h4>
-            <div class="acd-campo">${campo}</div><div class="acd-context">${context}</div></section>
-          <section class="acd-sec"><h4>Função harmônica provável</h4>
-            <div class="acd-funcao-box">${esc(rotuloFuncao(a))}</div>
-            ${textoFuncao(a)}</section>
-          <section class="acd-sec"><h4>Caráter sonoro</h4>
-            <div class="acd-character">${esc(caracter)}</div>${textoCarater(a)}
-            <p class="acd-mudo">O caráter sonoro é descritivo; tensão e estabilidade dependem do contexto musical.</p></section>
-          <section class="acd-sec acd-wide"><h4>Alternativas para experimentar</h4><p class="acd-mudo">Não são trocas automáticas: confira a melodia, o baixo e a progressão antes de substituir.</p>${textoSubstituicoes(a)}</section>
-          <section class="acd-sec acd-tip acd-wide"><h4>Dica rápida</h4>${textoDica(a)}</section>
+      let baixo = "";
+      if (a.baixoNome) {
+        const s = (lyraPc(a.baixoNome) - a.raizPc + 12) % 12;
+        const nomeI = { 0: "a fundamental", 3: "a terça", 4: "a terça", 7: "a quinta", 10: "a sétima", 11: "a sétima", 2: "a nona" }[s];
+        baixo = `<p><b>Baixo em ${esc(a.baixoNome)}</b>${nomeI ? ` (${nomeI} do acorde)` : ""}: é uma inversão. As notas são as mesmas; só muda quem fica embaixo, e o baixo anda mais suave.</p>`;
+      }
+
+      // campo harmônico
+      const sufixos = ["", "m", "m", "", "", "m", "°"];
+      const campo = sufixos.map((s, i) => {
+        const nota = notaDoGrau(a.ref, i) + s;
+        const cls = a.tipo === "diatonico" && a.grau.idx === i ? " on"
+          : a.alvo && a.alvo.idx === i ? " alvo" : "";
+        const rom = NATURAL[i] === "menor" ? ROMANOS[i].toLowerCase() : i === 6 ? "vii°" : ROMANOS[i];
+        return `<span class="acd-campo-item${cls}">${esc(nota)}<small>${rom}</small></span>`;
+      }).join("");
+      const campoTxt = a.tipo === "diatonico"
+        ? `<b>${esc(nome)}</b> é o ${a.grau.idx + 1}º grau (${NOME_GRAU[a.grau.idx]}) do campo de ${esc(a.ref)}.`
+        : a.alvo
+          ? `<b>${esc(nome)}</b> não está no campo de ${esc(a.ref)}; ele aponta para <b>${esc(a.alvo.nome)}</b>, marcado como alvo.`
+          : `<b>${esc(nome)}</b> não está no campo de ${esc(a.ref)}.`;
+      const menorTxt = a.menorTom
+        ? `<p class="acd-mudo">Tom menor: a régua de números usa o relativo maior, ${esc(a.ref)}.</p>` : "";
+
+      // como soa
+      const carater = textoCarater(a).replace(/<\/?p>/g, "");
+
+      // alternativas
+      const alts = substituicoes(a);
+      const altsHTML = alts.length
+        ? `<div class="acd-alts">${alts.map(i => `
+            <div class="acd-alt" role="button" tabindex="0" data-acd-abrir="${esc(i.nome)}" aria-label="Ver detalhes de ${esc(i.nome)}">
+              <span class="acd-alt-nome"><strong>${esc(i.nome)}</strong>${i.grau ? `<small>${esc(i.grau)}</small>` : ""}</span>
+              <span class="acd-alt-txt">${esc(i.motivo)}</span>
+              <span class="acd-alt-acoes">
+                <button type="button" class="acd-alt-som" data-acd-som="${esc(i.nome)}" aria-label="Ouvir ${esc(i.nome)}">${ICO_SOM}</button>
+                <span class="acd-alt-seta">${ICO_SETA}</span>
+              </span>
+            </div>`).join("")}</div>`
+        : `<p class="acd-mudo">Sem troca direta que valha a pena sugerir.</p>`;
+
+      f.innerHTML = cabecalho(nome, `${esc(nomeEmPalavras(a))}`) + `
+        <div class="acd-scroll"><div class="acd-grid">
+
+          <div class="acd-resumo acd-largo">
+            <div class="acd-res"><small>Grau</small><strong>${esc(romanoTxt)}</strong><span>${esc(grauApp)} no tom de ${esc(tom)}</span></div>
+            <div class="acd-res"><small>Função</small><strong>${esc(fun.nome)}</strong><span>${esc(fun.faz)}</span></div>
+            <div class="acd-res"><small>No tom</small><strong>${esc(tipo.rotulo)}</strong><span>${esc(tipo.curto)}</span></div>
+          </div>
+
+          <section class="acd-sec acd-largo"><h4>Notas do acorde</h4>
+            ${teclado ? `<div class="acd-teclado">${teclado}</div>` : ""}
+            <div class="acd-notas">${notas}</div>
+            <p>${esc(qualidadeFrase(a))}.</p>${baixo}
+          </section>
+
+          <section class="acd-sec acd-largo"><h4>No campo harmônico de ${esc(a.ref)}</h4>
+            <div class="acd-campo">${campo}</div>
+            <p>${campoTxt}</p>${menorTxt}
+            <details class="acd-def"><summary>O que é “${esc(tipo.rotulo.toLowerCase())}”?</summary><p>${esc(tipo.def)}</p></details>
+          </section>
+
+          <section class="acd-sec"><h4>Função</h4>
+            <div class="acd-funcao"><strong>${esc(fun.nome)}</strong><span class="acd-sigla">${esc(fun.sigla)}</span></div>
+            <p>${funcaoTexto(a)}</p>
+            <div class="acd-meds">${medidor("Tensão", tensao, "tensao")}${medidor("Repouso", 6 - tensao)}</div>
+          </section>
+
+          <section class="acd-sec"><h4>Como soa</h4><p>${carater}</p></section>
+
+          <section class="acd-sec acd-largo"><h4>Para experimentar</h4>${altsHTML}</section>
+
+          <section class="acd-sec acd-dica acd-largo"><h4>Dica</h4>${textoDica(a)}</section>
+
+          <p class="acd-rodape acd-largo">A análise olha só o acorde e o tom. A melodia e os acordes vizinhos podem mudar a leitura.</p>
         </div></div>`;
     }
     const scroller = f.querySelector(".acd-scroll");
@@ -673,7 +840,18 @@
     const f = document.getElementById("acdFolha");
     if (f) f.classList.remove("on");
     nomeAberto = null;
+    historico.length = 0;
   }
+
+  //  Alternativas também abrem pelo teclado (Enter / espaço).
+  document.addEventListener("keydown", e => {
+    const alt = e.target.closest && e.target.closest(".acd-alt");
+    if (!alt || (e.key !== "Enter" && e.key !== " ")) return;
+    if (e.target.closest(".acd-alt-som")) return;
+    e.preventDefault();
+    historico.push(nomeAberto);
+    abrir(alt.dataset.acdAbrir, true);
+  });
 
   // ---------- Botões no balão e no painel ----------
 

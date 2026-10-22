@@ -1,44 +1,10 @@
 // ============================================================
-//  TOM LOUVORES — integração com o Lyra
-//  API somente leitura. Cada chamada leva
-//  Authorization: Bearer (CONFIG.LYRA_API_KEY).
+//  TOM LOUVORES — cifras
+//  Fonte: tabela "cifras" do Supabase do próprio site (via req()).
+//  O nome "lyra" nas funções ficou da época em que vinha do Lyra.
 //  Cifra e letra abrem DENTRO do site, num leitor próprio.
 //  Carregue DEPOIS do app.js. Não altera nada do app.js.
 // ============================================================
-
-const LYRA_API = "https://database.invbotafogo.com.br/api/v1";
-const LYRA_MSG_CHAVE = "A chave da API do Lyra está ausente ou incorreta.";
-
-//  O valor mora em js/lyra-chave.js (não vai para o git). É o mesmo
-//  LYRA_API_KEY do servidor do banco de músicas.
-function lyraChaveApi() {
-  const bruta = typeof CONFIG !== "undefined" ? CONFIG.LYRA_API_KEY : "";
-  return typeof bruta === "string" ? bruta.trim() : "";
-}
-
-function lyraErroAuth() {
-  const e = new Error(LYRA_MSG_CHAVE);
-  e.lyraAuth = true;
-  e.status = 401;
-  return e;
-}
-
-function lyraEhErroDeChave(e) {
-  return !!(e && (e.lyraAuth || e.status === 401));
-}
-
-//  Único caminho até a API do Lyra. Sem a chave, nem tenta a rede:
-//  401 (ou chave vazia) não pode parecer falta de conexão.
-async function lyraFetch(url) {
-  const chave = lyraChaveApi();
-  if (!chave) throw lyraErroAuth();
-  const r = await fetch(url, {
-    cache: "no-store",
-    headers: { Authorization: `Bearer ${chave}` },
-  });
-  if (r.status === 401) throw lyraErroAuth();
-  return r;
-}
 
 const lyraCacheBusca  = new Map();  // nome normalizado → música do Lyra (ou null)
 const lyraPendentes   = new Map();  // nome normalizado → busca em andamento
@@ -354,7 +320,7 @@ async function lyraCarregarIndice(forcar = false) {
           // o site transpõe sozinho, então todo tom fica disponível,
           // mesmo quando o Lyra só cadastrou o original
           keys: lyraDozeTons(r.base_key) || r.available_keys || [],
-          versao: r.updated_at || "",       // a data do Lyra substitui esta, se a rede responder
+          versao: r.updated_at || "",       // muda quando a cifra é editada
           has_chords: true,
         };
         [lyraNorm(r.title), lyraChaveCurta(r.title)].forEach(k => {
@@ -369,9 +335,6 @@ async function lyraCarregarIndice(forcar = false) {
       lyraCacheBusca.clear();
       try { localStorage.removeItem(LYRA_CACHE_KEY); } catch (e) {}
       lyraLimparOrfas();
-      //  A tabela musicas_lyra não muda quando a cifra é editada no Lyra.
-      //  A data verdadeira vem de /sync. Sem rede, fica a data da tabela.
-      try { await lyraAtualizarVersoes(); } catch (e) { /* sem rede: segue com a tabela */ }
       lyraAtualizarBotaoBaixar();
       console.info(`Cifras: ${data.length} músicas carregadas de ${LYRA_TABELA}.`);
       return idx;
@@ -491,9 +454,10 @@ const LYRA_DISCO_INDICE  = "louvores_cifras_baixadas_v1";
 // pelo servidor) e quanto está ocupado no aparelho
 let lyraBytesBaixados = 0;
 
-function lyraContarBytes(url) {
+function lyraContarBytes(trecho) {
   try {
-    const e = performance.getEntriesByName(url).pop();
+    const e = performance.getEntriesByType("resource")
+      .filter(x => x.name.includes(trecho)).pop();
     if (!e) return;
     lyraBytesBaixados += e.transferSize || e.encodedBodySize || 0;
   } catch (err) { /* navegador sem Performance API */ }
@@ -579,44 +543,6 @@ function lyraVersaoDoSlug(slug) {
   return null;
 }
 
-//  A data que muda ao editar a cifra está no Lyra, não na tabela
-//  musicas_lyra. Uma lista só, sem o texto: o botão compara com o
-//  que já está no aparelho e baixa só o que for mais novo.
-async function lyraAtualizarVersoes() {
-  // As versões já vêm de public.cifras.updated_at.
-  return;
-}
-
-//  Cópias baixadas antes desta data do Lyra têm o carimbo da tabela
-//  musicas_lyra. Sem isto, o botão trata as 109 como se não existissem.
-//  A primeira vez só troca o carimbo. Edição feita depois disso baixa de novo.
-function lyraHerdarVersao(slug, versao) {
-  if (!slug || !versao) return;
-  let bruto = null;
-  try { bruto = localStorage.getItem(LYRA_DISCO_PREFIXO + slug); } catch (e) { return; }
-  if (!bruto) return;
-  let reg;
-  try { reg = JSON.parse(bruto); } catch (e) { return; }
-  if (!reg || reg.d == null || reg.lyra) return;
-  reg.v = versao;
-  reg.lyra = 1;
-  try { localStorage.setItem(LYRA_DISCO_PREFIXO + slug, JSON.stringify(reg)); }
-  catch (e) { /* sem espaço: a cópia continua, o botão pede de novo */ }
-}
-
-//  true se a cifra deste slug já está no aparelho e o banco não
-//  editou depois. Só lê o carimbo da versão, sem descomprimir o texto.
-function lyraCopiaAtual(slug) {
-  let bruto = null;
-  try { bruto = localStorage.getItem(LYRA_DISCO_PREFIXO + slug); } catch (e) { return false; }
-  if (!bruto) return false;
-  let reg;
-  try { reg = JSON.parse(bruto); } catch (e) { return false; }
-  if (!reg || reg.d == null || reg.v === undefined || reg.v === null) return false;
-  const atual = lyraVersaoDoSlug(slug);
-  return atual !== null && reg.v === atual;
-}
-
 async function lyraDoDisco(slug) {
   let bruto = null;
   try { bruto = localStorage.getItem(LYRA_DISCO_PREFIXO + slug); } catch (e) { return null; }
@@ -642,9 +568,9 @@ async function lyraGravarNoDisco(slug, musica) {
   let reg;
   try {
     const z = await lyraComprimir(txt);
-    reg = z ? { z: 1, d: z, v, lyra: 1 } : { z: 0, d: txt, v, lyra: 1 };
+    reg = z ? { z: 1, d: z, v } : { z: 0, d: txt, v };
   } catch (e) {
-    reg = { z: 0, d: txt, v, lyra: 1 };
+    reg = { z: 0, d: txt, v };
   }
   // grava por cima do registro anterior deste mesmo slug
   localStorage.setItem(LYRA_DISCO_PREFIXO + slug, JSON.stringify(reg));
@@ -654,6 +580,18 @@ async function lyraGravarNoDisco(slug, musica) {
 
 // música apagada ou com slug trocado no banco continuaria ocupando
 // espaço para sempre: some com ela
+//  Cópias da época do Lyra (prefixo antigo) não são mais lidas por
+//  ninguém e ocupavam o localStorage à toa.
+function lyraLimparLegado() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("lyra_m_") || k === "lyra_baixadas_v1")) localStorage.removeItem(k);
+    }
+  } catch (e) { /* sem acesso ao armazenamento */ }
+}
+lyraLimparLegado();
+
 function lyraLimparOrfas() {
   if (!lyraIndice) return 0;
   const validos = new Set(lyraSlugsDoIndice());
@@ -748,8 +686,7 @@ function lyraAtualizarBotaoBaixar(txt) {
   const btn = document.getElementById("lyraBaixar");
   if (!btn) return;
 
-  //  Só mexe no HTML quando o texto muda. A conferência automática
-  //  chama isto o tempo todo; reescrever o mesmo rótulo fazia o botão piscar.
+  //  Só mexe no HTML quando o texto muda: o botão não pisca.
   const pintar = (ico, rotulo) => {
     const marca = ico === LYRA_ICO_OK ? "ok" : "baixar";
     const igual = btn.dataset.ico === marca &&
@@ -760,146 +697,107 @@ function lyraAtualizarBotaoBaixar(txt) {
   };
 
   if (txt) { pintar(LYRA_ICO_BAIXAR, txt); return; }
+  //  No meio do download a lista é relida e chamava isto sem texto:
+  //  o botão voltava a "Baixar cifras" por um instante e piscava.
+  if (lyraBaixando) return;
 
+  //  Sempre "Baixar cifras": cada toque baixa tudo de novo. Quantas
+  //  já estão no aparelho fica só na dica (e no menu do celular).
   const slugs  = lyraSlugsDoIndice();
-  const total  = slugs.length;
-  const salvas = lyraListaBaixadas().filter(x => slugs.includes(x)).length;
-  const faltam = slugs.filter(s => !lyraCopiaAtual(s)).length;
-  const tudo   = total > 0 && salvas >= total && faltam === 0;
+  const lista  = new Set(lyraListaBaixadas());
+  const salvas = slugs.filter(x => lista.has(x)).length;
 
   if (btn.style.display === "none") btn.style.display = "";
-  if (btn.classList.contains("pronto") !== tudo) btn.classList.toggle("pronto", tudo);
+  btn.classList.remove("pronto", "parcial");
+  btn.dataset.salvas = String(salvas);
 
-  //  barra de carregamento junto com a porcentagem: preenche o
-  //  botão até a parte já guardada (some quando está tudo salvo)
-  const pctSalvo = total ? Math.floor((salvas / total) * 100) : 0;
-  const parcial = !tudo && salvas > 0;
-  if (btn.classList.contains("parcial") !== parcial) btn.classList.toggle("parcial", parcial);
-  const guarda = pctSalvo + "%";
-  if (btn.style.getPropertyValue("--guardado") !== guarda)
-    btn.style.setProperty("--guardado", guarda);
+  pintar(LYRA_ICO_BAIXAR, "Baixar cifras");
 
-  pintar(
-    tudo ? LYRA_ICO_OK : LYRA_ICO_BAIXAR,
-    tudo    ? "Cifras salvas"
-    : faltam && salvas ? `Atualizar · ${faltam}`
-    //  em porcentagem, para caber no header. Arredonda para baixo:
-    //  105 de 106 mostra 99%, nunca um 100% que não está completo.
-    : salvas ? `Baixar cifras · ${pctSalvo}%`
-             : "Baixar cifras"
-  );
-
-  const ocupado = lyraEspacoUsado();
-  const title = tudo
-    ? `${salvas} músicas guardadas neste aparelho (${lyraKB(ocupado)}). Toque para atualizar.`
-    : faltam
-      ? `${faltam} ${faltam === 1 ? "cifra nova ou editada" : "cifras novas ou editadas"}. Toque para baixar só essas.`
-      : `Guardar todas as cifras neste aparelho, para abrir sem internet.` +
-        (salvas ? ` ${salvas} de ${total} já guardadas.` : "") +
-        (ocupado ? ` Já guardadas: ${lyraKB(ocupado)}.` : "");
+  const title = `Baixar todas as cifras para abrir sem internet.` +
+    (salvas ? ` ${salvas} já neste aparelho (${lyraKB(lyraEspacoUsado())}).` : "");
   if (btn.title !== title) btn.title = title;
 }
 
+//  Como era até 16/10: cada toque baixa TODAS as cifras de novo
+//  (o que mudou no banco chega sem conferir nada), mostra a
+//  porcentagem no botão e recarrega a página no fim.
+//  Diferença: em vez de uma requisição por música, vem tudo numa
+//  só (tabela cifras do Supabase) — 112 músicas em ~1 segundo.
 async function lyraBaixarTudo() {
   if (lyraBaixando) return;
-  const indiceAtualizado = await lyraCarregarIndice(true);
-  if (!indiceAtualizado) {
-    toast("Não foi possível verificar atualizações no Supabase.", true);
-    return;
-  }
-
-  const slugs = lyraSlugsDoIndice();
-  if (!slugs.length) {
-    toast("Não consegui ler a lista de cifras. Verifique a conexão.", true);
-    return;
-  }
-
-  lyraLimparOrfas();
-
   const btn = document.getElementById("lyraBaixar");
-  //  Sem isto, a data da tabela musicas_lyra esconde a edição feita no Lyra.
-  try { await lyraAtualizarVersoes(); }
-  catch (e) {
-    if (lyraEhErroDeChave(e)) { toast(LYRA_MSG_CHAVE, true); return; }
-  }
-
-  //  10 já salvas e 2 novas no banco: só as 2 entram na fila.
-  //  Cifra editada muda o updated_at do Lyra e também entra. O resto fica.
-  const pendentes = slugs.filter(slug => !lyraCopiaAtual(slug));
-  const reaproveitadas = slugs.length - pendentes.length;
-
-  if (!pendentes.length) {
-    lyraAtualizarBotaoBaixar();
-    toast(`${reaproveitadas} ${reaproveitadas === 1 ? "cifra já estava" : "cifras já estavam"} neste aparelho.`);
-    //  No app instalado a página não recarrega sozinha. Este toque
-    //  traz o código novo, mesmo sem nenhuma cifra para baixar.
-    setTimeout(lyraRecarregarDepoisDeBaixar, 1600);
-    return;
-  }
 
   lyraBaixando = true;
   lyraBytesBaixados = 0;
   if (btn) btn.disabled = true;
+  lyraAtualizarBotaoBaixar("Baixando · 0%");
+  lyraProgresso(0);
 
-  let ok = 0, falhas = 0, cheio = false, semChave = false;
-  let cursor = 0, feitos = 0;
-  //  O navegador abre no máximo 6 conexões para o mesmo site.
-  const PARALELO = 6;
+  const encerrar = () => {
+    lyraProgresso(100);
+    setTimeout(() => lyraProgresso(null), 900);
+    lyraBaixando = false;
+    if (btn) btn.disabled = false;
+    lyraAtualizarBotaoBaixar();
+  };
 
-  function lyraMarcarProgresso() {
-    feitos++;
-    const pct = Math.round((feitos / pendentes.length) * 100);
-    lyraAtualizarBotaoBaixar(`Baixando · ${pct}%`);
-    lyraProgresso(Math.min(pct, 99));
+  //  lista fresca: música nova no banco entra, apagada sai
+  await lyraCarregarIndice(true);
+  const slugs = lyraSlugsDoIndice();
+  if (!slugs.length) {
+    encerrar();
+    toast("Não consegui ler a lista de cifras. Verifique a conexão.", true);
+    return;
   }
+  lyraLimparOrfas();
 
-  async function lyraBaixarUma() {
-    while (!cheio && !semChave) {
-      const i = cursor++;
-      if (i >= pendentes.length) return;
-      const slug = pendentes[i];
-      try {
-        lyraCacheMusica.delete(slug);
-        const musica = await lyraCarregarMusica(slug, true);
-        await lyraGravarNoDisco(slug, musica);
-        ok++;
-      } catch (e) {
-        if (lyraEhErroDeChave(e)) { semChave = true; }
-        else if (e && (e.name === "QuotaExceededError" || /quota|exceeded/i.test(e.message || ""))) {
-          cheio = true;
-        } else {
-          console.warn("Não baixei", slug, e);
-          falhas++;
-        }
+  let linhas;
+  try {
+    linhas = await lyraLerCifrasCompletas();
+  } catch (e) {
+    console.warn("Download das cifras falhou:", e);
+    encerrar();
+    toast("Não consegui baixar as cifras. Verifique a conexão.", true);
+    return;
+  }
+  const porSlug = new Map((linhas || []).map(d => [d.slug, d]));
+
+  let ok = 0, falhas = 0, cheio = false;
+
+  for (let i = 0; i < slugs.length; i++) {
+    const pct = Math.round((i / slugs.length) * 100);
+    lyraAtualizarBotaoBaixar(`Baixando · ${pct}%`);
+    lyraProgresso(pct);
+    const d = porSlug.get(slugs[i]);
+    if (!d) { falhas++; continue; }
+    try {
+      const musica = lyraMusicaDaLinha(d);
+      lyraCacheMusica.set(slugs[i], musica);
+      await lyraGravarNoDisco(slugs[i], musica);
+      ok++;
+    } catch (e) {
+      if (e && (e.name === "QuotaExceededError" || /quota|exceeded/i.test(e.message || ""))) {
+        cheio = true;
+        break;
       }
-      lyraMarcarProgresso();
+      console.warn("Não baixei", slugs[i], e);
+      falhas++;
     }
   }
 
-  await Promise.all(
-    Array.from({ length: Math.min(PARALELO, pendentes.length) }, () => lyraBaixarUma())
-  );
+  encerrar();
 
-  lyraProgresso(100);
-  setTimeout(() => lyraProgresso(null), 900);
-  lyraBaixando = false;
-  if (btn) btn.disabled = false;
-  lyraAtualizarBotaoBaixar();
+  const baixado = lyraBytesBaixados ? ` · ${lyraKB(lyraBytesBaixados)} baixados` : "";
 
-  const ja = reaproveitadas
-    ? ` ${reaproveitadas} ${reaproveitadas === 1 ? "já estava salva" : "já estavam salvas"}.`
-    : "";
-
-  if (semChave)    toast(LYRA_MSG_CHAVE, true);
-  else if (cheio)  toast(`Armazenamento cheio. ${ok} de ${pendentes.length} salvas.${ja}`, true);
-  else if (falhas) toast(`${ok} salvas, ${falhas} sem conexão.${ja}`, true);
-  else             toast(`${ok} ${ok === 1 ? "cifra nova" : "cifras novas"}.${ja}`);
+  if (cheio)       toast(`Armazenamento cheio. ${ok} de ${slugs.length} salvas.`, true);
+  else if (falhas) toast(`${ok} salvas, ${falhas} com falha.`, true);
+  else             toast(`${ok} ${ok === 1 ? "cifra guardada" : "cifras guardadas"} ✓${baixado}`);
 
   //  Recarrega no fim, para a página passar a usar o que acabou de
   //  ser guardado. A espera de 1,6s deixa a mensagem ser lida — e
   //  com o leitor aberto a recarga é adiada, senão a cifra que a
   //  pessoa está lendo sumiria da tela no meio do louvor.
-  if (ok && !cheio && !falhas && !semChave) setTimeout(lyraRecarregarDepoisDeBaixar, 1600);
+  if (!cheio && !falhas) setTimeout(lyraRecarregarDepoisDeBaixar, 1600);
 }
 
 function lyraRecarregarDepoisDeBaixar() {
@@ -913,26 +811,6 @@ function lyraRecarregarDepoisDeBaixar() {
   }
   location.reload();
 }
-
-//  O app instalado fica com a página aberta. Sem isto, "Atualizar · 1"
-//  só aparecia depois de um recarregamento manual.
-let lyraVigiaEmCurso = false;
-async function lyraVigiarEdicoes() {
-  if (lyraVigiaEmCurso || lyraBaixando || !lyraIndice) return;
-  lyraVigiaEmCurso = true;
-  try {
-    await lyraAtualizarVersoes();
-    lyraAtualizarBotaoBaixar();
-  } catch (e) { /* sem rede: o botão fica como está */ }
-  finally { lyraVigiaEmCurso = false; }
-}
-
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) lyraVigiarEdicoes();
-});
-window.addEventListener("focus", () => lyraVigiarEdicoes());
-window.addEventListener("pageshow", () => lyraVigiarEdicoes());
-setInterval(lyraVigiarEdicoes, 20000);
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", lyraMontarBotaoBaixar);
@@ -1134,6 +1012,29 @@ function lyraDozeTons(base) {
 
 const lyraMusicaPendente = new Map();   // slug → carregamento em andamento
 
+const LYRA_COLUNAS_CIFRA = "id,slug,chords,base_key,updated_at";
+
+//  Uma linha da tabela cifras → o formato que o leitor usa.
+function lyraMusicaDaLinha(d) {
+  if (d.id) lyraGuardarId(d.slug, d.id);
+  const porTom = new Map();
+  if (d.chords && d.base_key) porTom.set(lyraKeySlug(d.base_key), d.chords);
+  return lyraRefazerTons({
+    lyrics: "",
+    porTom,
+    base_key: d.base_key || "",
+    key_spelling: null,
+  });
+}
+
+//  Todas as cifras numa requisição só (o botão "Baixar cifras").
+async function lyraLerCifrasCompletas() {
+  const caminho = `${LYRA_TABELA}?select=${LYRA_COLUNAS_CIFRA}`;
+  const dados = await req(caminho);
+  lyraContarBytes(`/rest/v1/${LYRA_TABELA}?select=${LYRA_COLUNAS_CIFRA}`);
+  return dados || [];
+}
+
 //  forcar = true ignora o que está guardado e busca do banco.
 //  É o que o botão "Baixar cifras" faz: sem isso ele relia o disco,
 //  regravava a mesma coisa e a edição feita no banco nunca chegava.
@@ -1156,27 +1057,14 @@ async function lyraCarregarMusica(slug, forcar = false) {
 
     try {
       const dados = await req(
-        `cifras?select=id,slug,chords,base_key,updated_at` +
+        `cifras?select=${LYRA_COLUNAS_CIFRA}` +
         `&slug=eq.${encodeURIComponent(slug)}&limit=1`
       );
 
       const d = dados && dados[0];
       if (!d) throw new Error("Cifra não encontrada: " + slug);
 
-      lyraGuardarId(slug, d.id);
-
-      const porTom = new Map();
-      if (d.chords && d.base_key) {
-        porTom.set(lyraKeySlug(d.base_key), d.chords);
-      }
-
-      const musica = lyraRefazerTons({
-        lyrics: "",
-        porTom,
-        base_key: d.base_key || "",
-        key_spelling: null,
-      });
-
+      const musica = lyraMusicaDaLinha(d);
       lyraCacheMusica.set(slug, musica);
       lyraGravarNoDisco(slug, musica).catch(console.warn);
       return musica;
@@ -1212,18 +1100,22 @@ async function lyraCarregarCifra(slug, tomLyra, grafia = null) {
 
 }
 
-// A letra é derivada da mesma cifra publicada em public.cifras.
+// A letra sai da própria cifra: some o que é acorde, comentário (//)
+// e cabeçalho (Tom:, Capo:). Rótulo de parte sozinho ([Refrão]) fica;
+// rótulo com acordes na frente ([Intro] D4 C9) é instrumental e sai.
+// Linha removida some de vez: não deixa uma linha em branco no lugar.
 function lyraExtrairLetraDosAcordes(texto) {
   if (!texto) return "";
-  const acorde = /^(?:[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add|º|°|\+|\-)?\d*(?:\([^)]*\))?(?:\/[A-G](?:#|b)?)?)$/i;
   return String(texto).split(/\r?\n/).map(linha => {
     const t = linha.trim();
     if (!t) return "";
-    if (/^(?:Tom|Capo|Afinação)\s*:/i.test(t)) return "";
-    const partes = t.replace(/[|:]/g, " ").trim().split(/\s+/).filter(Boolean);
-    if (partes.length && partes.every(x => acorde.test(x) || /^\d+x$/i.test(x))) return "";
-    return linha.replace(/\[([A-G][#b]?(?:m|maj|dim|sus|add)?\d*(?:\/[A-G][#b]?)?)\]/gi, "");
-  }).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (lyraEhComentario(t)) return null;
+    if (/^(?:Tom|Capo|Afina[çc][ãa]o)\s*:/i.test(t)) return null;
+    const rotulo = t.match(/^\[[^\]]+\]\s*$/);
+    if (rotulo) return t;
+    if (lyraEhLinhaDeAcorde(t)) return null;
+    return linha.replace(/\[([A-G][#b]?[^\]\s]*)\]/g, "");
+  }).filter(l => l !== null).join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 async function lyraCarregarLetra(slug) {
@@ -1375,10 +1267,6 @@ async function lyraIrPara(direcao) {
 
     // adianta a busca dos vizinhos, para a próxima seta ser instantânea
     lyraPreCarregar(itens.slice(Math.max(0, i - 1), i + 3).map(x => x.nome));
-  } catch (e) {
-    if (meuNav !== lyraNavToken) return;
-    if (lyraEhErroDeChave(e))
-      corpo.innerHTML = `<div class="lyra-msg">${LYRA_MSG_CHAVE}</div>`;
   } finally {
     clearTimeout(avisar);
     if (meuNav === lyraNavToken) {
@@ -1414,6 +1302,12 @@ function lyraMontarEstrutura() {
           <p id="lyraArtista"></p>
         </div>
         <div class="lyra-hd-acoes">
+          <!-- Cifra/Letra mora no topo, ao lado do título: antes ocupava
+               uma faixa inteira só para isso, tirando altura da cifra -->
+          <div class="lyra-seg lyra-modo" id="lyraSeg" role="group" aria-label="Cifra ou letra">
+            <button type="button" data-modo="cifra" title="Cifra (acordes e letra)"><span>Cifra</span></button>
+            <button type="button" data-modo="letra" title="Só a letra"><span>Letra</span></button>
+          </div>
           <button class="lyra-btn" id="lyraAnt"  aria-label="Música anterior">${LYRA_ICO_ANT}</button>
           <button class="lyra-btn" id="lyraProx" aria-label="Próxima música">${LYRA_ICO_PROX}</button>
           <button class="lyra-x"   id="lyraFechar" aria-label="Fechar">&#10005;</button>
@@ -1422,10 +1316,6 @@ function lyraMontarEstrutura() {
 
       <div class="lyra-barra">
         <div class="lyra-grupo">
-          <div class="lyra-seg" id="lyraSeg">
-            <button data-modo="cifra">Cifra</button>
-            <button data-modo="letra">Letra</button>
-          </div>
           <span class="lyra-grupo-tom" id="lyraGrupoTom">
             <span class="lyra-lbl">Tom</span>
             <span class="lyra-tom">
@@ -1654,8 +1544,11 @@ function lyraAplicarModo() {
   document.getElementById("lyraGrupoTom").style.display  = emCifra ? "" : "none";
   document.getElementById("lyraQuebraBtn").style.display = emCifra ? "" : "none";
 
-  document.getElementById("lyraSeg").querySelectorAll("[data-modo]").forEach(b =>
-    b.classList.toggle("on", b.dataset.modo === lyraAtual.modo));
+  document.getElementById("lyraSeg").querySelectorAll("[data-modo]").forEach(b => {
+    const on = b.dataset.modo === lyraAtual.modo;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+  });
 }
 
 function lyraFecharLeitor() {
@@ -1748,9 +1641,7 @@ async function lyraRenderConteudo() {
   } catch (e) {
     if (meuToken !== lyraToken || !lyraAtual) return;
     console.warn("Falha ao carregar:", e);
-    corpo.innerHTML = lyraEhErroDeChave(e)
-      ? `<div class="lyra-msg">${LYRA_MSG_CHAVE}</div>`
-      : `<div class="lyra-msg">Não deu para carregar.
+    corpo.innerHTML = `<div class="lyra-msg">Não deu para carregar.
       Verifique a conexão e tente de novo.</div>`;
   }
 }
@@ -1800,10 +1691,10 @@ function lyraBlocoBotoes(m, song, nav) {
   bloco.className = "view-lyra";
   bloco.innerHTML = `
     <button type="button" class="view-yt-btn view-cf-btn" data-lyra-cifra="1">
-      ${LYRA_ICO_CIFRA}Abrir cifra
+      ${LYRA_ICO_CIFRA}Cifra
     </button>
     <button type="button" class="view-yt-btn view-lt-btn" data-lyra-letra="1">
-      ${LYRA_ICO_LETRA}Ver letra
+      ${LYRA_ICO_LETRA}Letra
     </button>`;
 
   bloco.querySelector("[data-lyra-cifra]").onclick =
@@ -1819,6 +1710,35 @@ function lyraBlocoBotoes(m, song, nav) {
 function lyraTrocarPelosBotoes(wrap, m, song, nav) {
   wrap.querySelectorAll("a.view-cf-btn").forEach(el => el.remove());
   wrap.appendChild(lyraBlocoBotoes(m, song, nav));
+  lyraTonsAbrem(m, song, nav);
+}
+
+//  Cada tom da lista abre a cifra JÁ nesse tom: tocar no F#m da
+//  Daniela abre em F#m. Antes "Abrir cifra" abria sempre no primeiro
+//  tom e era preciso trocar lá dentro.
+const LYRA_ICO_SETA = `<svg class="ton-abre-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>`;
+
+function lyraTonsAbrem(m, song, nav) {
+  const tons = [...new Set(
+    deserializarPares(m.tom).map(p => p.tom).filter(t => t && t !== "Orig.")
+  )];
+  document.querySelectorAll("#viewTons .card-ton-row").forEach(row => {
+    if (row.dataset.abre) return;
+    const lido = (row.querySelector(".card-badge")?.textContent || "").trim();
+    const tom = lido && lido !== "—" && lido !== "Orig." ? lido : song.base_key;
+    if (!tom) return;
+    row.dataset.abre = "1";
+    row.classList.add("ton-abre");
+    row.setAttribute("role", "button");
+    row.setAttribute("tabindex", "0");
+    row.setAttribute("aria-label", `Abrir a cifra em ${tom}`);
+    row.insertAdjacentHTML("beforeend", LYRA_ICO_SETA);
+    const abrir = () => lyraAbrirLeitor(song, tom, tons, nav, "cifra");
+    row.addEventListener("click", abrir);
+    row.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); }
+    });
+  });
 }
 
 function lyraRenderNaView(m, nav) {
@@ -1847,7 +1767,7 @@ function lyraRenderNaView(m, nav) {
   }).catch(e => {
     if (meuToken !== lyraTokenView) return;
     manuais.forEach(a => a.style.display = "");
-    if (lyraEhErroDeChave(e) && typeof toast === "function") toast(LYRA_MSG_CHAVE, true);
+    console.warn("Cifra indisponível:", e);
   });
 }
 

@@ -269,7 +269,15 @@ const PAGINA = document.body.dataset.pagina || "cultos";
 
 function navMontar() {
   const barra = document.querySelector(".header-inner");
-  if (!barra || document.querySelector(".nav-pag")) return;
+  if (!barra) return;
+
+  //  As abas agora vêm prontas no HTML (aparecem junto com a página,
+  //  sem pular). Aqui só ajusta o header e conta as sugestões.
+  if (document.querySelector(".nav-pag")) {
+    ajustarHeader();
+    navContarSugestoes();
+    return;
+  }
 
   const nav = document.createElement("nav");
   nav.className = "nav-pag";

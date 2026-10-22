@@ -1,0 +1,245 @@
+/* ============================================================
+   TOM LOUVORES — página de adicionar / editar música
+   Mesmo idioma visual das outras páginas: header com as abas,
+   título como o do Repertório (selo dourado espaçado + título
+   grande), cartões translúcidos sobre a foto, rótulos em caixa
+   alta espaçada, campos e seletores iguais aos dos filtros.
+   Substitui os dois <style> internos e o editor-mobile-fix.css.
+   ============================================================ */
+
+.ce-page,
+.ce-page * { box-sizing: border-box; }
+
+/* ── header ─────────────────────────────────────────────── */
+.ce-page .header { position: sticky; top: 0; z-index: 100; }
+.ce-page .header-right { gap: 10px; }
+.ce-page #ceVoltar {
+  display: inline-flex; align-items: center; gap: 6px;
+  text-decoration: none; white-space: nowrap;
+}
+.ce-page #ceHeaderSalvar { white-space: nowrap; }
+.ce-page #ceHeaderSalvar:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── conteúdo ───────────────────────────────────────────── */
+.ce-page .ce-wrap {
+  width: min(100% - 48px, 960px);
+  margin: 0 auto 96px;
+}
+.ce-page .ce-heading { padding: 56px 0 30px; }
+.ce-page .ce-heading .hero-sub { margin-top: 12px; }
+
+/* cartões: como as colunas de culto — vidro escuro sobre a foto */
+.ce-page .ce-panel {
+  background: rgba(10, 10, 11, 0.72);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--fio);
+  border-radius: 18px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.ce-page .ce-panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--fio);
+}
+.ce-page .ce-panel-head h2 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold);
+}
+/* o número do bloco: pastilha discreta, como os badges de tom */
+.ce-page .ce-panel-head > .ce-muted {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; height: 24px; padding: 0 8px;
+  border: 1px solid rgba(var(--gold-rgb), 0.3);
+  border-radius: 999px;
+  background: rgba(var(--gold-rgb), 0.08);
+  color: var(--gold-hi);
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  line-height: 1;
+}
+.ce-page .ce-panel-body { padding: 22px 24px 24px; }
+
+.ce-page .ce-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.ce-page .ce-field { min-width: 0; }
+
+.ce-page .ce-muted { color: var(--dim); font-size: 14px; line-height: 1.6; }
+
+/* sub-bloco (Tons dos ministrantes) */
+.ce-page .ce-sub {
+  margin-top: 24px; padding-top: 22px;
+  border-top: 1px solid var(--fio);
+}
+.ce-page .ce-sub-h {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 700; color: var(--paper);
+}
+.ce-page .ce-sub > .ce-muted { margin: 0 0 16px; }
+
+/* ── rótulos e campos: os mesmos do resto do site ───────── */
+.ce-page label {
+  display: block;
+  margin: 0 0 8px;
+  font-family: var(--font-ui);
+  font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--dim);
+}
+.ce-page input,
+.ce-page select,
+.ce-page textarea {
+  width: 100%; min-width: 0;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--fio);
+  color: var(--paper);
+  font-family: var(--font-ui); font-size: 15px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.ce-page input { padding: 13px 16px; border-radius: var(--r, 12px); }
+.ce-page input::placeholder,
+.ce-page textarea::placeholder { color: var(--gray2); }
+
+/* seletores em pílula, com a mesma seta dos filtros */
+.ce-page select {
+  padding: 13px 40px 13px 18px;
+  border-radius: var(--pill, 999px);
+  cursor: pointer;
+  -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+.ce-page select option { background: var(--black2, #141416); color: var(--white, #fff); }
+
+.ce-page input:focus,
+.ce-page select:focus,
+.ce-page textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(var(--gold-rgb), 0.12);
+}
+
+/* a cifra: fonte de código, como no leitor */
+.ce-page textarea {
+  display: block;
+  min-height: 460px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background-color: rgba(0, 0, 0, 0.35);
+  resize: vertical;
+  white-space: pre; overflow-x: auto; tab-size: 4;
+  font: 14px/1.8 ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* ── botões ─────────────────────────────────────────────── */
+.ce-page .ce-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 22px;
+  border: 1px solid var(--gold); border-radius: var(--pill, 999px);
+  background: var(--gold); color: var(--on-gold);
+  font: 600 14px var(--font-ui);
+  cursor: pointer; text-decoration: none;
+  transition: background .2s, border-color .2s, transform .15s;
+}
+.ce-page .ce-btn:hover { background: var(--gold-hi); border-color: var(--gold-hi); }
+.ce-page .ce-btn:active { transform: scale(.98); }
+.ce-page .ce-btn:disabled { opacity: .45; cursor: not-allowed; }
+.ce-page .ce-btn-outline {
+  background: rgba(0, 0, 0, 0.4); color: var(--paper); border-color: var(--line, var(--fio));
+}
+.ce-page .ce-btn-outline:hover { background: rgba(0, 0, 0, 0.5); color: var(--gold); border-color: var(--gold); }
+.ce-page #ceAdicionarMin { margin-top: 14px; }
+
+/* ── ministrantes adicionados: linhas como as do modal da música ── */
+.ce-page #ceListaMin { display: grid; gap: 8px; margin-top: 16px; }
+.ce-page #ceListaMin:empty { display: none; }
+.ce-page .ce-par {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px 10px 10px;
+  border: 1px solid var(--fio); border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.ce-page .ce-par-tom {
+  min-width: 52px; padding: 7px 10px; border-radius: 8px; text-align: center;
+  font-family: var(--font-tom, var(--font-display)); font-size: 17px; font-weight: 700;
+  color: var(--gold-hi);
+  background: rgba(var(--gold-rgb), 0.1); border: 1px solid rgba(var(--gold-rgb), 0.3);
+}
+.ce-page .ce-par-nome {
+  flex: 1; min-width: 0;
+  font-size: 14px; font-weight: 600; color: var(--paper);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ce-page .ce-par-x {
+  flex: none; padding: 8px 14px; font-size: 12.5px;
+}
+
+/* lista de tons já vinculados (modo edição) */
+.ce-page #listaTonsMinistrantes { display: grid; gap: 8px; }
+.ce-page #listaTonsMinistrantes > div {
+  padding: 12px 14px !important;
+  border: 1px solid var(--fio) !important; border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── tom original + resultado da detecção ──────────────── */
+.ce-page .ce-tom-organizado { margin-bottom: 18px !important; }
+.ce-page .ce-resultado-tom {
+  color: var(--gold-hi) !important;
+  font-size: 13px !important;
+}
+
+/* O style.css esconde as ações do header até 900px (nas outras
+   páginas elas vão para o menu ☰). Aqui não há menu: Voltar e
+   Salvar continuam no topo. */
+@media (max-width: 900px) {
+  .ce-page .header-right > #ceVoltar,
+  .ce-page .header-right > #ceHeaderSalvar { display: inline-flex !important; }
+}
+
+/* ── barra de salvar no celular ─────────────────────────── */
+.ce-barra { display: none; }
+
+@media (max-width: 600px) {
+  .ce-page .header-inner { padding-left: 14px; padding-right: 14px; }
+  .ce-page .logo-sub, .ce-page .logo-sep { display: none; }
+  .ce-page .logo-img { max-width: min(34vw, 125px); max-height: 34px; height: auto; width: auto; }
+  .ce-page .header-right > #ceVoltar { padding: 9px 14px; font-size: 13px; }
+  /* no celular o Salvar mora embaixo, ao alcance do polegar */
+  .ce-page .header-right > #ceHeaderSalvar { display: none !important; }
+
+  .ce-page .ce-wrap { width: 100%; padding: 0 12px; margin-bottom: 110px; }
+  .ce-page .ce-heading { padding: 26px 4px 20px; }
+  .ce-page .ce-heading .hero-h1 { font-size: clamp(30px, 8vw, 40px); }
+  .ce-page .ce-heading .hero-sub { font-size: 15px; }
+  .ce-page .ce-panel { border-radius: 16px; }
+  .ce-page .ce-panel-head { padding: 15px 16px; }
+  .ce-page .ce-panel-body { padding: 16px; }
+  .ce-page .ce-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  /* iOS dá zoom em campo com letra menor que 16px */
+  .ce-page input, .ce-page select, .ce-page textarea { font-size: 16px; }
+  .ce-page textarea { min-height: 55dvh; font-size: 14px; }
+  .ce-page #ceAdicionarMin { width: 100%; }
+
+  .ce-barra {
+    display: flex; gap: 10px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(10, 10, 11, 0.9);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--fio);
+  }
+  .ce-barra .btn-add { flex: 1; justify-content: center; padding: 14px 22px; font-size: 15px; }
+}
+
+@media (min-width: 601px) and (max-width: 1024px) {
+  .ce-page .ce-wrap { width: min(100% - 40px, 880px); }
+}

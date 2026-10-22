@@ -18,6 +18,23 @@
   <meta name="theme-color" content="#0A0A0B">
   <link rel="stylesheet" href="css/seletores-unificados.css">
   <link rel="stylesheet" href="css/responsivo-global.css">
+  <!-- Navegação rápida: no Chrome/Android a próxima aba começa a
+       carregar escondida assim que o dedo encosta (ou o mouse para em
+       cima). Ao soltar, ela já está pronta. Outros navegadores ignoram. -->
+  <script type="speculationrules">
+  {
+    "prerender": [{
+      "source": "document",
+      "where": { "selector_matches": ".nav-pag a:not([aria-current])" },
+      "eagerness": "moderate"
+    }],
+    "prefetch": [{
+      "source": "document",
+      "where": { "selector_matches": ".nav-pag a:not([aria-current])" },
+      "eagerness": "eager"
+    }]
+  }
+  </script>
 </head>
 <body class="read-only" data-pagina="sugestoes">
 
@@ -32,6 +49,12 @@
       <div class="logo-sep"></div>
       <span class="logo-sub">Tom<br>Louvores</span>
     </div>
+    <!-- abas já no HTML: aparecem junto com a página, sem pular -->
+    <nav class="nav-pag" aria-label="Seções">
+      <a href="./">Cultos</a>
+      <a href="repertorio.html">Repertório</a>
+      <a href="sugestoes.html" id="navSugestoes" aria-current="page">Sugestões</a>
+    </nav>
     <div class="header-right">
       <div class="status-pill" id="statusPill">
         <span class="dot"></span>
@@ -306,7 +329,6 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/config.js"></script>
-<script src="js/lyra-chave.js"></script>
 <script src="js/app.js"></script>
 <script src="js/lyra.js"></script>
 <script src="js/acordes.js"></script>
