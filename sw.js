@@ -18,20 +18,16 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v100";
+const CACHE = "tom-louvores-v104";
 
 const APP = [
   "./js/tons-mobile.js",
   "./css/tons-mobile.css",
-  "./css/editor-mobile-fix.css",
+  "./css/editor.css",
   "./js/editor-origem-sugestoes.js",
   "./css/responsivo-global.css",
   "./css/seletores-unificados.css",
   "./js/cifras-publicar.js",
-  "./css/cifras-layout-final.css",
-  "./js/cifras-layout-final.js",
-  "./css/cifras-layout.css",
-  "./js/cifras-layout.js",
   "./js/remover-atalho-cifras.js",
   "./js/editor-navegacao.js",
   "./js/cifras-vinculo.js",
@@ -72,6 +68,7 @@ const APP = [
   "./js/leitor-palco.js",
   "./js/arrastar.js",
   "./js/graus.js",
+  "./js/ministrante-largura.js",
   "./js/acorde-detalhes.js",
 
   //  Sem estes, o app abria offline mas sem o fundo do topo e sem
