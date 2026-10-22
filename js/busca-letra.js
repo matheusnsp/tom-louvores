@@ -190,6 +190,8 @@ filtrar = function () {
     if (mF && !(mins.includes(mF) || x.ministrante === mF)) return false;
     if (tF && !tons.includes(tF)) return false;
     if (!b || normTexto(x.nome).includes(b)) return true;
+    //  o nome do cantor também acha a música (artista.js)
+    if (typeof tlArtistaDe === "function" && normTexto(tlArtistaDe(x.nome)).includes(b)) return true;
     if (!usarLetra || !blLetras) return false;
     const trecho = blAchar(x.id, termo);
     if (trecho) blTrechos.set(String(x.id), trecho);
@@ -211,7 +213,7 @@ vistaLinhaHTML = function (m) {
 function blPlaceholder() {
   const inp = document.getElementById("busca");
   if (inp && typeof PAGINA !== "undefined" && PAGINA === "repertorio")
-    inp.placeholder = blIncluir ? "Nome ou trecho da letra..." : "Nome da música...";
+    inp.placeholder = blIncluir ? "Nome, cantor ou trecho da letra..." : "Nome ou cantor...";
 }
 
 //  Botão "Letra" ao lado da busca: liga e desliga a busca na letra.

@@ -6,14 +6,14 @@
 
 function abrirEditorCifraRepertorio() {
   if (typeof isAdmin !== "function" || !isAdmin()) {
-    alert("Entre como administrador para abrir o editor.");
+    if (typeof toast === "function") toast("Entre como administrador para abrir o editor.", true);
     return;
   }
 
   const nome = document.getElementById("fNome")?.value.trim();
 
   if (!nome) {
-    alert("Informe o nome da música primeiro.");
+    if (typeof toast === "function") toast("Escreva o nome da música primeiro.", true);
     return;
   }
 

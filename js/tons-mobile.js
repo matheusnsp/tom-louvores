@@ -2,7 +2,6 @@
   "use strict";
 
   const IDs = ["tom", "ceTomMin"];
-  const breakpoint = 1024;
 
   const simbolo = t => t.replace(/b/g, "♭");
 
@@ -105,7 +104,7 @@
     overlay.appendChild(painel);
     document.body.appendChild(overlay);
     document.body.classList.add("tl-tons-aberto");
-    fechar.focus();
+    (painel.querySelector(".tl-tons-opcao.selecionado") || fechar).focus();
   }
 
   function iniciar() {
@@ -115,8 +114,9 @@
 
       let aberturaAgendada = false;
 
+      //  Mesmo painel em qualquer tela: no computador a lista nativa
+      //  do sistema (34 tons numa coluna só) era difícil de usar.
       function agendarAbertura(e) {
-        if (window.innerWidth > breakpoint) return;
 
         e.preventDefault();
         e.stopPropagation();

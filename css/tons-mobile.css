@@ -147,3 +147,19 @@
     padding-right: 14px;
   }
 }
+
+/* Computador e iPad na horizontal: o mesmo painel, no centro da tela,
+   em vez de folha subindo de baixo. */
+@media (min-width: 601px) {
+  .tl-tons-overlay { align-items: center; padding: 24px; }
+  .tl-tons-painel {
+    width: min(100%, 520px);
+    border-radius: 20px;
+    padding: 22px 22px 24px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+  }
+  .tl-tons-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .tl-tons-opcao:hover { border-color: #f0b93a; color: #f6d27a; }
+  .tl-tons-opcao.selecionado:hover { color: #161616; }
+  .tl-tons-opcao:focus-visible { outline: 2px solid #f0b93a; outline-offset: 2px; }
+}

@@ -178,11 +178,35 @@
     });
     if (!resultado?.musica_id || !resultado?.cifra_id)
       throw new Error("O banco não confirmou ambos os registros.");
+    //  Salvo: o rascunho não tem mais razão de existir. A partir daqui
+    //  a página é a edição desta música (rascunho com a chave dela).
+    try {
+      localStorage.removeItem(window.tlRascunhoChave);
+      localStorage.removeItem("tom_louvores_editor_rascunho_v2_nova");
+      localStorage.removeItem("tl_cifra_ministrantes_v1");
+    } catch (_) {}
+    window.tlRascunhoChave = "tom_louvores_editor_rascunho_v2_m" + resultado.musica_id;
+    window.tlRascunhoPausado = true;
+    try { history.replaceState(null, "", "cifras-editor.html?origem=repertorio&modo=editar"); } catch (_) {}
     sessionStorage.setItem("tl_editor_vinculo", JSON.stringify({
       repertorioId: resultado.musica_id, titulo,
       tonsMinistrantes: pessoasParaEditor(pares), modo: "editar"
     }));
-    return true;
+    return titulo;
+  }
+
+  //  Erro técnico do banco → frase que dá para entender e resolver.
+  function erroAmigavel(erro) {
+    const m = String(erro && erro.message || erro || "");
+    if (/não tem autorização/i.test(m))
+      return { titulo: "Sem permissão", texto: "Esta conta entrou, mas não está autorizada a salvar músicas. Fale com quem administra o site." };
+    if (/Sessão expirada|Sessão inválida|Entre com o usuário admin|401|JWT|token/i.test(m))
+      return { titulo: "Entre de novo", texto: "Sua sessão de administrador expirou. Volte ao repertório, entre de novo e salve outra vez. O que você escreveu continua guardado aqui." };
+    if (/Failed to fetch|NetworkError|Load failed|network/i.test(m))
+      return { titulo: "Sem conexão", texto: "Não deu para falar com o servidor. Confira a internet e toque em Salvar de novo. O que você escreveu continua guardado aqui." };
+    if (/^Preencha|^Defina/.test(m))
+      return { titulo: "Falta preencher", texto: m };
+    return { titulo: "Não deu para salvar", texto: "Algo deu errado ao salvar a música. Tente de novo; se continuar, mande os detalhes abaixo para quem cuida do site.", detalhe: m };
   }
 
   function pessoasParaEditor(pares) {
@@ -194,25 +218,31 @@
     if (!botao || botao.disabled) return;
 
     botao.disabled = true;
-    botao.textContent = "Publicando...";
+    botao.textContent = "Salvando...";
 
     try {
-      const publicado = await publicar();
+      const titulo = await publicar();
+      botao.textContent = "Salvo ✓";
+      setTimeout(() => { botao.textContent = "Salvar"; }, 2500);
 
-      if (publicado) {
-        botao.textContent = "Publicado ✓";
-
-        alert(
-          "Cifra publicada no Supabase! " +
-          "Atualize o repertório para carregar a nova versão."
-        );
-      } else {
-        botao.textContent = "Salvar";
-      }
+      const voltarPara = (() => {
+        const o = sessionStorage.getItem("tl_editor_origem");
+        return ["index.html", "repertorio.html", "sugestoes.html"].includes(o) ? o : "repertorio.html";
+      })();
+      tlAviso({
+        tipo: "ok",
+        titulo: "Música salva",
+        texto: `“${titulo}” já está no repertório. Nos outros aparelhos, a versão nova aparece quando o site for aberto ou atualizado.`,
+        acoes: [
+          { rotulo: "Continuar editando" },
+          { rotulo: voltarPara === "index.html" ? "Ir para os cultos" : voltarPara === "sugestoes.html" ? "Ir para as sugestões" : "Ir para o repertório",
+            primario: true, aoTocar: () => { location.href = voltarPara; } },
+        ],
+      });
     } catch (erro) {
-      console.error("Erro ao publicar cifra:", erro);
-      alert("Não foi possível publicar:\n\n" + erro.message);
+      console.error("Erro ao salvar a música:", erro);
       botao.textContent = "Salvar";
+      tlAviso({ tipo: "erro", ...erroAmigavel(erro) });
     } finally {
       botao.disabled = false;
     }

@@ -169,6 +169,7 @@ Cole ou digite sua cifra aqui..."></textarea>
 </script>
 
 <script src="js/config.js"></script>
+<script src="js/aviso.js"></script>
 <script src="js/cifras-tonalidades.js"></script>
 <script>
 // Cada música tem o seu próprio rascunho. Antes existia uma única
@@ -196,6 +197,23 @@ Cole ou digite sua cifra aqui..."></textarea>
   window.tlRascunhoChave = id
     ? "tom_louvores_editor_rascunho_v2_m" + id
     : "tom_louvores_editor_rascunho_v2_nova";
+
+  //  O rascunho de "Nova música" nunca era apagado depois de salvar,
+  //  e a próxima "Nova música" abria preenchida com a última. Agora
+  //  ele é apagado ao salvar; esta limpeza única tira o que ficou
+  //  guardado nos aparelhos antes da correção.
+  try {
+    if (!localStorage.getItem("tl_rascunho_nova_limpo_v1")) {
+      localStorage.removeItem("tom_louvores_editor_rascunho_v2_nova");
+      localStorage.removeItem("tl_cifra_ministrantes_v1");
+      localStorage.setItem("tl_rascunho_nova_limpo_v1", "1");
+    }
+  } catch (_) {}
+
+  //  Depois de salvar, o rascunho fica pausado até a próxima edição:
+  //  sem isso, sair da página gravava tudo de volta como rascunho.
+  window.tlRascunhoPausado = false;
+  document.addEventListener("input", () => { window.tlRascunhoPausado = false; }, true);
 })();
 </script>
 <script>
@@ -264,7 +282,8 @@ Cole ou digite sua cifra aqui..."></textarea>
   $("rascunho").addEventListener("click", () => {
     // Enquanto a cifra da música ainda está chegando do banco os
     // campos estão vazios: gravar agora apagaria o rascunho certo.
-    if (window.tlEditorCarregando) return;
+    if (window.tlEditorCarregando || window.tlRascunhoPausado) return;
+    const STORAGE = window.tlRascunhoChave;
 
     const dados = {
       titulo: $("titulo").value,
@@ -521,7 +540,10 @@ Cole ou digite sua cifra aqui..."></textarea>
     const tom = $("ceTomMin").value;
 
     if (!min || !tom) {
-      alert("Selecione o ministrante e o tom.");
+      tlAviso({ tipo: "info", titulo: "Falta escolher",
+        texto: !min && !tom ? "Escolha o ministrante e o tom antes de adicionar."
+             : !min ? "Escolha o ministrante antes de adicionar."
+             : "Escolha o tom antes de adicionar." });
       return;
     }
 
@@ -530,7 +552,8 @@ Cole ou digite sua cifra aqui..."></textarea>
     );
 
     if (jaExiste) {
-      alert("Essa ministrante já possui esse tom cadastrado.");
+      tlAviso({ tipo: "info", titulo: "Já está na lista",
+        texto: `${min} já tem o tom ${tom} nesta música.` });
       return;
     }
 
@@ -569,7 +592,8 @@ Cole ou digite sua cifra aqui..."></textarea>
   // O botão existente salva o restante do formulário.
   // Complementamos o mesmo rascunho com os ministrantes.
   $("rascunho").addEventListener("click", () => {
-    if (window.tlEditorCarregando) return;
+    if (window.tlEditorCarregando || window.tlRascunhoPausado) return;
+    const DRAFT = window.tlRascunhoChave;
 
     try {
       const dados = JSON.parse(localStorage.getItem(DRAFT) || "{}");
