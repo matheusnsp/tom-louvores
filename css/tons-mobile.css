@@ -163,3 +163,21 @@
   .tl-tons-opcao.selecionado:hover { color: #161616; }
   .tl-tons-opcao:focus-visible { outline: 2px solid #f0b93a; outline-offset: 2px; }
 }
+
+/* ── variações do painel (também usado nos campos do culto) ── */
+.tl-tons-grade.tl-tons-largo { grid-template-columns: 1fr; }
+.tl-tons-grade.tl-tons-nomes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tl-tons-grade.tl-tons-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tl-tons-opcao.com-quem {
+  flex-direction: column; gap: 3px; min-height: 58px; padding: 8px 10px;
+}
+.tl-tons-opcao.com-quem b { font-size: 17px; }
+.tl-tons-opcao.com-quem small {
+  font-size: 11.5px; font-weight: 500; opacity: .75;
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tl-tons-grade.tl-tons-nomes .tl-tons-opcao { min-height: 50px; font-size: 14.5px; }
+@media (max-width: 600px) {
+  .tl-tons-grade.tl-tons-nomes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tl-tons-grade.tl-tons-lista { grid-template-columns: 1fr; }
+}

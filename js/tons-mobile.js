@@ -1,9 +1,36 @@
+// ============================================================
+//  TOM LOUVORES — painel de escolha (tons e ministrantes)
+//  No lugar da lista do sistema, que mostra 30 tons numa coluna
+//  só, abre um painel com botões: tons maiores e menores em grade,
+//  ou os nomes dos ministrantes. Vale em qualquer tela.
+//
+//  Campos atendidos:
+//    · editor: Tom original, Ministrante, Tom do ministrante
+//    · culto (modal da música): Tom neste culto, Cadastrar outro
+//      tom (tom + ministrante)
+//    · culto (adicionar louvor): Tom, Cadastrar outro tom
+//
+//  Os campos do culto são criados depois que a página abre, então
+//  a escuta é no documento inteiro, não em cada campo.
+// ============================================================
 (() => {
   "use strict";
 
-  const IDs = ["tom", "ceTomMin"];
+  const TITULOS = {
+    tom: "Tom original",
+    ceTomMin: "Tom do ministrante",
+    ceMin: "Ministrante",
+    viewTomSel: "Tom neste culto",
+    viewTomNovoSel: "Tom",
+    viewMinNovoSel: "Ministrante",
+    cultoNovoTomSel: "Tom",
+    cultoNovoMinSel: "Ministrante",
+    cTomEscolhido: "Tom",
+  };
+  const SELETOR = Object.keys(TITULOS).map(id => "select#" + id).join(",");
 
-  const simbolo = t => t.replace(/b/g, "♭");
+  const simbolo = t => t.replace(/([A-G])b/g, "$1♭");
+  const ehTom = v => /^([A-G][#b]?m?|Orig\.)$/.test(v);
 
   function abrir(select) {
     if (document.getElementById("tlPainelTons")) return;
@@ -16,90 +43,87 @@
     painel.className = "tl-tons-painel";
     painel.setAttribute("role", "dialog");
     painel.setAttribute("aria-modal", "true");
-    painel.setAttribute("aria-label", "Escolher tonalidade");
+    painel.setAttribute("aria-label", TITULOS[select.id] || "Escolher");
 
-    const titulo = document.createElement("div");
-    titulo.className = "tl-tons-topo";
-
+    const topo = document.createElement("div");
+    topo.className = "tl-tons-topo";
     const h = document.createElement("strong");
-    h.textContent = select.id === "tom"
-      ? "Tom original"
-      : "Tom do ministrante";
-
+    h.textContent = TITULOS[select.id] || "Escolher";
     const fechar = document.createElement("button");
     fechar.type = "button";
     fechar.className = "tl-tons-fechar";
     fechar.textContent = "✕";
     fechar.setAttribute("aria-label", "Fechar");
+    topo.append(h, fechar);
+    painel.appendChild(topo);
 
-    titulo.append(h, fechar);
-    painel.appendChild(titulo);
-
+    //  Só opções de verdade: "Ministrante" e "Tom" vazios são rótulo.
     const opcoes = Array.from(select.options)
-      .filter(o => o.value)
-      .map(o => ({
-        valor: o.value,
-        menor: /m$/.test(o.value)
-      }));
+      .filter(o => o.value && !o.disabled)
+      .map(o => ({ valor: o.value, texto: o.textContent.trim() }));
 
-    function grupo(nome, menores) {
-      const lista = opcoes.filter(o => o.menor === menores);
-      if (!lista.length) return;
-
-      const subtitulo = document.createElement("div");
-      subtitulo.className = "tl-tons-subtitulo";
-      subtitulo.textContent = nome;
-      painel.appendChild(subtitulo);
-
-      const grade = document.createElement("div");
-      grade.className = "tl-tons-grade";
-
-      for (const item of lista) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "tl-tons-opcao";
-        btn.textContent = simbolo(item.valor);
-
-        if (select.value === item.valor) {
-          btn.classList.add("selecionado");
-          btn.setAttribute("aria-pressed", "true");
-        }
-
-        btn.addEventListener("click", () => {
-          select.value = item.valor;
-          select.dispatchEvent(
-            new Event("change", { bubbles: true })
-          );
-          encerrar();
-          select.focus({ preventScroll: true });
-        });
-
-        grade.appendChild(btn);
+    function botao(item) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tl-tons-opcao";
+      //  "Gm · Todos" (tom com quem canta): o tom grande, o resto menor
+      const partes = item.texto.split(" · ");
+      if (partes.length > 1) {
+        btn.classList.add("com-quem");
+        btn.innerHTML = `<b></b><small></small>`;
+        btn.querySelector("b").textContent = simbolo(partes[0]);
+        btn.querySelector("small").textContent = partes.slice(1).join(" · ");
+      } else {
+        btn.textContent = ehTom(item.valor) ? simbolo(item.texto) : item.texto;
       }
+      if (select.value === item.valor) {
+        btn.classList.add("selecionado");
+        btn.setAttribute("aria-pressed", "true");
+      }
+      btn.addEventListener("click", () => {
+        select.value = item.valor;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        encerrar();
+        select.focus({ preventScroll: true });
+      });
+      return btn;
+    }
 
+    function grupo(nome, lista, classe) {
+      if (!lista.length) return;
+      if (nome) {
+        const sub = document.createElement("div");
+        sub.className = "tl-tons-subtitulo";
+        sub.textContent = nome;
+        painel.appendChild(sub);
+      }
+      const grade = document.createElement("div");
+      grade.className = "tl-tons-grade" + (classe ? " " + classe : "");
+      lista.forEach(item => grade.appendChild(botao(item)));
       painel.appendChild(grade);
     }
 
-    grupo("Tons maiores", false);
-    grupo("Tons menores", true);
+    const soTons = opcoes.length > 0 && opcoes.every(o => ehTom(o.valor));
+    const comQuem = opcoes.some(o => o.texto.includes(" · "));
+    if (soTons && !comQuem && opcoes.length > 8) {
+      grupo("", opcoes.filter(o => o.valor === "Orig."), "tl-tons-largo");
+      grupo("Tons maiores", opcoes.filter(o => o.valor !== "Orig." && !/m$/.test(o.valor)));
+      grupo("Tons menores", opcoes.filter(o => /m$/.test(o.valor)));
+    } else {
+      //  Ministrantes, ou os poucos tons já cadastrados na música.
+      grupo("", opcoes, comQuem ? "tl-tons-lista" : "tl-tons-nomes");
+    }
 
     function encerrar() {
-      document.removeEventListener("keydown", tecla);
+      document.removeEventListener("keydown", tecla, true);
       overlay.remove();
       document.body.classList.remove("tl-tons-aberto");
     }
-
-    function tecla(e) {
-      if (e.key === "Escape") encerrar();
-    }
+    function tecla(e) { if (e.key === "Escape") { e.stopPropagation(); encerrar(); } }
 
     fechar.addEventListener("click", encerrar);
-
-    overlay.addEventListener("pointerdown", e => {
-      if (e.target === overlay) encerrar();
-    });
-
-    document.addEventListener("keydown", tecla);
+    overlay.addEventListener("pointerdown", e => { if (e.target === overlay) encerrar(); });
+    document.addEventListener("keydown", tecla, true);
 
     overlay.appendChild(painel);
     document.body.appendChild(overlay);
@@ -107,46 +131,20 @@
     (painel.querySelector(".tl-tons-opcao.selecionado") || fechar).focus();
   }
 
-  function iniciar() {
-    for (const id of IDs) {
-      const select = document.getElementById(id);
-      if (!select) continue;
-
-      let aberturaAgendada = false;
-
-      //  Mesmo painel em qualquer tela: no computador a lista nativa
-      //  do sistema (34 tons numa coluna só) era difícil de usar.
-      function agendarAbertura(e) {
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (aberturaAgendada ||
-            document.getElementById("tlPainelTons")) return;
-
-        aberturaAgendada = true;
-
-        // Cria o painel depois do evento original.
-        setTimeout(() => {
-          aberturaAgendada = false;
-          abrir(select);
-        }, 0);
-      }
-
-      select.addEventListener("pointerdown", agendarAbertura, true);
-      select.addEventListener("click", agendarAbertura, true);
-
-      select.addEventListener("keydown", e => {
-        if (e.key !== "Enter" && e.key !== " ") return;
-        agendarAbertura(e);
-      });
-
-    }
+  //  Um toque no campo abre o painel em vez da lista do sistema.
+  let agendado = false;
+  function interceptar(e) {
+    const select = e.target.closest && e.target.closest(SELETOR);
+    if (!select || select.disabled) return;
+    if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (agendado || document.getElementById("tlPainelTons")) return;
+    agendado = true;
+    setTimeout(() => { agendado = false; abrir(select); }, 0);
   }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", iniciar);
-  } else {
-    iniciar();
-  }
+  document.addEventListener("pointerdown", interceptar, true);
+  document.addEventListener("mousedown", interceptar, true);
+  document.addEventListener("click", interceptar, true);
+  document.addEventListener("keydown", interceptar, true);
 })();
