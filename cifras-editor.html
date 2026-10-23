@@ -52,6 +52,14 @@
       <span class="ce-muted">01</span>
     </div>
     <div class="ce-panel-body">
+      <div class="ce-lyra" id="ceLyra">
+        <label for="ceLyraBusca">Buscar no Lyra <span class="ce-opc">preenche nome, cantor e link</span></label>
+        <div class="ce-lyra-campo">
+          <input id="ceLyraBusca" type="search" placeholder="Digite o nome do louvor" autocomplete="off" spellcheck="false">
+          <div class="ce-lyra-lista" id="ceLyraLista" role="listbox" hidden></div>
+        </div>
+        <p class="ce-lyra-msg" id="ceLyraMsg" aria-live="polite"></p>
+      </div>
       <div class="ce-grid">
         <div class="ce-field">
           <label for="titulo">Nome do louvor</label>
@@ -60,6 +68,11 @@
         <div class="ce-field">
           <label for="artista">Cantor / artista</label>
           <input id="artista" placeholder="Nome do artista">
+        </div>
+        <div class="ce-field ce-field-largo">
+          <label for="ceLink">Link para ouvir <span class="ce-opc">opcional</span></label>
+          <input id="ceLink" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+                 placeholder="YouTube, Spotify, Deezer…">
         </div>
         
       </div>
@@ -170,6 +183,7 @@ Cole ou digite sua cifra aqui..."></textarea>
 
 <script src="js/config.js"></script>
 <script src="js/aviso.js"></script>
+<script src="js/lyra-api.js"></script>
 <script src="js/cifras-tonalidades.js"></script>
 <script>
 // Cada música tem o seu próprio rascunho. Antes existia uma única
@@ -290,6 +304,7 @@ Cole ou digite sua cifra aqui..."></textarea>
       artista: $("artista").value,
       tom: $("tom").value,
       cifra: $("cifra").value,
+      link: $("ceLink") ? $("ceLink").value : "",
       salvoEm: Date.now()
     };
 
@@ -308,6 +323,7 @@ Cole ou digite sua cifra aqui..."></textarea>
       if (typeof dados[campo] === "string")
         $(campo).value = dados[campo];
     }
+    if (typeof dados.link === "string" && $("ceLink")) $("ceLink").value = dados.link;
   }
 
   let rascunho = null;
@@ -719,6 +735,7 @@ Cole ou digite sua cifra aqui..."></textarea>
 })();
 </script>
 <script src="js/cifras-publicar.js"></script>
+<script src="js/editor-lyra.js"></script>
 <script src="js/editor-origem-sugestoes.js"></script>
 <script src="js/tons-mobile.js"></script>
 </body>

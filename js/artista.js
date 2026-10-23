@@ -90,12 +90,18 @@
       const r = viewAnterior.call(this, m, ...resto);
       const titulo = document.getElementById("viewTitulo");
       if (titulo) {
+        //  Título e cantor num bloco só, empilhados à esquerda. Antes o
+        //  cantor era vizinho do título no cabeçalho e ficava colado nele.
         let sub = document.getElementById("viewArtista");
         if (!sub) {
+          const caixa = document.createElement("div");
+          caixa.className = "view-hd-txt";
+          titulo.before(caixa);
+          caixa.appendChild(titulo);
           sub = document.createElement("p");
           sub.id = "viewArtista";
           sub.className = "view-artista";
-          titulo.after(sub);
+          caixa.appendChild(sub);
         }
         sub.textContent = artistaDe(m && m.nome);
       }

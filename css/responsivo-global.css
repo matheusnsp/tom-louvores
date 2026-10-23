@@ -634,3 +634,8 @@ img, video, canvas {
   .filtros-row .rv-filtro,
   .filtros-row .btn-vista { flex: 0 0 auto; }
 }
+
+/* Modal da música: cantor embaixo do título, os dois à esquerda */
+.view-hd-txt { flex: 1 1 auto; min-width: 0; }
+.view-hd-txt #viewTitulo { margin: 0; }
+.view-hd-txt .view-artista { margin: 4px 0 0; }

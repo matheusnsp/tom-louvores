@@ -758,6 +758,12 @@ async function lyraBaixarTudo() {
   }
   lyraLimparOrfas();
 
+  //  As letras do Lyra vêm junto (em paralelo), para o modo Letra
+  //  funcionar sem internet. Se não vierem, o download segue igual.
+  const letrasPromessa = window.tlLyra
+    ? Promise.race([tlLyra.letras(true).catch(() => null), new Promise(ok => setTimeout(() => ok(null), 25000))])
+    : Promise.resolve(null);
+
   let linhas;
   try {
     linhas = await lyraLerCifrasCompletas();
@@ -768,6 +774,7 @@ async function lyraBaixarTudo() {
     return;
   }
   const porSlug = new Map((linhas || []).map(d => [d.slug, d]));
+  const letras = await letrasPromessa;
 
   let ok = 0, falhas = 0, cheio = false;
 
@@ -779,6 +786,8 @@ async function lyraBaixarTudo() {
     if (!d) { falhas++; continue; }
     try {
       const musica = lyraMusicaDaLinha(d);
+      const doLyra = letras && letras.get(slugs[i]);
+      if (doLyra && doLyra.lyrics) musica.lyrics = doLyra.lyrics;
       lyraCacheMusica.set(slugs[i], musica);
       await lyraGravarNoDisco(slugs[i], musica);
       ok++;
@@ -1125,10 +1134,25 @@ function lyraExtrairLetraDosAcordes(texto) {
   }).filter(l => l !== null).join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+//  A letra: a do Lyra quando existe (já guardada no aparelho ou
+//  buscada agora, pela função do Supabase); senão, tirada da cifra.
 async function lyraCarregarLetra(slug) {
   const musica = await lyraCarregarMusica(slug);
+  if (musica.lyrics) return musica.lyrics;
+
+  if (window.tlLyra) {
+    const letra = await Promise.race([
+      tlLyra.letraDe(slug).catch(() => ""),
+      new Promise(ok => setTimeout(() => ok(""), 4000)),   // sem esperar demais
+    ]);
+    if (letra) {
+      musica.lyrics = letra;
+      lyraGravarNoDisco(slug, musica).catch(() => {});    // fica para abrir offline
+      return letra;
+    }
+  }
   const original = musica.base_key && musica.porTom.get(lyraKeySlug(musica.base_key));
-  return lyraExtrairLetraDosAcordes(original || "") || musica.lyrics || "";
+  return lyraExtrairLetraDosAcordes(original || "");
 }
 
 // ── Montagem do texto na tela ────────────────────────────────

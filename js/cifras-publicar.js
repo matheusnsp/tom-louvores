@@ -158,6 +158,9 @@
     const cifra = $("cifra")?.value;
     if (!titulo || !artista || !tom || !cifra?.trim())
       throw new Error("Preencha nome, artista, tom original e a cifra completa.");
+    const link = ($("ceLink")?.value || "").trim();
+    if (link && !/^https?:\/\/\S+\.\S+/.test(link))
+      throw new Error("Preencha o link completo, começando com https:// (ou deixe em branco).");
     const { pares, ministrante } = paresMinistrantes();
     const token = await autenticar();
     let vinculo = null;
@@ -178,6 +181,16 @@
     });
     if (!resultado?.musica_id || !resultado?.cifra_id)
       throw new Error("O banco não confirmou ambos os registros.");
+
+    //  Link para ouvir: vai nas observações da música no repertório,
+    //  de onde saem os botões YouTube/Spotify do modal. Se falhar, a
+    //  música já está salva: avisa sem desfazer nada.
+    try {
+      await salvarLink(resultado.musica_id, link, token);
+    } catch (erro) {
+      console.warn("Link não salvo:", erro);
+      window.tlLinkFalhou = true;
+    }
     //  Salvo: o rascunho não tem mais razão de existir. A partir daqui
     //  a página é a edição desta música (rascunho com a chave dela).
     try {
@@ -193,6 +206,24 @@
       tonsMinistrantes: pessoasParaEditor(pares), modo: "editar"
     }));
     return titulo;
+  }
+
+  //  Troca o link antigo pelo novo nas observações (ou acrescenta,
+  //  ou tira, se o campo foi apagado). O resto do texto fica igual.
+  async function salvarLink(musicaId, link, token) {
+    const antigo = window.tlLinkOriginal || "";
+    if (link === antigo) return;
+    const linhas = await requisicao(
+      `musicas?select=observacoes&id=eq.${encodeURIComponent(musicaId)}`, token);
+    let obs = (linhas && linhas[0] && linhas[0].observacoes) || "";
+    if (antigo && obs.includes(antigo)) obs = obs.replace(antigo, link);
+    else if (link && !obs.includes(link)) obs = (obs.trim() ? obs.trim() + "\n" : "") + link;
+    obs = obs.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    await requisicao(`musicas?id=eq.${encodeURIComponent(musicaId)}`, token, {
+      method: "PATCH",
+      body: JSON.stringify({ observacoes: obs }),
+    });
+    window.tlLinkOriginal = link;
   }
 
   //  Erro técnico do banco → frase que dá para entender e resolver.
@@ -229,10 +260,13 @@
         const o = sessionStorage.getItem("tl_editor_origem");
         return ["index.html", "repertorio.html", "sugestoes.html"].includes(o) ? o : "repertorio.html";
       })();
+      const semLink = window.tlLinkFalhou;
+      window.tlLinkFalhou = false;
       tlAviso({
         tipo: "ok",
         titulo: "Música salva",
-        texto: `“${titulo}” já está no repertório. Nos outros aparelhos, a versão nova aparece quando o site for aberto ou atualizado.`,
+        texto: `“${titulo}” já está no repertório. Nos outros aparelhos, a versão nova aparece quando o site for aberto ou atualizado.` +
+          (semLink ? " Só o link para ouvir não foi salvo: tente salvar de novo." : ""),
         acoes: [
           { rotulo: "Continuar editando" },
           { rotulo: voltarPara === "index.html" ? "Ir para os cultos" : voltarPara === "sugestoes.html" ? "Ir para as sugestões" : "Ir para o repertório",

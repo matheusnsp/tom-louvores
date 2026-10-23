@@ -97,6 +97,16 @@ function blIndexar(rows) {
   blLetras = mapa;
 }
 
+//  As letras vêm do Lyra (pela função do Supabase). Se a função não
+//  estiver publicada ou falhar, usa a tabela antiga musicas_lyra.
+async function blLerLetras() {
+  if (window.tlLyra) {
+    const mapa = await tlLyra.letras().catch(() => null);
+    if (mapa && mapa.size) return [...mapa.values()].map(x => ({ title: x.title, lyrics: x.lyrics }));
+  }
+  return await req("musicas_lyra?select=title,lyrics") || [];
+}
+
 function blCarregar() {
   if (blLetras) return Promise.resolve();
   if (blBuscando) return blBuscando;
@@ -107,7 +117,7 @@ function blCarregar() {
 
   blBuscando = (async () => {
     try {
-      const rows = await req(caminho) || [];
+      const rows = await blLerLetras();
       if (typeof copiaGuardar === "function") copiaGuardar(caminho, rows);
       blIndexar(rows);
     } catch (e) {
@@ -124,8 +134,8 @@ let blAtualizada = false;
 function blAtualizarPorTras() {
   if (blAtualizada) return;
   blAtualizada = true;
-  req("musicas_lyra?select=title,lyrics").then(rows => {
-    if (!rows) return;
+  blLerLetras().then(rows => {
+    if (!rows || !rows.length) return;
     if (typeof copiaGuardar === "function") copiaGuardar("musicas_lyra?select=title,lyrics", rows);
     blIndexar(rows);
   }).catch(() => {});
