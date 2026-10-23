@@ -12,15 +12,15 @@
 //       [Ponte]...) como títulos. Com a música aberta no leitor, a
 //       letra acompanha a cifra: a linha que está no topo da tela
 //       fica marcada e o painel rola junto.
-//    3. tocar numa linha envia na hora para o chat:
-//         📍 REFRÃO (2ª vez) — “Eu quero nascer do Teu espírito”
-//            · 🎵 Última Chance (D)
+//    3. tocar numa linha envia na hora para o chat, em duas linhas:
+//         Agora: REFRÃO · 2ª vez
+//         “Eu quero nascer do Teu espírito”
 //       tocar num título envia só a parte.
 //
 //  O chat guarda as mensagens num Firebase aberto (o mesmo que o
 //  chat-aviso.js lê); daqui a mensagem entra direto lá, pela API
 //  REST, com o nome que a pessoa escreveu uma vez neste aparelho.
-//  O chat junta tudo numa linha só, então a mensagem é uma linha.
+//  A mensagem vai em duas linhas (parte em cima, trecho embaixo).
 // ============================================================
 (() => {
   "use strict";
@@ -113,10 +113,11 @@
   .cr-opt small{display:block;font-weight:500;font-size:12px;color:var(--gray,#aaa)}
   .cr-opt:hover{background:rgba(var(--gold-rgb,242,193,78),.08)}
   .cr-grupo{margin:8px 8px 2px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray2,#8a8a90)}
-  .cr-status{flex:0 0 auto;padding:0 14px;font-size:12.5px;font-weight:600;line-height:1.35;color:var(--gray,#aaa)}
-  .cr-status:not(:empty){padding:10px 14px;border-top:1px solid var(--black4,#222)}
-  .cr-status.ok{color:#5fd38a}
-  .cr-status.erro{color:#ff8a7a}
+  .cr-status{display:none;margin:-2px 0 10px;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;line-height:1.35;
+    color:var(--gray,#aaa);background:var(--black,#0a0a0a);border:1px solid var(--black5,#2a2a2e);white-space:pre-line}
+  .cr-status:not(:empty){display:block}
+  .cr-status.ok{color:#5fd38a;background:rgba(95,211,138,.1);border-color:rgba(95,211,138,.35)}
+  .cr-status.erro{color:#ff8a7a;background:rgba(255,138,122,.08);border-color:rgba(255,138,122,.35)}
   .cr-bloqueado .cr-rolar,.cr-bloqueado .cr-musica{opacity:.4;pointer-events:none}`;
   document.head.appendChild(st);
 
@@ -127,15 +128,16 @@
   const artistaDe = nome => (typeof tlArtistaDe === "function" ? tlArtistaDe(nome) : "");
 
   // ── as mensagens ──
-  //  O chat junta quebras de linha, então tudo cabe numa linha:
-  //  primeiro ONDE (a parte), depois o trecho, por último a música.
+  //  Duas linhas: em cima ONDE (a parte), embaixo o trecho entre
+  //  aspas. A música e o tom não se repetem a cada verso: vão uma
+  //  vez, no "Enviar" do cartão. Sem emojis.
+  //  O chat da igreja hoje mostra a quebra de linha como espaço;
+  //  aí a mensagem fica "Agora: REFRÃO · 2ª vez “…”", que também lê
+  //  bem.
   const ORDINAL = n => `${n}ª vez`;
-  function musicaTxt() {
-    return `🎵 ${escolhida.nome}${escolhida.tom ? ` (${escolhida.tom})` : ""}`;
-  }
   function parteTxt(b) {
     if (!b || !b.parte) return "";
-    return b.parte.toLocaleUpperCase("pt-BR") + (b.total > 1 ? ` (${ORDINAL(b.vez)})` : "");
+    return b.parte.toLocaleUpperCase("pt-BR") + (b.total > 1 ? ` · ${ORDINAL(b.vez)}` : "");
   }
   function trecho(l) {
     const t = l.replace(/[\s,;.:!?-]+$/, "");
@@ -143,15 +145,12 @@
   }
   const msgLinha = (b, l) => {
     const p = parteTxt(b);
-    return p ? `📍 ${p} — “${trecho(l)}” · ${musicaTxt()}` : `📍 “${trecho(l)}” · ${musicaTxt()}`;
+    return `${p ? `Agora: ${p}` : "A partir de:"}\n“${trecho(l)}”`;
   };
-  const msgParte = b => `📍 ${parteTxt(b)} · ${musicaTxt()}`;
+  const msgParte = b => `Agora: ${parteTxt(b)}`;
   function msgMusica() {
-    const partes = [`🎵 Vamos tocar: ${escolhida.nome}`];
-    if (escolhida.tom) partes.push(`Tom ${escolhida.tom}`);
-    const a = artistaDe(escolhida.nome);
-    if (a) partes.push(a);
-    return partes.join(" · ");
+    const sub = [escolhida.tom && `Tom ${escolhida.tom}`, artistaDe(escolhida.nome)].filter(Boolean).join(" · ");
+    return `Vamos tocar: ${escolhida.nome}` + (sub ? `\n${sub}` : "");
   }
 
   // ── envio ──
@@ -531,7 +530,7 @@
     status("Enviando…");
     const r = await enviarAoChat(texto);
     if (r === "ok") {
-      status(`Enviado: ${texto}`, "ok");
+      status(`Enviado ✓\n${texto}`, "ok");
       painel.querySelectorAll(".enviada").forEach(x => x.classList.remove("enviada"));
       if (botao && botao.classList.contains("cr-lin") || botao && botao.classList.contains("cr-sec")) {
         botao.classList.add("enviada");
@@ -541,7 +540,7 @@
     else if (r === "negado") status("O chat recusou a mensagem.", "erro");
     else status("Não foi. Confira a internet e tente de novo.", "erro");
     //  um respiro para um toque duplo não mandar duas vezes
-    setTimeout(() => { ocupado = false; }, 1200);
+    setTimeout(() => { ocupado = false; }, 700);
   }
 
   // ── abrir e fechar ──
@@ -557,10 +556,10 @@
           <span class="cr-titulo">De onde vamos cantar</span>
           <button type="button" class="cr-x" aria-label="Fechar">&#10005;</button>
         </div>
+        <div class="cr-status" aria-live="polite"></div>
         <div class="cr-dados"></div>
       </div>
-      <div class="cr-rolar"></div>
-      <div class="cr-status" aria-live="polite"></div>`;
+      <div class="cr-rolar"></div>`;
     painel.querySelector(".cr-x").addEventListener("click", fechar);
     const rolar = painel.querySelector(".cr-rolar");
     ["touchstart", "wheel", "pointerdown"].forEach(ev =>
