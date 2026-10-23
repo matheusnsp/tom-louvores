@@ -956,6 +956,7 @@ function lyraTransporLinha(linha, semis, bemol) {
 //  grafia ("sharp" | "flat") força os acidentes; sem ela, segue a
 //  armadura do tom de destino.
 function lyraTransporTexto(texto, tomDe, tomPara, grafia = null) {
+  texto = lyraSemInvisiveis(texto);
   const de   = lyraPc(lyraPartesTom(tomDe).raiz);
   const para = lyraPc(lyraPartesTom(tomPara).raiz);
   if (de === null || para === null) return null;
@@ -996,7 +997,18 @@ function lyraTomDoSlug(slug) {
 //  Refaz todos os tons a partir do original, assim que a música
 //  chega. Qualquer parte do site que leia porTom (o leitor, o
 //  painel de opções, o que vier depois) já recebe a versão certa.
+//  Caracteres invisíveis (espaço de largura zero U+200B e parentes)
+//  colados no começo das linhas, comuns em cifra copiada de site.
+//  O trim() não tira esses caracteres: "\u200B    E5" virava uma
+//  linha de 2 pedaços com 1 acorde, abaixo do mínimo, e o E5 não
+//  mudava de tom; "\u200B[Refrão]" não era reconhecido como parte.
+const LYRA_INVISIVEIS = /[\u200B-\u200D\u2060\uFEFF]/g;
+function lyraSemInvisiveis(texto) {
+  return typeof texto === "string" ? texto.replace(LYRA_INVISIVEIS, "") : texto;
+}
+
 function lyraRefazerTons(musica) {
+  for (const [k, v] of musica.porTom) musica.porTom.set(k, lyraSemInvisiveis(v));
   const base = musica.base_key;
   const original = base && musica.porTom.get(lyraKeySlug(base));
   if (!original) return musica;

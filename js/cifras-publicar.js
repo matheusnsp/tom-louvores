@@ -155,7 +155,10 @@
     const titulo = $("titulo")?.value.trim();
     const artista = $("artista")?.value.trim();
     const tom = $("tom")?.value;
-    const cifra = $("cifra")?.value;
+    //  Caracteres invisíveis (espaço de largura zero etc., comuns em
+    //  texto colado de sites de cifra) escondiam acordes e partes da
+    //  transposição. Saem antes de salvar.
+    const cifra = ($("cifra")?.value || "").replace(/[\u200B-\u200D\u2060\uFEFF]/g, "");
     if (!titulo || !artista || !tom || !cifra?.trim())
       throw new Error("Preencha nome, artista, tom original e a cifra completa.");
     const link = ($("ceLink")?.value || "").trim();

@@ -379,10 +379,27 @@ async function sugEnviar(ev) {
   btn.textContent = "Enviando…";
 
   try {
-    const criadas = await req(SUG_TABELA, {
+    //  Sugestão é de qualquer visitante: vai com a chave pública,
+    //  não pelo req() do app.js, que desde 21/10 exige o login de
+    //  admin para toda escrita (e por isso ninguém conseguia
+    //  sugerir). O banco libera só a inserção de sugestão nova.
+    const r = await fetch(`${URL_BASE}/rest/v1/${SUG_TABELA}`, {
       method: "POST",
+      headers: {
+        apikey: KEY,
+        Authorization: `Bearer ${KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
       body: JSON.stringify({ nome, sugerido_por: quem, link }),
     });
+    if (!r.ok) throw new Error(await r.text());
+    const criadas = [{
+      id: "nova-" + Date.now(),
+      nome, sugerido_por: quem, link,
+      status: "pendente",
+      criado_em: new Date().toISOString(),
+    }];
     sugMudancas++;
 
     //  O nome não é mais guardado no aparelho: o iPad da equipe é
@@ -396,13 +413,13 @@ async function sugEnviar(ev) {
     //  Com a lista na tela, a nova entra direto. Se a lista não
     //  tinha carregado, busca agora: contar só a nova daria "0
     //  aprovadas" como se fosse a lista inteira.
+    //  Depois busca de novo, para a nova vir com o id do banco.
     if (sugEstado === "ok") {
-      if (Array.isArray(criadas) && criadas[0]) sugLista.unshift(criadas[0]);
+      sugLista.unshift(criadas[0]);
       sugRender();
       sugDica();
-    } else {
-      sugCarregar();
     }
+    sugCarregar();
   } catch (e) {
     if (!["23505", "P0001"].includes(sugCodigo(e))) console.error(e);
     if (sugCodigo(e) === "23505") sugErroCampo("sugLink", sugMensagemErro(e));
