@@ -11,9 +11,12 @@
 //    ?acao=letras         → letras de todas as músicas (busca na
 //                           letra e uso offline). Guardada 15 min.
 //
-//  Publicar (uma vez):
-//    supabase secrets set LYRA_API_KEY=<chave nova do Lyra>
-//    supabase functions deploy lyra
+//  Publicada no projeto do Lyra no Supabase (sivtvuomqamvmnptuwvo),
+//  com "Enforce JWT Verification" desligado e o segredo LYRA_API_KEY.
+//  Pelo terminal:
+//    supabase link --project-ref sivtvuomqamvmnptuwvo
+//    supabase secrets set LYRA_API_KEY='<chave do Lyra>'
+//    supabase functions deploy lyra --no-verify-jwt
 // ============================================================
 
 const LYRA = "https://database.invbotafogo.com.br/api/v1";

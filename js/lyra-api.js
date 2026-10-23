@@ -1,11 +1,12 @@
 // ============================================================
 //  TOM LOUVORES — Lyra pela função do Supabase
-//  Carregue DEPOIS do config.js.
+//  Pode ser carregado em qualquer ordem (não usa o config.js).
 //
 //  O Lyra serve só de fonte para: nome, cantor, link do YouTube e
 //  letra. A cifra continua sendo a do banco do site (tabela cifras).
-//  A chave da API do Lyra fica na função "lyra" do Supabase, nunca
-//  aqui (ver supabase/functions/lyra/index.ts).
+//  A chave da API do Lyra fica na função "lyra" do Supabase do Lyra
+//  (projeto sivtvuomqamvmnptuwvo), nunca aqui. Código da função em
+//  supabase/functions/lyra/index.ts.
 //
 //  Tudo aqui falha em silêncio: sem a função publicada, sem rede ou
 //  com o Lyra fora do ar, o site segue como antes (letra tirada da
@@ -23,18 +24,18 @@ window.tlLyra = (() => {
   let letrasMapa = null;                // slug → letra
   let letrasPendente = null;
 
-  const url = params =>
-    `${CONFIG.SUPABASE_URL}/functions/v1/lyra?${new URLSearchParams(params)}`;
+  //  A função mora no projeto do Lyra no Supabase (não no do site) e
+  //  foi publicada sem verificação de JWT: não precisa de chave. Ela
+  //  só responde ao domínio do site e só lê.
+  const FUNCAO = "https://sivtvuomqamvmnptuwvo.supabase.co/functions/v1/lyra";
+  const url = params => `${FUNCAO}?${new URLSearchParams(params)}`;
 
   async function chamar(params, ms = 8000) {
     if (indisponivel) throw new Error("Lyra indisponível");
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), ms);
     try {
-      const r = await fetch(url(params), {
-        signal: ctl.signal,
-        headers: { apikey: CONFIG.SUPABASE_KEY, Authorization: `Bearer ${CONFIG.SUPABASE_KEY}` },
-      });
+      const r = await fetch(url(params), { signal: ctl.signal });
       //  404 da própria função (não publicada) ≠ 404 de música.
       if (r.status === 404 && params.acao !== "musica") indisponivel = true;
       const d = await r.json().catch(() => ({}));
