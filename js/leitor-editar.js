@@ -8,6 +8,8 @@
 //  (cifras-editor.html) já com a música, os tons e os ministrantes,
 //  do mesmo jeito que o lápis da lista do repertório. Música que só
 //  tem cifra e não está no repertório não ganha o lápis.
+//  No editor, o "Voltar" (e o "Ir para o repertório" depois de
+//  salvar) traz de volta para a cifra aberta, no mesmo tom.
 // ============================================================
 (() => {
   "use strict";
@@ -35,9 +37,24 @@
       null;
   }
 
+  const VOLTAR = "tl_voltar_leitor_v1";
+  const pagina = () => location.pathname.split("/").pop() || "index.html";
+
   function abrirEdicao() {
     const m = musicaAberta();
     if (!m || !logado()) return;
+    //  para o "Voltar" do editor reabrir esta cifra, no mesmo tom
+    try {
+      sessionStorage.setItem(VOLTAR, JSON.stringify({
+        pagina: pagina(),
+        id: m.id,
+        nome: m.nome,
+        slug: (lyraAtual.song && lyraAtual.song.slug) || "",
+        tom: lyraAtual.tom || "",
+        modo: lyraAtual.modo || "cifra",
+        em: Date.now(),
+      }));
+    } catch { /* sem armazenamento: volta para a lista, como antes */ }
     if (typeof window.tlAbrirEditor === "function") window.tlAbrirEditor(m);
     else if (typeof abrirModal === "function") abrirModal(m);
   }
@@ -65,6 +82,36 @@
       document.getElementById("lyraTelaBtn") || document.getElementById("lyraFechar");
     if (b.nextElementSibling !== vizinho || b.parentElement !== acoes) acoes.insertBefore(b, vizinho);
   }
+
+  // ── de volta do editor: reabre a cifra ──
+  //  Vale só na página de onde o lápis foi tocado e por 2 horas;
+  //  usado uma vez. Espera o repertório e o índice de cifras chegarem.
+  async function reabrir() {
+    let v = null;
+    try { v = JSON.parse(sessionStorage.getItem(VOLTAR) || "null"); } catch { v = null; }
+    if (!v || v.pagina !== pagina() || Date.now() - v.em > 2 * 3600e3) return;
+    try { sessionStorage.removeItem(VOLTAR); } catch { /* ok */ }
+
+    const limite = Date.now() + 15000;
+    const pronto = () => typeof musicas !== "undefined" && musicas.length &&
+      typeof lyraIndice !== "undefined" && lyraIndice;
+    while (!pronto() && Date.now() < limite) {
+      if (typeof lyraCarregarIndice === "function") { try { await lyraCarregarIndice(); } catch { /* sem rede */ } }
+      await new Promise(r => setTimeout(r, 300));
+    }
+    if (!pronto()) return;
+
+    const m = musicas.find(x => x && x.id == v.id) || musicas.find(x => x && norm(x.nome) === norm(v.nome));
+    let song = null;
+    lyraIndice.forEach(s => { if (!song && s && v.slug && s.slug === v.slug) song = s; });
+    if (!song && m) song = lyraNoIndice(m.nome);
+    if (!song) return;
+    let nav = null;
+    try { nav = m && typeof lyraMontarNav === "function" ? lyraMontarNav(m, null) : null; } catch { nav = null; }
+    lyraAbrirLeitor(song, v.tom, [], nav, v.modo === "letra" ? "letra" : "cifra");
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(reabrir, 0));
+  else setTimeout(reabrir, 0);
 
   const embrulhar = nome => {
     if (typeof window[nome] !== "function") return;
