@@ -12,15 +12,14 @@
 //       [Ponte]...) como títulos. Com a música aberta no leitor, a
 //       letra acompanha a cifra: a linha que está no topo da tela
 //       fica marcada e o painel rola junto.
-//    3. tocar numa linha envia na hora para o chat, em duas linhas:
-//         Agora: REFRÃO · 2ª vez
-//         “Eu quero nascer do Teu espírito”
+//    3. tocar numa linha envia na hora para o chat:
+//         REFRÃO · 2ª vez — “Eu quero nascer do Teu espírito”
 //       tocar num título envia só a parte.
 //
 //  O chat guarda as mensagens num Firebase aberto (o mesmo que o
 //  chat-aviso.js lê); daqui a mensagem entra direto lá, pela API
 //  REST, com o nome que a pessoa escreveu uma vez neste aparelho.
-//  A mensagem vai em duas linhas (parte em cima, trecho embaixo).
+//  A mensagem vai numa linha: parte, depois o trecho.
 // ============================================================
 (() => {
   "use strict";
@@ -139,12 +138,12 @@
   }
   const msgLinha = (b, l) => {
     const p = parteTxt(b);
-    return p ? `Agora: ${p} — “${trecho(l)}”` : `A partir de: “${trecho(l)}”`;
+    return p ? `${p} — “${trecho(l)}”` : `“${trecho(l)}”`;
   };
-  const msgParte = b => `Agora: ${parteTxt(b)}`;
+  const msgParte = b => parteTxt(b);
   function msgMusica() {
     const sub = [escolhida.tom && `Tom ${escolhida.tom}`, artistaDe(escolhida.nome)].filter(Boolean).join(" · ");
-    return `Vamos tocar: ${escolhida.nome}` + (sub ? ` — ${sub}` : "");
+    return escolhida.nome + (sub ? ` — ${sub}` : "");
   }
 
   // ── envio ──
