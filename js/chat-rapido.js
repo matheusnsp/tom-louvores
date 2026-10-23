@@ -3,7 +3,7 @@
 //  Carregue DEPOIS do chat.js, do chat-aviso.js e do
 //  leitor-palco.js.
 //
-//  No leitor de cifra, para TODO MUNDO (não só admin), há um botão
+//  No leitor de cifra, só para quem entrou (admin), há um botão
 //  de raio que abre um painel:
 //    1. a música: já vem a que está aberta; "Trocar" deixa escolher
 //       outra (as do culto primeiro, ou buscando pelo nome)
@@ -359,7 +359,7 @@
   }
 
   async function enviar(texto, botao) {
-    if (ocupado) return;
+    if (ocupado || !logado()) return;
     ocupado = true;
     status("Enviando…");
     const r = await enviarAoChat(texto);
@@ -425,9 +425,15 @@
   // ── botão no leitor ──
   const ICO = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H12L11 22l8.5-11.5H12L13 2z"/></svg>`;
 
+  const logado = () => typeof isAdmin === "function" && isAdmin() === true;
+
+  //  Só para quem entrou (admin), igual ao chat. Sem login o botão
+  //  sai e o painel fecha.
   function botaoNoLeitor() {
+    const atual = document.getElementById("lyraMsgs");
+    if (!logado()) { fechar(); if (atual) atual.remove(); return; }
     const acoes = document.querySelector("#lyraOverlay .lyra-hd-acoes");
-    if (!acoes || document.getElementById("lyraMsgs")) return;
+    if (!acoes || atual) return;
     const b = el("button", "lyra-btn");
     b.type = "button";
     b.id = "lyraMsgs";
@@ -444,6 +450,7 @@
     const anterior = chatSincronizar;
     chatSincronizar = function (...a) {
       const r = anterior.apply(this, a);
+      botaoNoLeitor();
       const nosso = document.getElementById("lyraMsgs");
       const chat = document.getElementById("lyraChat");
       if (nosso && chat && nosso.nextElementSibling !== chat) chat.before(nosso);
