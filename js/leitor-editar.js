@@ -15,6 +15,13 @@
   const logado = () => typeof isAdmin === "function" && isAdmin() === true;
   const norm = s => (typeof normTexto === "function" ? normTexto(s || "") : String(s || "").toLowerCase().trim());
 
+  //  No celular o topo do leitor já é apertado (o nome da música
+  //  sumia): lá o lápis fica de fora; editar é coisa de iPad e
+  //  computador.
+  const st = document.createElement("style");
+  st.textContent = "@media (max-width:600px){#lyraEditar{display:none!important}}";
+  document.head.appendChild(st);
+
   const ICO = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`;
 
   //  A música do repertório que está aberta no leitor.

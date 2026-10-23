@@ -113,11 +113,7 @@
   .cr-opt small{display:block;font-weight:500;font-size:12px;color:var(--gray,#aaa)}
   .cr-opt:hover{background:rgba(var(--gold-rgb,242,193,78),.08)}
   .cr-grupo{margin:8px 8px 2px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray2,#8a8a90)}
-  .cr-status{display:none;margin:-2px 0 10px;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;line-height:1.35;
-    color:var(--gray,#aaa);background:var(--black,#0a0a0a);border:1px solid var(--black5,#2a2a2e);white-space:pre-line}
-  .cr-status:not(:empty){display:block}
-  .cr-status.ok{color:#5fd38a;background:rgba(95,211,138,.1);border-color:rgba(95,211,138,.35)}
-  .cr-status.erro{color:#ff8a7a;background:rgba(255,138,122,.08);border-color:rgba(255,138,122,.35)}
+  #toast.toast{z-index:9800}
   .cr-bloqueado .cr-rolar,.cr-bloqueado .cr-musica{opacity:.4;pointer-events:none}`;
   document.head.appendChild(st);
 
@@ -128,12 +124,10 @@
   const artistaDe = nome => (typeof tlArtistaDe === "function" ? tlArtistaDe(nome) : "");
 
   // ── as mensagens ──
-  //  Duas linhas: em cima ONDE (a parte), embaixo o trecho entre
-  //  aspas. A música e o tom não se repetem a cada verso: vão uma
-  //  vez, no "Enviar" do cartão. Sem emojis.
-  //  O chat da igreja hoje mostra a quebra de linha como espaço;
-  //  aí a mensagem fica "Agora: REFRÃO · 2ª vez “…”", que também lê
-  //  bem.
+  //  Uma linha só (o chat da igreja junta as quebras de linha):
+  //  primeiro ONDE (a parte), depois o trecho entre aspas. A música
+  //  e o tom não se repetem a cada verso: vão uma vez, no "Enviar"
+  //  do cartão. Sem emojis.
   const ORDINAL = n => `${n}ª vez`;
   function parteTxt(b) {
     if (!b || !b.parte) return "";
@@ -145,12 +139,12 @@
   }
   const msgLinha = (b, l) => {
     const p = parteTxt(b);
-    return `${p ? `Agora: ${p}` : "A partir de:"}\n“${trecho(l)}”`;
+    return p ? `Agora: ${p} — “${trecho(l)}”` : `A partir de: “${trecho(l)}”`;
   };
   const msgParte = b => `Agora: ${parteTxt(b)}`;
   function msgMusica() {
     const sub = [escolhida.tom && `Tom ${escolhida.tom}`, artistaDe(escolhida.nome)].filter(Boolean).join(" · ");
-    return `Vamos tocar: ${escolhida.nome}` + (sub ? `\n${sub}` : "");
+    return `Vamos tocar: ${escolhida.nome}` + (sub ? ` — ${sub}` : "");
   }
 
   // ── envio ──
@@ -293,14 +287,13 @@
     return !!agora && !!agora.slug && agora.slug === escolhida.slug;
   };
 
+  //  O aviso é o mesmo banner do site (o de "cifras guardadas"),
+  //  por cima de tudo, até do leitor.
   function status(txt, tipo) {
-    const s = painel && painel.querySelector(".cr-status");
-    if (!s) return;
-    clearTimeout(statusTimer);
-    s.textContent = txt;
-    s.className = "cr-status" + (tipo ? " " + tipo : "");
-    if (tipo === "ok") statusTimer = setTimeout(() => { s.textContent = ""; s.className = "cr-status"; }, 4000);
+    if (!tipo || typeof toast !== "function") return;
+    toast(txt, tipo === "erro");
   }
+
 
   const novo = (tag, classe, txt) => {
     const e = document.createElement(tag);
@@ -527,10 +520,9 @@
   async function enviar(texto, botao) {
     if (ocupado || !logado()) return;
     ocupado = true;
-    status("Enviando…");
     const r = await enviarAoChat(texto);
     if (r === "ok") {
-      status(`Enviado ✓\n${texto}`, "ok");
+      status("Mensagem enviada no chat ✓", "ok");
       painel.querySelectorAll(".enviada").forEach(x => x.classList.remove("enviada"));
       if (botao && botao.classList.contains("cr-lin") || botao && botao.classList.contains("cr-sec")) {
         botao.classList.add("enviada");
@@ -556,7 +548,6 @@
           <span class="cr-titulo">De onde vamos cantar</span>
           <button type="button" class="cr-x" aria-label="Fechar">&#10005;</button>
         </div>
-        <div class="cr-status" aria-live="polite"></div>
         <div class="cr-dados"></div>
       </div>
       <div class="cr-rolar"></div>`;
@@ -577,7 +568,6 @@
     trocando = !escolhida;
     editandoNome = false;
     maoNoPainel = 0;
-    status("");
     painel.classList.add("on");
     document.getElementById("lyraMsgs")?.classList.add("on");
     pintar();
