@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v124";
+const CACHE = "tom-louvores-v125";
 
 const APP = [
   "./js/tons-mobile.js",
@@ -83,14 +83,16 @@ const APP = [
   //  Sem estes, o app abria offline mas sem o fundo do topo e sem
   //  o ícone na tela de início do celular.
   //
-  //  São logo2 e logo3 porque são os que as páginas usam de fato:
-  //  eu tinha posto "logo.png" no chute, e o resultado era guardar
-  //  um arquivo que ninguém exibe e deixar de fora os dois que
-  //  aparecem na tela.
+  //  logo2 é o do topo; os icone-* são os quadrados de fundo preto
+  //  do app instalado, da aba do navegador e dos avisos do chat.
   "./manifest.json",
   "./img/image.jpg",
   "./img/logo2.png",
-  "./img/logo3.png",
+  "./img/icone-192.png",
+  "./img/icone-512.png",
+  "./img/icone-maskable-512.png",
+  "./img/apple-touch-icon.png",
+  "./img/favicon-48.png",
   "./img/logo-novavida.png",
 ];
 

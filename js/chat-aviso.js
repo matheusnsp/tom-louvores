@@ -325,7 +325,7 @@ async function avNotificar() {
   const titulo = varias ? `${avNaoLidas} mensagens novas no chat` : nome;
   const opcoes = {
     body: varias ? `${nome}: ${avUltima.texto}` : (avUltima.texto || "Mensagem nova no chat"),
-    icon: "img/logo3.png",
+    icon: "img/icone-192.png",
     tag: "tl-chat",   // uma só na gaveta, atualizada a cada mensagem...
     renotify: true,   // ...mas avisando de novo a cada uma
     lang: "pt-BR",

@@ -1281,7 +1281,7 @@ function tempoRelativo(iso) {
   return "em " + new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-// monta o texto da lista de um culto, pronto pra colar no WhatsApp
+// monta o texto da lista de um culto, pronto pra mandar no WhatsApp
 function textoCultoParaCopiar(oc, dados) {
   const louvores   = dados.louvores || [];
   const principais = louvores.filter(l => secaoDoLouvor(l) === "principal");
@@ -1292,7 +1292,9 @@ function textoCultoParaCopiar(oc, dados) {
 
   const linhaMusica = l => `${l.nome} — ${l.tom || "—"}`;
 
-  const linhas = [`${oc.dia} — ${dataStr}`, ""];
+  const linhas = [`*${oc.dia} — ${dataStr}*`];
+  if (dados.ministrante) linhas.push(`Ministrante: ${dados.ministrante}`);
+  linhas.push("");
   principais.forEach((l, i) => linhas.push(`${i + 1}. ${linhaMusica(l)}`));
   if (posPalavra.length) {
     linhas.push("", "Pós-palavra:");
@@ -1306,6 +1308,7 @@ function textoCultoParaCopiar(oc, dados) {
     linhas.push("", "Ofertório:");
     ofertorios.forEach(l => linhas.push(`- ${linhaMusica(l)}`));
   }
+  linhas.push("", "Cifras e tons: https://louvores.invbotafogo.com.br");
   return linhas.join("\n");
 }
 
@@ -1334,15 +1337,28 @@ function copiarTexto(texto) {
   return Promise.resolve(false);
 }
 
-// clique no botão "Copiar" de um culto
+// clique no botão "Compartilhar" de um culto.
+// no celular abre a janela de compartilhar do sistema (WhatsApp,
+// Telegram…); onde ela não existe, copia a lista.
 async function copiarCulto(chave) {
   const oc    = calOcorrenciaPorChave(chave);
   const dados = cultos[chave];
   if (!oc || !dados || !(dados.louvores || []).length) {
-    toast("Nada para copiar ainda.", true);
+    toast("Nada para compartilhar ainda.", true);
     return;
   }
-  const ok = await copiarTexto(textoCultoParaCopiar(oc, dados));
+  const texto = textoCultoParaCopiar(oc, dados);
+  const celular = matchMedia("(pointer: coarse)").matches;
+  if (celular && navigator.share) {
+    try {
+      await navigator.share({ text: texto });
+      return;
+    } catch (e) {
+      // fechou a janela sem escolher: nada a fazer
+      if (e.name === "AbortError") return;
+    }
+  }
+  const ok = await copiarTexto(texto);
   toast(ok ? "Lista copiada ✓" : "Não consegui copiar — copie manualmente.", !ok);
 }
 
@@ -1522,9 +1538,9 @@ function renderCultos() {
     const metaHTML = louvores.length
       ? `<div class="culto-col-meta">
            <span class="culto-atualizado">${atualizadoStr ? "Atualizado " + atualizadoStr : ""}</span>
-           <button class="culto-copy-btn" onclick="copiarCulto('${chave}')" title="Copiar lista">
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-             Copiar
+           <button class="culto-copy-btn" onclick="copiarCulto('${chave}')" title="Compartilhar a lista do culto">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+             Compartilhar
            </button>
          </div>`
       : "";
