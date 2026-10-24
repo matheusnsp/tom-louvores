@@ -182,6 +182,9 @@ function calEmAndamento(o, agora = new Date()) {
 let calMes    = null;   // Date no dia 1 do mês exibido
 let calDiaSel = null;   // ISO do dia selecionado
 let calFormAberto = false;
+// a pessoa escolheu um dia (no calendário ou nas setas): o relógio
+// de baixo não a arrasta de volta para o próximo culto
+let calEscolhido = false;
 
 // os cultos que o app.js deve montar em coluna: os do dia escolhido
 function calOcorrenciasVisiveis() {
@@ -190,6 +193,7 @@ function calOcorrenciasVisiveis() {
 }
 
 function calIrParaProximo() {
+  calEscolhido = false;
   const p = calProximo();
   calDiaSel = p ? p.data : isoDia(new Date());
   calMes = calPrimeiroDoMes(calData(calDiaSel));
@@ -213,7 +217,7 @@ function calGarantirPadroes() {
   st.id = "calEstilo";
   st.textContent = `
   /* ---- botão que abre o calendário ---- */
-  .cal-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .cal-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px}
   .cal-btn{
     display:inline-flex;align-items:center;gap:9px;
     background:rgba(0,0,0,0.5);border:1px solid var(--line);
@@ -228,6 +232,29 @@ function calGarantirPadroes() {
   .cal-btn svg{width:15px;height:15px;flex-shrink:0}
   .cal-btn-data{color:var(--gold-hi);font-weight:600;letter-spacing:0}
   .cal-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  /* setas: culto anterior / seguinte */
+  .cal-seta{
+    width:40px;height:40px;flex-shrink:0;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.5);border:1px solid var(--line);
+    color:var(--paper);border-radius:50%;cursor:pointer;transition:all 0.2s;
+  }
+  .cal-seta svg{width:16px;height:16px}
+  .cal-seta:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  .cal-seta:disabled{opacity:0.3;cursor:default}
+  .cal-seta:focus-visible,.cal-hoje:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .cal-hoje{
+    background:none;border:none;cursor:pointer;
+    font-family:var(--font-ui);font-size:13px;font-weight:600;
+    color:var(--gold);padding:8px 4px;text-decoration:underline;
+    text-underline-offset:3px;white-space:nowrap;
+  }
+  .cal-hoje[hidden]{display:none}
+  @media(max-width:440px){
+    .cal-bar{gap:8px}
+    .cal-btn{padding:10px 14px}
+  }
 
   /* ---- modal ---- */
   #calModal{max-width:460px}
@@ -374,20 +401,92 @@ function calMontarBarra() {
   bar.className = "cal-bar";
   bar.id = "calBar";
   bar.innerHTML = `
+    <button type="button" class="cal-seta" id="calAnt" aria-label="Culto anterior" title="Culto anterior">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
     <button type="button" class="cal-btn" id="calBtn">
       ${CAL_ICONE}
       <span>Calendário</span>
       <span class="cal-btn-data" id="calBtnData"></span>
-    </button>`;
+    </button>
+    <button type="button" class="cal-seta" id="calSeg" aria-label="Culto seguinte" title="Culto seguinte">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button type="button" class="cal-hoje" id="calHoje" hidden>Próximo culto</button>`;
 
   grid.parentNode.insertBefore(bar, grid);
   document.getElementById("calBtn").onclick = calAbrir;
+  document.getElementById("calAnt").onclick = () => calPular(-1);
+  document.getElementById("calSeg").onclick = () => calPular(1);
+  document.getElementById("calHoje").onclick = () => {
+    calIrParaProximo();
+    calFormAberto = false;
+    renderCultos();
+  };
+}
+
+// ── setas: de culto em culto ────────────────────────────────
+//  Para trás, só os dias em que algum culto teve louvores: é a
+//  lista do culto passado que se quer ver, e um domingo antigo
+//  vazio (de antes do site, por exemplo) só atrapalharia. A seta
+//  vai até onde houver lista. Para a frente, os mesmos dias com
+//  louvores e, a partir do próximo culto, todo dia que tem culto
+//  (os de amanhã ainda estão sendo montados).
+
+function calDiasComLouvores() {
+  const dias = new Set();
+  Object.values(cultos).forEach(c => {
+    if (c.cancelado || !c.data || !(c.louvores || []).length) return;
+    dias.add(c.data);
+  });
+  return [...dias].sort();
+}
+
+function calDiaVizinho(direcao) {
+  const atual = calDiaSel;
+  const prox = calProximo();
+  const dias = calDiasComLouvores();
+
+  if (direcao < 0) {
+    return dias.filter(d => d < atual).pop() || null;
+  }
+
+  const candidatos = dias.filter(d => d > atual);
+  // dias com culto a partir do próximo (ou de amanhã, se já
+  // passamos dele)
+  const de = prox && prox.data > atual ? prox.data
+    : isoDia(calAddDias(calData(atual), 1));
+  const futuro = calOcorrencias(de, isoDia(calAddDias(new Date(), CAL_HORIZONTE_D)))
+    .find(o => o.data > atual && (!prox || o.data >= prox.data));
+  if (futuro) candidatos.push(futuro.data);
+  return candidatos.sort()[0] || null;
+}
+
+function calPular(direcao) {
+  const dia = calDiaVizinho(direcao);
+  if (!dia) return;
+  calDiaSel = dia;
+  calMes = calPrimeiroDoMes(calData(dia));
+  calFormAberto = false;
+  const prox = calProximo();
+  calEscolhido = !prox || dia !== prox.data;
+  renderCultos();
 }
 
 function calAtualizarBarra() {
   const el = document.getElementById("calBtnData");
   if (el) el.textContent = calData(calDiaSel).toLocaleDateString("pt-BR",
     { day: "2-digit", month: "2-digit" });
+
+  const ant = document.getElementById("calAnt");
+  const seg = document.getElementById("calSeg");
+  const hoje = document.getElementById("calHoje");
+  if (ant) ant.disabled = !calDiaVizinho(-1);
+  if (seg) seg.disabled = !calDiaVizinho(1);
+  if (hoje) {
+    const prox = calProximo();
+    hoje.hidden = !prox || prox.data === calDiaSel;
+  }
 }
 
 // ============================================================
@@ -443,6 +542,7 @@ function calMontarModal() {
     const cel = e.target.closest(".cal-dia");
     if (!cel || cel.classList.contains("fora")) return;
     calDiaSel = cel.dataset.dia;
+    calEscolhido = true;
     calFormAberto = false;
     renderCultos();   // as colunas atrás já mudam; o modal fica aberto
   });
@@ -727,6 +827,7 @@ setInterval(() => {
   const p = calProximo();
   if (!p) return;
   if (calFormAberto) return;
+  if (calEscolhido) return;
 
   if (p.data !== calDiaSel) {
     const aindaFaz = calOcorrenciasDoDia(calDiaSel).some(

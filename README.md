@@ -158,7 +158,7 @@ Com login, o repertório mostra dois botões logo abaixo dos filtros:
 
 ## 📋 Escala
 
-A aba **Escala** (`escala.html`) só aparece para quem está logado. Ela mostra, de hoje até o fim do mês seguinte, quem **ministra** e quem faz o **back** em cada culto, com o horário de chegada.
+A aba **Escala** (`escala.html`) só aparece para quem está logado. No computador ela fica no topo, junto das outras; no celular, fica no **menu** (☰), porque quatro abas não cabem ao lado da logo. Ela mostra, de hoje até o fim do mês seguinte, quem **ministra** e quem faz o **back** em cada culto, com o horário de chegada.
 
 - Os dados vêm da mesma escala do Firebase (projeto `escala-lideres`, coleção `escalas`, equipe `louvor`) de onde sai o ministrante dos cultos. Ministrante é a função `MINISTRANTE`; o back são `BVOCAL 1` a `BVOCAL 4`. Músicos e mesa de som ficam de fora.
 - Lugar marcado como "disponível" na escala aparece como **Vaga**.
@@ -188,6 +188,7 @@ delete from public.sugestoes where status <> 'aprovada' and criado_em > now() - 
 - **Editar**: abra a música e use o lápis. **Excluir**: o ✕ na linha da lista (com login).
 - **Filtrar**: busca, ministrante e tom; no repertório, agrupe por letra, tom ou mais recentes.
 - **Montar o culto**: na página inicial, escolha as músicas de cada culto e o tom.
+- **Ver cultos passados**: na página inicial, as setas ‹ › ao lado do **Calendário** vão de culto em culto. Para trás, a seta passa só pelos cultos que tiveram louvores, até o mais antigo; **Próximo culto** volta para o de agora. Enquanto você olha outro dia, a página não volta sozinha para o próximo culto.
 
 ### Sobre o login
 

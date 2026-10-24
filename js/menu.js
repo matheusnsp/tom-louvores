@@ -42,6 +42,7 @@ const MN_ICO = {
   baixar:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/></svg>`,
   editar:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
   entrar:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="1.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>`,
+  escala:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 4.6a3.2 3.2 0 0 1 0 6.3"/><path d="M18 14.5a5.5 5.5 0 0 1 2.5 5.5"/></svg>`,
   sair:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h9"/></svg>`,
 };
 
@@ -272,6 +273,13 @@ function mnMontar() {
       sub: "Adicionar ao repertório", id: "mnNova",
       aoTocar: () => { mnFechar(); abrirModal(); },
     }),
+    //  A aba Escala não cabe no topo do celular junto com as outras
+    //  três: com login, ela mora aqui.
+    mnLinha({
+      ico: MN_ICO.escala, nome: "Escala",
+      sub: "Ministrante e back dos cultos", id: "mnEscala",
+      aoTocar: () => { mnFechar(); location.href = "escala.html"; },
+    }),
     mnLinha({
       ico: MN_ICO.baixar, nome: "Baixar cifras", sub: "—", id: "mnBaixar",
       // a gaveta fica aberta: é aqui que a faixa de progresso corre
@@ -364,6 +372,7 @@ function mnSincronizar() {
 
   // ── permissões ──
   mnMostrar("mnNova",   mnVisivel("btnNovaMusica"));
+  mnMostrar("mnEscala", mnVisivel("btnLogout") && document.body.dataset.pagina !== "escala");
   mnMostrar("mnEntrar", mnVisivel("btnLoginShow"));
   mnMostrar("mnSair",   mnVisivel("btnLogout"));
 
