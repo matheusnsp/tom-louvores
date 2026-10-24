@@ -35,10 +35,8 @@
     white-space:nowrap;
   }
   .nav-pag a:hover{color:var(--white)}
-  /* aba só da equipe (Escala): some para quem não está logado e,
-     no celular, mora no menu (js/menu.js) — quatro abas não cabem
-     ao lado da logo e do botão do menu */
-  body.read-only .nav-pag a.nav-equipe{display:none}
+  /* aba Escala: no celular mora no menu (js/menu.js) — quatro
+     abas não cabem ao lado da logo e do botão do menu */
   @media(max-width:900px){
     .nav-pag a.nav-equipe{display:none}
   }

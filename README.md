@@ -85,7 +85,7 @@ Para trocar a cor de destaque do site inteiro, mude só `--gold`, `--gold-hi` e 
 | `index.html` | Cultos da semana: o que vai ser tocado, em que tom e quem ministra |
 | `repertorio.html` | Todas as músicas, em lista ou em cards, com busca e filtros |
 | `sugestoes.html` | Qualquer pessoa sugere um louvor; a equipe aprova ou recusa |
-| `escala.html` | Escala do louvor: ministrante e back de cada culto (só com login) |
+| `escala.html` | Escala do louvor: ministrante e back de cada culto |
 | `cifras-editor.html` | Editor de cifras (com login) |
 
 ---
@@ -158,14 +158,12 @@ Com login, o repertório mostra dois botões logo abaixo dos filtros:
 
 ## 📋 Escala
 
-A aba **Escala** (`escala.html`) só aparece para quem está logado. No computador ela fica no topo, junto das outras; no celular, fica no **menu** (☰), porque quatro abas não cabem ao lado da logo. Ela mostra, de hoje até o fim do mês seguinte, quem **ministra** e quem faz o **back** em cada culto, com o horário de chegada.
+A aba **Escala** (`escala.html`) é aberta para todo mundo, com ou sem login. No computador ela fica no topo, junto das outras; no celular, fica no **menu** (☰), porque quatro abas não cabem ao lado da logo. Ela mostra, de hoje até o fim do mês seguinte, quem **ministra** e quem faz o **back** em cada culto, com o horário de chegada.
 
 - Os dados vêm da mesma escala do Firebase (projeto `escala-lideres`, coleção `escalas`, equipe `louvor`) de onde sai o ministrante dos cultos. Ministrante é a função `MINISTRANTE`; o back são `BVOCAL 1` a `BVOCAL 4`. Músicos e mesa de som ficam de fora.
 - Lugar marcado como "disponível" na escala aparece como **Vaga**.
 - A última escala vista fica guardada no aparelho: sem internet, a aba continua mostrando quem canta.
 - Mudou a escala no Firebase? A aba atualiza sozinha ao voltar para ela (não precisa do `escalaForcar()`, que é só para o ministrante dos cultos).
-
-> A aba fica escondida de quem não está logado, mas a escala no Firebase é de leitura pública (é assim que o site a lê sem login). Quem quiser proteger de verdade precisa mudar as regras do Firestore no projeto `escala-lideres`.
 
 ## 💡 Sugestões de louvores
 

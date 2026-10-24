@@ -274,7 +274,7 @@ function mnMontar() {
       aoTocar: () => { mnFechar(); abrirModal(); },
     }),
     //  A aba Escala não cabe no topo do celular junto com as outras
-    //  três: com login, ela mora aqui.
+    //  três: ela mora aqui, para todo mundo.
     mnLinha({
       ico: MN_ICO.escala, nome: "Escala",
       sub: "Ministrante e back dos cultos", id: "mnEscala",
@@ -372,7 +372,7 @@ function mnSincronizar() {
 
   // ── permissões ──
   mnMostrar("mnNova",   mnVisivel("btnNovaMusica"));
-  mnMostrar("mnEscala", mnVisivel("btnLogout") && document.body.dataset.pagina !== "escala");
+  mnMostrar("mnEscala", document.body.dataset.pagina !== "escala");
   mnMostrar("mnEntrar", mnVisivel("btnLoginShow"));
   mnMostrar("mnSair",   mnVisivel("btnLogout"));
 

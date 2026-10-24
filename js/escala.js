@@ -1,7 +1,7 @@
 // ============================================================
 //  TOM LOUVORES — escala do louvor (ministrante e back)
-//  Só na escala.html, e só para quem está logado. Carregue
-//  DEPOIS do app.js e do paginas.js.
+//  Só na escala.html, aberta para todos (com ou sem login).
+//  Carregue DEPOIS do app.js e do paginas.js.
 //
 //  Lê a mesma escala do Firebase (projeto escala-lideres) que o
 //  escala-ministrante.js usa para preencher o ministrante dos
@@ -188,8 +188,6 @@ function escCopiaGravar(lista) {
 }
 
 async function escCarregar() {
-  if (!isAdmin()) { escRender(); return; }
-
   const pedido = ++escPedido;
   if (!escCultos) {
     const copia = escCopiaLer();
@@ -264,15 +262,6 @@ function escRender() {
   const caixa = document.getElementById("escLista");
   if (!caixa) return;
 
-  if (!isAdmin()) {
-    caixa.innerHTML = `
-      <div class="esc-aviso">
-        A escala do louvor é só para a <b>equipe</b>.<br>Entre para ver quem ministra e quem faz o back.
-        <div><button class="btn-add btn-entrar" onclick="abrirLogin()">Entrar</button></div>
-      </div>`;
-    return;
-  }
-
   if (escEstado === "carregando" && !escCultos) {
     caixa.innerHTML = `<div class="esc-carregando"><div class="spinner"></div></div>`;
     return;
@@ -300,17 +289,6 @@ function escRender() {
     return `<h2 class="esc-mes">${ESC_MESES[mm - 1]} ${a}</h2>
       <div class="esc-grade">${m.cultos.map(c => escCardHTML(c, hoje)).join("")}</div>`;
   }).join("");
-}
-
-// entrou ou saiu: a escala aparece ou some na hora
-if (typeof aplicarEstadoAuth === "function") {
-  const escAuthOriginal = aplicarEstadoAuth;
-  aplicarEstadoAuth = function (...a) {
-    const r = escAuthOriginal.apply(this, a);
-    if (isAdmin() && !escCultos) escCarregar();
-    else escRender();
-    return r;
-  };
 }
 
 if (document.readyState === "loading") {

@@ -5,8 +5,7 @@
 //  index.html      → só os louvores escalados nos cultos
 //  repertorio.html → a lista completa, com busca e filtros
 //  sugestoes.html  → sugestões de louvores (sugestoes.js)
-//  escala.html     → ministrante e back da escala, só com login
-//                    (escala.js)
+//  escala.html     → ministrante e back da escala (escala.js)
 //
 //  Os arquivos compartilham o mesmo app.js. Cada página traz
 //  escondidos os campos de que o app.js precisa mas que ela

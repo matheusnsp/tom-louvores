@@ -233,27 +233,48 @@ function calGarantirPadroes() {
   .cal-btn-data{color:var(--gold-hi);font-weight:600;letter-spacing:0}
   .cal-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
-  /* setas: culto anterior / seguinte */
-  .cal-seta{
-    width:40px;height:40px;flex-shrink:0;
-    display:inline-flex;align-items:center;justify-content:center;
+  /* setas + calendário num controle só, como um seletor de data:
+     ‹ | 📅 14/10 | ›. O "Próximo culto" fica à direita. */
+  .cal-pular{
+    display:inline-flex;align-items:stretch;
     background:rgba(0,0,0,0.5);border:1px solid var(--line);
-    color:var(--paper);border-radius:50%;cursor:pointer;transition:all 0.2s;
+    border-radius:var(--pill);overflow:hidden;
+  }
+  .cal-pular .cal-btn{
+    border:none;border-radius:0;background:transparent;
+    border-left:1px solid var(--fio);border-right:1px solid var(--fio);
+  }
+  .cal-pular .cal-btn:hover{background:rgba(var(--gold-rgb),0.06)}
+  .cal-seta{
+    width:44px;flex-shrink:0;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:transparent;border:none;
+    color:var(--paper);cursor:pointer;transition:all 0.2s;
   }
   .cal-seta svg{width:16px;height:16px}
-  .cal-seta:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
-  .cal-seta:disabled{opacity:0.3;cursor:default}
-  .cal-seta:focus-visible,.cal-hoje:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .cal-seta:hover:not(:disabled){color:var(--gold);background:rgba(var(--gold-rgb),0.06)}
+  .cal-seta:disabled{opacity:0.25;cursor:default}
+  .cal-seta:focus-visible,.cal-hoje:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
   .cal-hoje{
-    background:none;border:none;cursor:pointer;
-    font-family:var(--font-ui);font-size:13px;font-weight:600;
-    color:var(--gold);padding:8px 4px;text-decoration:underline;
-    text-underline-offset:3px;white-space:nowrap;
+    margin-left:auto;
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+    background:rgba(var(--gold-rgb),0.08);border:1px solid var(--line);
+    color:var(--gold);font-family:var(--font-ui);
+    font-size:13px;font-weight:600;letter-spacing:0;
+    padding:9px 14px;border-radius:var(--pill);cursor:pointer;transition:all 0.2s;
   }
+  .cal-hoje svg{width:14px;height:14px}
+  .cal-hoje:hover{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
   .cal-hoje[hidden]{display:none}
-  @media(max-width:440px){
-    .cal-bar{gap:8px}
-    .cal-btn{padding:10px 14px}
+  /* no celular a palavra "Calendário" sai: o ícone e a data bastam */
+  @media(max-width:520px){
+    .cal-pular .cal-btn{padding:10px 14px}
+    .cal-btn-rot{display:none}
+    .cal-seta{width:40px}
+  }
+  @media(max-width:370px){
+    .cal-hoje-culto{display:none}
+    .cal-hoje{padding:9px 12px}
   }
 
   /* ---- modal ---- */
@@ -401,18 +422,23 @@ function calMontarBarra() {
   bar.className = "cal-bar";
   bar.id = "calBar";
   bar.innerHTML = `
-    <button type="button" class="cal-seta" id="calAnt" aria-label="Culto anterior" title="Culto anterior">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    </button>
-    <button type="button" class="cal-btn" id="calBtn">
-      ${CAL_ICONE}
-      <span>Calendário</span>
-      <span class="cal-btn-data" id="calBtnData"></span>
-    </button>
-    <button type="button" class="cal-seta" id="calSeg" aria-label="Culto seguinte" title="Culto seguinte">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-    </button>
-    <button type="button" class="cal-hoje" id="calHoje" hidden>Próximo culto</button>`;
+    <div class="cal-pular">
+      <button type="button" class="cal-seta" id="calAnt" aria-label="Culto anterior" title="Culto anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button type="button" class="cal-btn" id="calBtn" title="Calendário">
+        ${CAL_ICONE}
+        <span class="cal-btn-rot">Calendário</span>
+        <span class="cal-btn-data" id="calBtnData"></span>
+      </button>
+      <button type="button" class="cal-seta" id="calSeg" aria-label="Culto seguinte" title="Culto seguinte">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+    <button type="button" class="cal-hoje" id="calHoje" hidden>
+      Próximo<span class="cal-hoje-culto"> culto</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+    </button>`;
 
   grid.parentNode.insertBefore(bar, grid);
   document.getElementById("calBtn").onclick = calAbrir;
