@@ -42,7 +42,7 @@ No ar em **https://louvores.invbotafogo.com.br**
   Cifras e tons: https://louvores.invbotafogo.com.br
   ```
 
-- **Prévia do link**: quem manda o endereço do site no WhatsApp ou no Instagram vê o card com o logo, o nome e a descrição (`img/compartilhar.png`, 1200×630, e as tags `og:` no `<head>` de cada página). O WhatsApp guarda a prévia antiga por um tempo; se não mudar, mande o link com `?v=2` no final.
+- **Prévia do link**: quem manda o endereço do site no WhatsApp ou no Instagram vê o V dourado no fundo preto, com o nome e a descrição da página (`img/compartilhar.png`, 1200×630, e as tags `og:` no `<head>` de cada página). O WhatsApp guarda a prévia antiga por um tempo; se não mudar, mande o link com `?v=2` no final.
 
 ---
 
@@ -85,6 +85,7 @@ Para trocar a cor de destaque do site inteiro, mude só `--gold`, `--gold-hi` e 
 | `index.html` | Cultos da semana: o que vai ser tocado, em que tom e quem ministra |
 | `repertorio.html` | Todas as músicas, em lista ou em cards, com busca e filtros |
 | `sugestoes.html` | Qualquer pessoa sugere um louvor; a equipe aprova ou recusa |
+| `escala.html` | Escala do louvor: ministrante e back de cada culto (só com login) |
 | `cifras-editor.html` | Editor de cifras (com login) |
 
 ---
@@ -92,7 +93,7 @@ Para trocar a cor de destaque do site inteiro, mude só `--gold`, `--gold-hi` e 
 ## Arquivos
 
 ```
-├── index.html, repertorio.html, sugestoes.html   → as páginas
+├── index.html, repertorio.html, sugestoes.html, escala.html → as páginas
 ├── cifras-editor.html     → editor de cifras
 ├── css/style.css          → estilo geral
 ├── js/
@@ -102,6 +103,7 @@ Para trocar a cor de destaque do site inteiro, mude só `--gold`, `--gold-hi` e 
 │   ├── vista-lista.js     → repertório em lista (A–Z, por tom, recentes)
 │   ├── lyra.js            → leitor de cifras
 │   ├── sugestoes.js       → aba de sugestões
+│   ├── escala.js          → aba da escala (ministrante e back, do Firebase)
 │   ├── login-dia.js       → mantém o login o dia todo no aparelho
 │   └── …                  → um arquivo por recurso (afinador, metrônomo, chat…)
 ├── img/                   → logo do topo, ícones do app e imagem de compartilhar
@@ -153,6 +155,17 @@ Com login, o repertório mostra dois botões logo abaixo dos filtros:
 
 - **Agrupar → Uso**: separa o repertório em mais tocadas, tocadas uma vez, sem tocar há 3 meses e ainda não tocadas, contando os cultos montados no site.
 - **Busca**: a partir de 3 letras, procura também dentro das letras das músicas que têm cifra, e mostra o verso que bateu.
+
+## 📋 Escala
+
+A aba **Escala** (`escala.html`) só aparece para quem está logado. Ela mostra, de hoje até o fim do mês seguinte, quem **ministra** e quem faz o **back** em cada culto, com o horário de chegada.
+
+- Os dados vêm da mesma escala do Firebase (projeto `escala-lideres`, coleção `escalas`, equipe `louvor`) de onde sai o ministrante dos cultos. Ministrante é a função `MINISTRANTE`; o back são `BVOCAL 1` a `BVOCAL 4`. Músicos e mesa de som ficam de fora.
+- Lugar marcado como "disponível" na escala aparece como **Vaga**.
+- A última escala vista fica guardada no aparelho: sem internet, a aba continua mostrando quem canta.
+- Mudou a escala no Firebase? A aba atualiza sozinha ao voltar para ela (não precisa do `escalaForcar()`, que é só para o ministrante dos cultos).
+
+> A aba fica escondida de quem não está logado, mas a escala no Firebase é de leitura pública (é assim que o site a lê sem login). Quem quiser proteger de verdade precisa mudar as regras do Firestore no projeto `escala-lideres`.
 
 ## 💡 Sugestões de louvores
 

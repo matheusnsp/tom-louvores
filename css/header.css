@@ -35,6 +35,8 @@
     white-space:nowrap;
   }
   .nav-pag a:hover{color:var(--white)}
+  /* aba só da equipe (Escala): some para quem não está logado */
+  body.read-only .nav-pag a.nav-equipe{display:none}
   .nav-pag a[aria-current]{color:var(--gold);border-bottom-color:var(--gold)}
 
   /* quantas sugestões esperam análise (só com login), logo
@@ -216,6 +218,22 @@
      e as três abas continuam à vista. */
   @media(max-width:419px){
     .logo-sub{display:none}
+  }
+
+  /* Com login aparece a quarta aba (Escala) e as quatro passavam
+     a encostar no botão do menu. Só para quem está logado, as abas
+     ficam mais juntas e a letra um pouco menor. */
+  @media(max-width:440px){
+    body:not(.read-only) .nav-pag{gap:9px}
+    body:not(.read-only) .nav-pag a{font-size:9.5px;letter-spacing:0.02em}
+  }
+  @media(max-width:370px){
+    body:not(.read-only) .nav-pag{gap:7px}
+    body:not(.read-only) .nav-pag a{font-size:9px;letter-spacing:0}
+  }
+  @media(max-width:330px){
+    body:not(.read-only) .nav-pag{gap:5px}
+    body:not(.read-only) .nav-pag a{font-size:8.5px}
   }
 
   /* Abaixo de 350px nem o rótulo cabe: fica só o "+", que já é

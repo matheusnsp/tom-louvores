@@ -5,6 +5,8 @@
 //  index.html      → só os louvores escalados nos cultos
 //  repertorio.html → a lista completa, com busca e filtros
 //  sugestoes.html  → sugestões de louvores (sugestoes.js)
+//  escala.html     → ministrante e back da escala, só com login
+//                    (escala.js)
 //
 //  Os arquivos compartilham o mesmo app.js. Cada página traz
 //  escondidos os campos de que o app.js precisa mas que ela
@@ -43,7 +45,8 @@ function navMontar() {
   nav.innerHTML = `
     <a href="./"${PAGINA === "cultos" ? ' aria-current="page"' : ""}>Cultos</a>
     <a href="repertorio.html"${PAGINA === "repertorio" ? ' aria-current="page"' : ""}>Repertório</a>
-    <a href="sugestoes.html" id="navSugestoes"${PAGINA === "sugestoes" ? ' aria-current="page"' : ""}>Sugestões</a>`;
+    <a href="sugestoes.html" id="navSugestoes"${PAGINA === "sugestoes" ? ' aria-current="page"' : ""}>Sugestões</a>
+    <a href="escala.html" class="nav-equipe"${PAGINA === "escala" ? ' aria-current="page"' : ""}>Escala</a>`;
 
   // entra logo depois da logo, e fica ali em qualquer largura
   const logo = barra.querySelector(".logo");
@@ -170,6 +173,18 @@ if (PAGINA === "sugestoes") {
   render = function (lista) {
     if (typeof lyraListaVisivel !== "undefined") lyraListaVisivel = lista || [];
     if (typeof sugRepertorioMudou === "function") sugRepertorioMudou();
+  };
+}
+
+if (PAGINA === "escala") {
+  //  No lugar dos cultos, a escala do Firebase, no mesmo ciclo de
+  //  atualização. Nada de repertório para desenhar.
+  carregarCultos = async function () {
+    if (typeof escCarregar === "function") await escCarregar();
+  };
+  renderCultos = function () {};
+  render = function (lista) {
+    if (typeof lyraListaVisivel !== "undefined") lyraListaVisivel = lista || [];
   };
 }
 
