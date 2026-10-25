@@ -297,8 +297,50 @@ function lyraChaveCurta(s = "") {
   return lyraNorm(s).replace(/\(.*?\)/g, " ").replace(/\s+/g, " ").trim();
 }
 
+// as linhas da tabela viram o índice: título (e título sem
+// parênteses) → música
+function lyraMontarIndice(data) {
+  const idx = new Map();
+  data.forEach(r => {
+    if (!r.slug) return;
+    const song = {
+      slug: r.slug,
+      title: r.title,
+      artist: r.artist,
+      base_key: r.base_key,
+      // o site transpõe sozinho, então todo tom fica disponível,
+      // mesmo quando o Lyra só cadastrou o original
+      keys: lyraDozeTons(r.base_key) || r.available_keys || [],
+      versao: r.updated_at || "",       // muda quando a cifra é editada
+      has_chords: true,
+    };
+    [lyraNorm(r.title), lyraChaveCurta(r.title)].forEach(k => {
+      if (k && !idx.has(k)) idx.set(k, song);
+    });
+  });
+  return idx;
+}
+
+// ── cópia do índice no aparelho ──
+// Sem ela, a página abria sem o cantor embaixo de cada louvor e só
+// o mostrava quando a tabela de cifras chegava do banco. Agora o
+// índice da última visita vale na primeira pintura, e o do banco o
+// substitui logo depois (lyraIndiceFresco diz qual dos dois está aí).
+const LYRA_INDICE_COPIA = "tl_lyra_indice_v1";
+let lyraIndiceFresco = false;
+
+// roda no fim deste arquivo: montar o índice usa as tabelas de
+// notas (LYRA_SUST…), que são declaradas mais abaixo
+function lyraIndiceDaCopia() {
+  if (lyraIndice) return;
+  try {
+    const data = JSON.parse(localStorage.getItem(LYRA_INDICE_COPIA) || "null");
+    if (Array.isArray(data) && data.length) lyraIndice = lyraMontarIndice(data);
+  } catch (e) { console.warn("Cópia do índice de cifras ilegível:", e); }
+}
+
 async function lyraCarregarIndice(forcar = false) {
-  if (lyraIndice && !forcar) return lyraIndice;
+  if (lyraIndice && lyraIndiceFresco && !forcar) return lyraIndice;
   if (lyraIndiceEmCurso) return lyraIndiceEmCurso;
 
   lyraIndiceEmCurso = (async () => {
@@ -306,29 +348,14 @@ async function lyraCarregarIndice(forcar = false) {
       const data = await lyraLerTabela();
       if (!data || !data.length) {
         console.warn(`Tabela ${LYRA_TABELA} vazia ou inacessível.`);
-        return null;
+        return lyraIndice;   // fica a cópia, se houver
       }
 
-      const idx = new Map();
-      data.forEach(r => {
-        if (!r.slug) return;
-        const song = {
-          slug: r.slug,
-          title: r.title,
-          artist: r.artist,
-          base_key: r.base_key,
-          // o site transpõe sozinho, então todo tom fica disponível,
-          // mesmo quando o Lyra só cadastrou o original
-          keys: lyraDozeTons(r.base_key) || r.available_keys || [],
-          versao: r.updated_at || "",       // muda quando a cifra é editada
-          has_chords: true,
-        };
-        [lyraNorm(r.title), lyraChaveCurta(r.title)].forEach(k => {
-          if (k && !idx.has(k)) idx.set(k, song);
-        });
-      });
+      const idx = lyraMontarIndice(data);
+      try { localStorage.setItem(LYRA_INDICE_COPIA, JSON.stringify(data)); } catch (e) {}
 
       lyraIndice = idx;
+      lyraIndiceFresco = true;
       if (forcar) lyraCacheMusica.clear();
       // o índice é a fonte da verdade: o cache de buscas antigas
       // (que pode ter gravado "sem cifra" por falha de rede) sai de cena
@@ -340,7 +367,7 @@ async function lyraCarregarIndice(forcar = false) {
       return idx;
     } catch (e) {
       console.warn(`Não consegui ler ${LYRA_TABELA}:`, e);
-      return null;
+      return lyraIndice;   // sem rede: fica a cópia, se houver
     } finally {
       lyraIndiceEmCurso = null;
     }
@@ -350,7 +377,7 @@ async function lyraCarregarIndice(forcar = false) {
 }
 
 lyraCarregarIndice();
-setTimeout(() => { if (!lyraIndice) lyraCarregarIndice(); }, 4000);
+setTimeout(() => { if (!lyraIndiceFresco) lyraCarregarIndice(); }, 4000);
 
 // casa o nome do repertório com o título do banco
 function lyraNoIndice(nome) {
@@ -1887,3 +1914,6 @@ async function lyraTelaAcesa() {
 new MutationObserver(lyraTelaAcesa)
   .observe(document.body, { attributes: true, attributeFilter: ["class"] });
 document.addEventListener("visibilitychange", lyraTelaAcesa);
+
+// o índice da última visita, já na primeira pintura (ver lyraIndiceDaCopia)
+lyraIndiceDaCopia();

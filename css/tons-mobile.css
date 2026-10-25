@@ -191,7 +191,9 @@
 .tl-campo-original { display: none !important; }
 
 .tl-campo.tl-campo {
-  display: inline-flex !important;
+  /* sem !important: regra da tela que esconde o campo (como a do
+     ministrante do culto para quem não está logado) tem que vencer */
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -279,3 +281,6 @@
 }
 .tl-tons-busca:focus { border-color: #f0b93a; }
 .tl-tons-opcao[hidden] { display: none; }
+
+/* quem não está logado vê só o nome do ministrante, sem o campo */
+body.read-only .tl-campo.culto-escala-sel { display: none; }
