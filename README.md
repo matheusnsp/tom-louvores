@@ -128,7 +128,7 @@ Edite **só** a lista `MINISTRANTES` no `js/config.js`:
 const MINISTRANTES = ["Raphaela", "Daniela", "Cris", "Mirian", "Pr. Humberto"];
 ```
 
-Os filtros, os formulários, a escala e o número de ministrantes no topo do repertório saem dessa lista. Escreva o nome igual ao que está na escala. Depois aumente o `CACHE` no `sw.js`.
+Os filtros, os formulários e a escala saem dessa lista. Escreva o nome igual ao que está na escala. Depois aumente o `CACHE` no `sw.js`.
 
 ### Novo culto fixo na semana
 

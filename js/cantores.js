@@ -10,6 +10,9 @@
 //  músicas dele. Para ver todos os cantores de uma vez, com as
 //  músicas embaixo de cada um, há o "Agrupar → Cantor" da lista.
 //
+//  O total de cantores também aparece no topo do repertório, junto
+//  de Músicas e Tons.
+//
 //  O cantor vem da cifra (artista.js): música sem cifra cadastrada
 //  não tem cantor e só aparece com o filtro em "Todos".
 // ============================================================
@@ -39,6 +42,10 @@
       if (c) conta.set(c, (conta.get(c) || 0) + 1);
     });
     const nomes = [...conta.keys()].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    //  o total no topo do repertório (no lugar do de ministrantes).
+    //  "Medley" não é cantor: fica fora da conta.
+    const total = document.getElementById("totalCantores");
+    if (total) total.textContent = nomes.filter(n => n !== "Medley").length;
     const nova = nomes.map(n => n + conta.get(n)).join("|");
     if (nova === assinatura) return;
     assinatura = nova;
