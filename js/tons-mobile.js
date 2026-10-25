@@ -47,6 +47,7 @@
     // filtros do repertório
     "#filtroMin":        { titulo: "Ministrante", todos: "Todos os ministrantes", vazio: "Ministrantes" },
     "#filtroTom":        { titulo: "Tom", todos: "Todos os tons", vazio: "Tons" },
+    "#filtroCantor":     { titulo: "Cantor", todos: "Todos os cantores", vazio: "Cantores", busca: "Procurar cantor" },
     // ministrante escalado no culto
     "select.culto-escala-sel": { titulo: "Ministrante do culto", todos: "Ninguém escalado", vazio: "Escalar", compacto: true },
   };
@@ -91,7 +92,9 @@
       const quem = partes.length > 1 ? partes.slice(1).join(" · ") : "";
       return seloTom(tom) + (quem ? `<span class="tl-campo-quem">${esc(quem)}</span>` : "");
     }
-    return `<span class="tl-campo-nome">${esc(texto)}</span>`;
+    //  "Fernandinho · 5 músicas": o nome, e o resto mais apagado
+    return `<span class="tl-campo-nome">${esc(partes[0])}</span>` +
+      (partes.length > 1 ? `<span class="tl-campo-quem">${esc(partes.slice(1).join(" · "))}</span>` : "");
   }
 
   function desenhar(select) {
@@ -209,12 +212,13 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "tl-tons-opcao";
+      btn.dataset.valor = item.valor;
       //  "Gm · Todos" (tom com quem canta): o tom grande, o resto menor
       const partes = item.texto.split(" · ");
       if (partes.length > 1) {
         btn.classList.add("com-quem");
         btn.innerHTML = `<b></b><small></small>`;
-        btn.querySelector("b").textContent = simbolo(partes[0]);
+        btn.querySelector("b").textContent = ehTom(partes[0]) ? simbolo(partes[0]) : partes[0];
         btn.querySelector("small").textContent = partes.slice(1).join(" · ");
       } else {
         btn.textContent = ehTom(item.valor) ? simbolo(item.texto) : item.texto;
@@ -243,6 +247,26 @@
       grade.className = "tl-tons-grade" + (classe ? " " + classe : "");
       lista.forEach(item => grade.appendChild(botao(item)));
       painel.appendChild(grade);
+    }
+
+    //  Lista comprida (os cantores): uma busca no topo do painel
+    let busca = null;
+    if (cfg.busca) {
+      busca = document.createElement("input");
+      busca.type = "search";
+      busca.className = "tl-tons-busca";
+      busca.placeholder = cfg.busca;
+      busca.setAttribute("aria-label", cfg.busca);
+      busca.autocomplete = "off";
+      painel.appendChild(busca);
+      const semAcento = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      busca.addEventListener("input", () => {
+        const q = semAcento(busca.value.trim());
+        painel.querySelectorAll(".tl-tons-opcao").forEach(b => {
+          if (!b.dataset.valor) return;   // "Todos" fica sempre
+          b.hidden = !!q && !semAcento(b.dataset.valor).includes(q);
+        });
+      });
     }
 
     //  "Todos os tons", "Ninguém escalado": o vazio como escolha
@@ -284,7 +308,10 @@
     overlay.appendChild(painel);
     document.body.appendChild(overlay);
     document.body.classList.add("tl-tons-aberto");
-    (painel.querySelector(".tl-tons-opcao.selecionado") || fechar).focus();
+    //  com busca, o foco vai para ela só no computador: no celular o
+    //  teclado subiria por cima da lista antes de a pessoa querer
+    if (busca && matchMedia("(pointer: fine)").matches) busca.focus();
+    else (painel.querySelector(".tl-tons-opcao.selecionado") || fechar).focus();
   }
 
   //  Rede de segurança: um toque no select escondido (se algum dia

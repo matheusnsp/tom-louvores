@@ -11,7 +11,7 @@
 //   • cabeçalho de grupo gruda no topo enquanto você rola
 //   • índice lateral A–Z pula direto pra letra (218 músicas
 //     é muita rolagem)
-//   • agrupar por LETRA, por TOM ou por MAIS RECENTE
+//   • agrupar por LETRA, por TOM, por MAIS RECENTE ou por CANTOR
 //   • teclado: ↑ ↓ anda, Enter abre, / foca a busca
 // ============================================================
 
@@ -19,7 +19,7 @@ const VISTA_KEY   = "tl_vista";
 const VISTA_GRUPO = "tl_vista_grupo";
 
 let vistaModo    = localStorage.getItem(VISTA_KEY)   || "lista";  // lista | cards
-let vistaAgrupar = localStorage.getItem(VISTA_GRUPO) || "letra";  // letra | tom | recente
+let vistaAgrupar = localStorage.getItem(VISTA_GRUPO) || "letra";  // letra | tom | recente | uso | cantor
 let vistaLista   = [];
 
 // ── estilo (injetado, para não mexer no style.css) ──────────
@@ -114,6 +114,13 @@ let vistaLista   = [];
     color:var(--gray2);
   }
   .lst-grupo i{flex:1;height:1px;background:transparent;font-style:normal}
+  /* agrupado por cantor: o nome é longo, então título menor numa
+     linha só, e o cantor não se repete embaixo de cada música */
+  .lst-wrap.cantor .lst-grupo b{
+    font-size:19px;letter-spacing:0;min-width:0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .lst-wrap.cantor .lst-nome .tl-artista{display:none}
 
   /* a linha */
   .lst-row{
@@ -294,6 +301,20 @@ function vistaAgrupada(lista) {
       a[0].localeCompare(b[0], "pt-BR", { numeric: true }));
   }
 
+  //  por cantor: cada cantor com as músicas dele. O cantor vem da
+  //  cifra (artista.js); medley e música sem cifra vão para o fim.
+  if (vistaAgrupar === "cantor") {
+    const cantorDe = m => (typeof tlArtistaDe === "function" && tlArtistaDe(m.nome)) || "Sem cantor";
+    lista.forEach(m => {
+      const c = cantorDe(m);
+      if (!grupos.has(c)) grupos.set(c, []);
+      grupos.get(c).push(m);
+    });
+    const peso = n => n === "Sem cantor" ? 2 : n === "Medley" ? 1 : 0;
+    return [...grupos.entries()].sort((a, b) =>
+      peso(a[0]) - peso(b[0]) || a[0].localeCompare(b[0], "pt-BR"));
+  }
+
   if (vistaAgrupar === "recente") {
     const ordenada = [...lista].sort((a, b) =>
       new Date(b.criado_em || 0) - new Date(a.criado_em || 0));
@@ -370,6 +391,7 @@ function vistaRenderLista(lista) {
 
   const grupos = vistaAgrupada(lista);
   const total  = lista.length;
+  wrap.classList.toggle("cantor", vistaAgrupar === "cantor");
 
   const barra = `
     <div class="lst-bar">
@@ -381,6 +403,7 @@ function vistaRenderLista(lista) {
         <button data-g="tom"${vistaAgrupar === "tom" ? ' class="on"' : ""}>Tom</button>
         <button data-g="recente"${vistaAgrupar === "recente" ? ' class="on"' : ""}>Recentes</button>
         <button data-g="uso"${vistaAgrupar === "uso" ? ' class="on"' : ""}>Uso</button>
+        <button data-g="cantor"${vistaAgrupar === "cantor" ? ' class="on"' : ""}>Cantor</button>
       </span>
     </div>`;
 

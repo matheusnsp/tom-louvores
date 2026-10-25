@@ -184,7 +184,8 @@ delete from public.sugestoes where status <> 'aprovada' and criado_em > now() - 
 - **Entrar**: "🔒 Entrar", no topo. Sem login, o site é só leitura.
 - **Adicionar música**: "+ Nova música", com nome, tom e ministrante.
 - **Editar**: abra a música e use o lápis. **Excluir**: o ✕ na linha da lista (com login).
-- **Filtrar**: busca, ministrante e tom; no repertório, agrupe por letra, tom ou mais recentes.
+- **Filtrar**: busca, ministrante, tom e **cantor**; no repertório, agrupe por letra, tom, mais recentes, uso ou **cantor** (cada cantor com as músicas dele). O cantor vem da cifra (`js/artista.js`): música sem cifra cadastrada fica em "Sem cantor".
+- **Campos de tom e ministrante**: são todos o mesmo campo, com o mesmo painel de escolha (`js/tons-mobile.js`). Campo novo de tom ou ministrante? Acrescente o `id` dele em `CAMPOS`, no começo desse arquivo.
 - **Montar o culto**: na página inicial, escolha as músicas de cada culto e o tom.
 - **Ver cultos passados**: na página inicial, as setas ‹ › ao lado do **Calendário** vão de culto em culto. Para trás, a seta passa só pelos cultos que tiveram louvores, até o mais antigo; **Próximo culto** volta para o de agora. Enquanto você olha outro dia, a página não volta sozinha para o próximo culto.
 

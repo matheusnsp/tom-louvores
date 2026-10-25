@@ -267,3 +267,15 @@
 
 /* duas grades seguidas sem título ("Todos os tons" e "Orig."): o mesmo respiro de dentro da grade */
 .tl-tons-grade + .tl-tons-grade { margin-top: 8px; }
+
+/* busca dentro do painel (cantores) */
+.tl-tons-busca {
+  width: 100%; margin: 0 0 14px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid #39393d; border-radius: 999px;
+  color: #fff; font-family: var(--font-ui); font-size: 16px;
+  outline: none;
+}
+.tl-tons-busca:focus { border-color: #f0b93a; }
+.tl-tons-opcao[hidden] { display: none; }
