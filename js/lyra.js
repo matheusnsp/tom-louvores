@@ -506,21 +506,6 @@ function lyraKB(bytes) {
   return bytes < 1024 ? `${bytes} B` : `${Math.round(bytes / 1024)} KB`;
 }
 
-const lyraTemCompressao =
-  typeof CompressionStream !== "undefined" && typeof DecompressionStream !== "undefined";
-
-async function lyraComprimir(texto) {
-  if (!lyraTemCompressao) return null;
-  const fluxo = new Blob([texto]).stream().pipeThrough(new CompressionStream("gzip"));
-  const bytes = new Uint8Array(await new Response(fluxo).arrayBuffer());
-  let bin = "";
-  const passo = 0x8000;
-  for (let i = 0; i < bytes.length; i += passo) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + passo));
-  }
-  return btoa(bin);
-}
-
 async function lyraDescomprimir(b64) {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
@@ -592,13 +577,12 @@ async function lyraDoDisco(slug) {
 async function lyraGravarNoDisco(slug, musica) {
   const txt = lyraMusicaParaTexto(musica);
   const v = lyraVersaoDoSlug(slug) || "";
-  let reg;
-  try {
-    const z = await lyraComprimir(txt);
-    reg = z ? { z: 1, d: z, v } : { z: 0, d: txt, v };
-  } catch (e) {
-    reg = { z: 0, d: txt, v };
-  }
+  //  Sem comprimir: num celular mais lento, comprimir as 124 cifras
+  //  levava uns 3 s e era quase todo o tempo do "Baixar cifras". Sem
+  //  compressão elas ocupam uns 360 KB, folgado no armazenamento, e
+  //  abrem mais rápido. As já guardadas comprimidas (z: 1) continuam
+  //  sendo lidas.
+  const reg = { z: 0, d: txt, v };
   // grava por cima do registro anterior deste mesmo slug
   localStorage.setItem(LYRA_DISCO_PREFIXO + slug, JSON.stringify(reg));
   lyraMarcarBaixada(slug);
@@ -775,11 +759,12 @@ async function lyraBaixarTudo() {
     lyraAtualizarBotaoBaixar();
   };
 
-  //  As letras do Lyra vêm por trás e NÃO seguram o botão: elas
+  //  As letras do Lyra vêm por trás e NÃO seguram as cifras: elas
   //  ficam guardadas no aparelho pelo tlLyra (lyra-api.js), de onde
   //  o modo Letra lê sem internet. Antes o download esperava por
   //  elas (uns 4 s, às vezes até 25 s) com as cifras já prontas.
-  if (window.tlLyra) tlLyra.letras(true).catch(() => {});
+  //  Só a recarga do fim espera por elas.
+  const letrasPromessa = window.tlLyra ? tlLyra.letras(true).catch(() => null) : Promise.resolve(null);
 
   //  A lista fresca (música nova entra, apagada sai) e as cifras
   //  completas vêm ao mesmo tempo, não uma depois da outra.
@@ -836,11 +821,29 @@ async function lyraBaixarTudo() {
   else if (falhas) toast(`${ok} salvas, ${falhas} com falha.`, true);
   else             toast(`${ok} ${ok === 1 ? "cifra guardada" : "cifras guardadas"} ✓${baixado}`);
 
-  //  Sem recarregar a página: as cifras novas já estão em uso (na
-  //  memória e no aparelho). Só a lista é redesenhada, para marcar
-  //  o que passou a abrir sem internet.
-  if (typeof PAGINA !== "undefined" && PAGINA === "repertorio" && typeof filtrar === "function") filtrar();
-  else if (typeof renderCultos === "function" && document.getElementById("cultosGrid")) renderCultos();
+  //  Recarrega no fim, para a página passar a usar o que acabou de
+  //  ser guardado. Espera a mensagem ser lida (1,2 s) e as letras
+  //  terminarem de chegar (senão a recarga cortaria o download delas),
+  //  mas nunca mais de 8 s. Com o leitor aberto a recarga é adiada,
+  //  senão a cifra que a pessoa está lendo sumiria no meio do louvor.
+  if (!cheio && !falhas) {
+    Promise.all([
+      new Promise(ok => setTimeout(ok, 1200)),
+      Promise.race([letrasPromessa, new Promise(ok => setTimeout(ok, 8000))]),
+    ]).then(lyraRecarregarDepoisDeBaixar);
+  }
+}
+
+function lyraRecarregarDepoisDeBaixar() {
+  const leitorAberto = document.getElementById("lyraOverlay")?.classList.contains("open");
+  const modalAberto  = document.querySelector(".overlay-bg.open, .overlay.open");
+
+  if (leitorAberto || modalAberto) {
+    // tenta de novo quando a tela estiver livre
+    setTimeout(lyraRecarregarDepoisDeBaixar, 2000);
+    return;
+  }
+  location.reload();
 }
 
 if (document.readyState === "loading") {
