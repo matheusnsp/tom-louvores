@@ -775,8 +775,23 @@ async function lyraBaixarTudo() {
     lyraAtualizarBotaoBaixar();
   };
 
-  //  lista fresca: música nova no banco entra, apagada sai
-  await lyraCarregarIndice(true);
+  //  As letras do Lyra vêm por trás e NÃO seguram o botão: elas
+  //  ficam guardadas no aparelho pelo tlLyra (lyra-api.js), de onde
+  //  o modo Letra lê sem internet. Antes o download esperava por
+  //  elas (uns 4 s, às vezes até 25 s) com as cifras já prontas.
+  if (window.tlLyra) tlLyra.letras(true).catch(() => {});
+
+  //  A lista fresca (música nova entra, apagada sai) e as cifras
+  //  completas vêm ao mesmo tempo, não uma depois da outra.
+  let linhas;
+  try {
+    [, linhas] = await Promise.all([lyraCarregarIndice(true), lyraLerCifrasCompletas()]);
+  } catch (e) {
+    console.warn("Download das cifras falhou:", e);
+    encerrar();
+    toast("Não consegui baixar as cifras. Verifique a conexão.", true);
+    return;
+  }
   const slugs = lyraSlugsDoIndice();
   if (!slugs.length) {
     encerrar();
@@ -784,49 +799,34 @@ async function lyraBaixarTudo() {
     return;
   }
   lyraLimparOrfas();
-
-  //  As letras do Lyra vêm junto (em paralelo), para o modo Letra
-  //  funcionar sem internet. Se não vierem, o download segue igual.
-  const letrasPromessa = window.tlLyra
-    ? Promise.race([tlLyra.letras(true).catch(() => null), new Promise(ok => setTimeout(() => ok(null), 25000))])
-    : Promise.resolve(null);
-
-  let linhas;
-  try {
-    linhas = await lyraLerCifrasCompletas();
-  } catch (e) {
-    console.warn("Download das cifras falhou:", e);
-    encerrar();
-    toast("Não consegui baixar as cifras. Verifique a conexão.", true);
-    return;
-  }
   const porSlug = new Map((linhas || []).map(d => [d.slug, d]));
-  const letras = await letrasPromessa;
 
-  let ok = 0, falhas = 0, cheio = false;
-
-  for (let i = 0; i < slugs.length; i++) {
-    const pct = Math.round((i / slugs.length) * 100);
+  //  Gravação em paralelo: cada música é comprimida por conta própria
+  //  (antes, uma de cada vez, em fila).
+  let ok = 0, falhas = 0, cheio = false, prontas = 0;
+  const marcar = () => {
+    const pct = Math.round((++prontas / slugs.length) * 100);
     lyraAtualizarBotaoBaixar(`Baixando · ${pct}%`);
     lyraProgresso(pct);
-    const d = porSlug.get(slugs[i]);
-    if (!d) { falhas++; continue; }
+  };
+  await Promise.all(slugs.map(async slug => {
+    const d = porSlug.get(slug);
+    if (!d) { falhas++; marcar(); return; }
+    if (cheio) { marcar(); return; }
     try {
       const musica = lyraMusicaDaLinha(d);
-      const doLyra = letras && letras.get(slugs[i]);
-      if (doLyra && doLyra.lyrics) musica.lyrics = doLyra.lyrics;
-      lyraCacheMusica.set(slugs[i], musica);
-      await lyraGravarNoDisco(slugs[i], musica);
+      //  a letra que já estava guardada com a cifra continua junto
+      const antiga = lyraCacheMusica.get(slug);
+      if (antiga && antiga.lyrics) musica.lyrics = antiga.lyrics;
+      lyraCacheMusica.set(slug, musica);
+      await lyraGravarNoDisco(slug, musica);
       ok++;
     } catch (e) {
-      if (e && (e.name === "QuotaExceededError" || /quota|exceeded/i.test(e.message || ""))) {
-        cheio = true;
-        break;
-      }
-      console.warn("Não baixei", slugs[i], e);
-      falhas++;
+      if (e && (e.name === "QuotaExceededError" || /quota|exceeded/i.test(e.message || ""))) cheio = true;
+      else { console.warn("Não baixei", slug, e); falhas++; }
     }
-  }
+    marcar();
+  }));
 
   encerrar();
 
@@ -836,23 +836,11 @@ async function lyraBaixarTudo() {
   else if (falhas) toast(`${ok} salvas, ${falhas} com falha.`, true);
   else             toast(`${ok} ${ok === 1 ? "cifra guardada" : "cifras guardadas"} ✓${baixado}`);
 
-  //  Recarrega no fim, para a página passar a usar o que acabou de
-  //  ser guardado. A espera de 1,6s deixa a mensagem ser lida — e
-  //  com o leitor aberto a recarga é adiada, senão a cifra que a
-  //  pessoa está lendo sumiria da tela no meio do louvor.
-  if (!cheio && !falhas) setTimeout(lyraRecarregarDepoisDeBaixar, 1600);
-}
-
-function lyraRecarregarDepoisDeBaixar() {
-  const leitorAberto = document.getElementById("lyraOverlay")?.classList.contains("open");
-  const modalAberto  = document.querySelector(".overlay-bg.open, .overlay.open");
-
-  if (leitorAberto || modalAberto) {
-    // tenta de novo quando a tela estiver livre
-    setTimeout(lyraRecarregarDepoisDeBaixar, 2000);
-    return;
-  }
-  location.reload();
+  //  Sem recarregar a página: as cifras novas já estão em uso (na
+  //  memória e no aparelho). Só a lista é redesenhada, para marcar
+  //  o que passou a abrir sem internet.
+  if (typeof PAGINA !== "undefined" && PAGINA === "repertorio" && typeof filtrar === "function") filtrar();
+  else if (typeof renderCultos === "function" && document.getElementById("cultosGrid")) renderCultos();
 }
 
 if (document.readyState === "loading") {

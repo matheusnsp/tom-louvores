@@ -408,8 +408,10 @@ if ("serviceWorker" in navigator) {
     try {
       const reg = await navigator.serviceWorker.register("sw.js");
 
-      // uma recarga só, para não entrar em laço
-      let jaTrocou = false;
+      // uma recarga só, para não entrar em laço. E só quando havia
+      // uma versão antiga rodando: na primeira visita não há o que
+      // trocar, e a recarga só fazia a página abrir duas vezes.
+      let jaTrocou = !navigator.serviceWorker.controller;
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (jaTrocou) return;
         jaTrocou = true;

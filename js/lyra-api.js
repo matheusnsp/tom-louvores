@@ -100,7 +100,14 @@ window.tlLyra = (() => {
 
   //  Só a letra de uma música (mapa geral primeiro, depois a consulta).
   async function letraDe(slug) {
-    if (letrasMapa && letrasMapa.get(slug)?.lyrics) return letrasMapa.get(slug).lyrics;
+    //  ainda sem o mapa nesta abertura: vale o guardado no aparelho,
+    //  mesmo velho (é o que faz o modo Letra funcionar sem internet)
+    let mapa = letrasMapa;
+    if (!mapa) {
+      const g = ler(LETRAS_CHAVE);
+      if (g && Array.isArray(g.letras)) mapa = new Map(g.letras.filter(x => x && x.slug).map(x => [x.slug, x]));
+    }
+    if (mapa && mapa.get(slug)?.lyrics) return mapa.get(slug).lyrics;
     const m = await musica(slug);
     return (m && m.lyrics) || "";
   }
