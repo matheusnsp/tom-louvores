@@ -40,7 +40,7 @@
   }
 
   function atualizar() {
-    document.querySelectorAll(".culto-escala-sel").forEach(ajustar);
+    document.querySelectorAll("select.culto-escala-sel:not(.tl-campo-original)").forEach(ajustar);
   }
 
   document.addEventListener("change", e => {

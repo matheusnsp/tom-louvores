@@ -181,3 +181,89 @@
   .tl-tons-grade.tl-tons-nomes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tl-tons-grade.tl-tons-lista { grid-template-columns: 1fr; }
 }
+
+/* ── o campo de tom/ministrante (js/tons-mobile.js) ──────────────
+   Um visual só em todo o site: pílula, tom no selo dourado (o mesmo
+   dos louvores do culto) e quem canta ao lado. O <select> de
+   verdade fica escondido; o campo o espelha. As classes do select
+   vão junto para cada tela encaixar a largura; o visual é daqui,
+   por isso o .tl-campo.tl-campo e os !important. */
+.tl-campo-original { display: none !important; }
+
+.tl-campo.tl-campo {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 7px 14px 7px 18px !important;
+  background: rgba(255,255,255,0.03) !important;
+  background-image: none !important;
+  border: 1px solid var(--fio) !important;
+  border-radius: var(--pill, 999px) !important;
+  color: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, background-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.tl-campo.tl-campo:hover:not(:disabled) { border-color: var(--gray2) !important; }
+.tl-campo.tl-campo:focus-visible {
+  outline: none;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(var(--gold-rgb), 0.15);
+}
+.tl-campo.tl-campo:disabled { opacity: .45; cursor: default; }
+
+.tl-campo-valor {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+  overflow: hidden;
+}
+.tl-campo-vazio { color: var(--gray2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-campo-nome  { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-campo-quem  { color: var(--dim); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* o selo do tom: o mesmo .culto-louvor-badge da lista do culto */
+.tl-campo-tom {
+  flex-shrink: 0;
+  font-family: var(--font-tom); font-weight: 700;
+  font-size: 15px; line-height: 1; letter-spacing: 0;
+  color: var(--gold-hi);
+  background: rgba(var(--gold-rgb), 0.10);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  min-width: 40px; text-align: center;
+}
+.tl-campo-tom .tom-m { font-size: .8em; }
+
+.tl-campo-seta { flex-shrink: 0; width: 14px; height: 14px; color: var(--gray); }
+
+/* compacto: o ministrante na linha do culto, da largura do nome */
+.tl-campo.tl-campo-compacto {
+  width: auto !important;
+  flex: 0 0 auto !important;
+  min-height: 0;
+  padding: 7px 12px 7px 15px !important;
+  font-size: 14px;
+}
+
+/* filtros do repertório: mesma altura dos outros botões da fila */
+.filtros-row .tl-campo.tl-campo { min-height: 46px; }
+
+/* o painel na fonte do site (antes saía na fonte do sistema) */
+.tl-tons-overlay,
+.tl-tons-overlay button { font-family: var(--font-ui); }
+.tl-tons-topo strong { font-weight: 700; letter-spacing: -0.01em; }
+.tl-tons-opcao { font-family: var(--font-tom); letter-spacing: 0; }
+.tl-tons-grade.tl-tons-largo .tl-tons-opcao { font-family: var(--font-ui); }
+
+/* duas grades seguidas sem título ("Todos os tons" e "Orig."): o mesmo respiro de dentro da grade */
+.tl-tons-grade + .tl-tons-grade { margin-top: 8px; }
