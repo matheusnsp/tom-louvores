@@ -140,9 +140,8 @@ function chatAbrir() {
 
   const p = peMontar();
   const corpo = p.querySelector("#peCorpo");
-  //  O chat só carrega na primeira abertura e depois fica vivo
-  //  por trás: reabrir é instantâneo e a conversa volta onde
-  //  parou.
+  //  O chat carrega ao abrir o painel e é descarregado ao fechar
+  //  (ver peFechar): ele não fica vivo por trás.
   if (!corpo.querySelector("iframe")) {
     const f = document.createElement("iframe");
     f.src = CHAT_URL;
@@ -160,6 +159,13 @@ function peFechar() {
   document.getElementById("pePainel").classList.remove("on");
   document.body.classList.remove("painel-aberto");
   document.getElementById("lyraChat")?.classList.remove("on");
+  //  Com o painel fechado, o chat sai da página. O NVB Chat passou
+  //  a mandar notificação própria de cada mensagem; vivo por trás,
+  //  ele avisava junto com o chat-aviso.js e chegavam duas
+  //  notificações da mesma mensagem. Quem avisa com o painel
+  //  fechado é só o Tom Louvores (nome e texto da mensagem).
+  //  Reabrir recarrega a conversa, que é rápida.
+  document.querySelector("#peCorpo iframe")?.remove();
 }
 
 function chatAlternar() {
