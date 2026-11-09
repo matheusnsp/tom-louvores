@@ -201,6 +201,7 @@
    páginas elas vão para o menu ☰). Aqui não há menu: Voltar e
    Salvar continuam no topo. */
 @media (max-width: 900px) {
+  .ce-page .header-right > #ceLimpar,
   .ce-page .header-right > #ceVoltar,
   .ce-page .header-right > #ceHeaderSalvar { display: inline-flex !important; }
 }
@@ -212,7 +213,8 @@
   .ce-page .header-inner { padding-left: 14px; padding-right: 14px; }
   .ce-page .logo-sub, .ce-page .logo-sep { display: none; }
   .ce-page .logo-img { max-width: min(34vw, 125px); max-height: 34px; height: auto; width: auto; }
-  .ce-page .header-right > #ceVoltar { padding: 9px 14px; font-size: 13px; }
+  .ce-page .header-right > #ceVoltar,
+  .ce-page .header-right > #ceLimpar { padding: 9px 14px; font-size: 13px; }
   /* no celular o Salvar mora embaixo, ao alcance do polegar */
   .ce-page .header-right > #ceHeaderSalvar { display: none !important; }
 
