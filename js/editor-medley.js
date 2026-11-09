@@ -290,7 +290,10 @@
     if (e.key === "Escape") fecharLista();
     if (e.key === "Enter") { e.preventDefault(); lista.querySelector(".ce-lyra-item")?.click(); }
   });
-  document.addEventListener("click", e => { if (!bloco.contains(e.target)) fecharLista(); });
+  //  Só toque/clique de verdade fecha a lista: o editor salva o
+  //  rascunho "clicando" num botão invisível a cada 700ms, e isso
+  //  fechava a lista logo depois de ela aparecer.
+  document.addEventListener("click", e => { if (e.isTrusted && !bloco.contains(e.target)) fecharLista(); });
 
   // ── montar ──────────────────────────────────────────────────
   //  "Mesmo tom" é a mesma escala, não a mesma nota: uma música em
