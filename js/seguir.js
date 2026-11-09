@@ -147,12 +147,15 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
 (function snEstilo() {
   const st = document.createElement("style");
   st.textContent = `
-  /*  Pastilha no topo do leitor. Quem transmite precisa saber que
-      está transmitindo, e quem segue precisa de um jeito óbvio de
-      se soltar — sem isso a função vira tela possuída. */
+  /*  Pastilha no topo do leitor, logo abaixo do cabeçalho (ela
+      entra no fluxo, depois do .lyra-hd — ver snSelo). Flutuando
+      por cima do cabeçalho ela tampava os botões em telas médias.
+      Quem transmite precisa saber que está transmitindo, e quem
+      segue precisa de um jeito óbvio de se soltar — sem isso a
+      função vira tela possuída. */
   .sn-selo{
-    position:absolute;left:50%;transform:translateX(-50%);
-    top:calc(6px + env(safe-area-inset-top));z-index:80;
+    align-self:center;flex:0 0 auto;
+    margin:8px auto 2px;
     display:none;align-items:center;gap:7px;
     background:rgba(28,28,28,.94);
     border:1px solid var(--gray3);
@@ -200,15 +203,12 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
 
   /*  No celular a pastilha não aparece: o estado e as ações moram
       no botão Seguir da barra flutuante de baixo (opcoes.js, que
-      lê snEstadoBarra()). Flutuando aqui em cima ela tampava os
-      botões do cabeçalho. No computador o cabeçalho tem folga e
-      ela segue flutuando no meio. */
+      lê snEstadoBarra()). */
   @media (max-width: 820px), (pointer: coarse) {
     .sn-selo.on{display:none}
   }
 
-  /* o selo não briga com a barra flutuante nem com os painéis */
-  #lyraBox:has(#opPainel.on) .sn-selo,
+  /* o selo não briga com a folha rápida do celular */
   #lyraBox:has(#opRapido.on) .sn-selo{display:none}`;
   document.head.appendChild(st);
 })();
