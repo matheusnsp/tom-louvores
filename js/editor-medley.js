@@ -275,6 +275,20 @@
   document.addEventListener("click", e => { if (!bloco.contains(e.target)) fecharLista(); });
 
   // ── montar ──────────────────────────────────────────────────
+  //  "Mesmo tom" é a mesma escala, não a mesma nota: uma música em
+  //  Am levada para o tom G vai para Em (a relativa menor de G),
+  //  não para Gm — Gm tem outras notas e não emenda com G. E uma
+  //  música maior num medley em Em vai para G. Maior com maior e
+  //  menor com menor seguem direto.
+  function tomDaMusica(tomDe, alvo) {
+    const de = partesTom(tomDe), para = partesTom(alvo);
+    if (de.menor === para.menor) return alvo;
+    const bemol = usaBemol(alvo);
+    return de.menor
+      ? mover(para.raiz, -3, bemol) + "m"   // menor num medley maior: relativa menor
+      : mover(para.raiz, 3, bemol);         // maior num medley menor: relativa maior
+  }
+
   //  Tira o "Tom:" de cada música (fica um só, no topo) e o lixo
   //  das pontas. O resto da cifra vai como está: é a pessoa quem
   //  decide o que cortar, no campo, depois.
@@ -296,13 +310,16 @@
 
     const partes = [];
     const avisos = [];
+    const resumo = [];
     for (const s of escolhidas) {
       let c = null;
       try { c = await cifraDe(s.slug); } catch { /* avisa abaixo */ }
       if (!c || !c.chords) { avisos.push(`${s.title}: sem cifra no banco`); continue; }
       const de = c.base_key || s.base_key;
-      const texto = de ? transporTexto(c.chords, de, alvo) : c.chords;
+      const para = de ? tomDaMusica(de, alvo) : null;
+      const texto = para ? transporTexto(c.chords, de, para) : c.chords;
       if (!de) avisos.push(`${s.title}: sem tom cadastrado, ficou como estava`);
+      else resumo.push(`${(c.title || s.title).trim()} em ${para}`);
       partes.push(`[${(c.title || s.title).trim()}]\n${limpar(texto)}`);
     }
 
@@ -325,7 +342,7 @@
     const tom = $("tom");
     if (tom) { tom.value = alvo; tom.dispatchEvent(new Event("change", { bubbles: true })); }
 
-    msg.textContent = `Medley montado em ${alvo} com ${partes.length} músicas. Ajeite a cifra abaixo e publique.`
+    msg.textContent = `Medley montado em ${alvo}: ${resumo.join(", ")}. Ajeite a cifra abaixo e publique.`
       + (avisos.length ? ` Atenção: ${avisos.join("; ")}.` : "");
     botao.disabled = false;
     cifra.scrollIntoView({ behavior: "smooth", block: "start" });
