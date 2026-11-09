@@ -247,6 +247,12 @@ Cole ou digite sua cifra aqui..."></textarea>
     "F#m","Gbm","Gm","G#m","Abm","Am","A#m","Bbm","Bm"
   ];
 
+  //  Começa sem tom escolhido: antes a lista abria em "C" e, até a
+  //  cifra chegar do banco, parecia que a música era em C.
+  const vazio = document.createElement("option");
+  vazio.value = "";
+  vazio.textContent = "Tom";
+  $("tom").appendChild(vazio);
   for (const t of tons) {
     const option = document.createElement("option");
     option.value = t;
@@ -374,6 +380,29 @@ Cole ou digite sua cifra aqui..."></textarea>
     detectar();
   }
 
+  //  O site guarda no aparelho a lista de cifras (cantor e tom) e,
+  //  para quem já abriu a música no leitor ou baixou as cifras, o
+  //  texto dela. Com isso o editor abre preenchido na hora; o que
+  //  vem do banco, logo depois, só confirma (ou atualiza).
+  const slugEdicao = slugificar(edicao.titulo);
+  let daCopia = false;
+  try {
+    const indice = JSON.parse(localStorage.getItem("tl_lyra_indice_v1") || "[]");
+    const s = Array.isArray(indice) ? indice.find(x => x && x.slug === slugEdicao) : null;
+    if (s) {
+      if (s.artist && !$("artista").value) $("artista").value = s.artist;
+      if (tons.includes(s.base_key)) { $("tom").value = s.base_key; manual = true; }
+      const reg = JSON.parse(localStorage.getItem("louvores_cifra_v1_" + slugEdicao) || "null");
+      if (reg && !reg.z && typeof reg.d === "string") {
+        const m = JSON.parse(reg.d);
+        const chave = String(s.base_key || m.base_key || "").replace("#", "s").toLowerCase();
+        const texto = m.tons && (m.tons[chave] || Object.values(m.tons)[0]);
+        if (texto) { $("cifra").value = texto; daCopia = true; }
+      }
+    }
+  } catch (_) { /* sem cópia: espera o banco */ }
+  $("resultado").textContent = daCopia ? "Conferindo com o banco…" : "Carregando a cifra…";
+
   (async () => {
     let cifra = null;
 
@@ -409,6 +438,11 @@ Cole ou digite sua cifra aqui..."></textarea>
         $("tom").value = cifra.base_key;
         manual = true;
       }
+    } else if (daCopia) {
+      $("resultado").textContent =
+        "Sem resposta do banco: mostrando a cópia guardada neste aparelho.";
+      window.tlEditorCarregando = false;
+      return;
     } else {
       $("resultado").textContent =
         "Esta música ainda não tem cifra publicada.";
