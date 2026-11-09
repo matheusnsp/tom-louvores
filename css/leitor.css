@@ -1,0 +1,122 @@
+/* ============================================================
+   TOM LOUVORES — o leitor de cifras na linguagem do site
+   Carregar DEPOIS do tons-mobile.css (é o último css do <head>).
+
+   O leitor em si já fala a língua do site: acordes dourados, tags
+   em pílula, barra de vidro. Mas as folhas que sobem de baixo no
+   celular (Tom, Rolagem, Seguir, Instrumento) saíram em outra:
+   quadrados cinza, tom escolhido em branco, sem o dourado. Aqui
+   elas entram no padrão das outras telas — o mesmo das pílulas
+   "Cifra / Letra", dos selos de tom e dos rótulos dourados em
+   caixa alta ("TONS E MINISTRANTES").
+
+   Os estilos originais das folhas moram no opcoes.js; por isso os
+   seletores aqui carregam #lyraBox, para vencerem sem !important.
+   ============================================================ */
+
+/* ── a folha ────────────────────────────────────────────────── */
+#lyraBox .op-rapido {
+  background: var(--black2);
+  border-top: 1px solid var(--line);          /* fio dourado, como o quadro do topo */
+  border-radius: 22px 22px 0 0;
+  padding: 10px 20px calc(24px + env(safe-area-inset-bottom));
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, .55);
+}
+#lyraBox .op-rapido .op-pega {
+  width: 40px; height: 4px; border-radius: 2px;
+  margin: 0 auto 16px; background: rgba(255, 255, 255, .18);
+}
+/* o título da folha é o rótulo dourado do site */
+#lyraBox .op-rapido h4 {
+  margin: 0 0 16px;
+  font-size: 12px; font-weight: 400; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--gold);
+}
+
+/* ── pílulas: o controle genérico das folhas ───────────────── */
+#lyraBox .op-tom-acoes button,
+#lyraBox .op-escolha button {
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--fio);
+  border-radius: var(--pill);
+  color: var(--paper);
+  font-family: var(--font-ui); font-weight: 600; letter-spacing: 0;
+}
+#lyraBox .op-tom-acoes button { font-size: 14px; padding: 12px 8px; }
+#lyraBox .op-tom-acoes .op-restaurar { color: var(--gray); }
+#lyraBox .op-tom-acoes [data-grafia].on,
+#lyraBox .op-escolha button.on {
+  background: var(--gold); border-color: var(--gold); color: var(--on-gold);
+}
+/* lista de escolhas (Seguir, Instrumento): uma pílula por linha */
+#lyraBox .op-escolha { gap: 10px; }
+#lyraBox .op-escolha button {
+  justify-content: center; gap: 10px;
+  font-size: 15px; padding: 15px 18px; text-align: center;
+}
+
+/* ── os tons: os mesmos selos do resto do site ──────────────── */
+#lyraBox .op-tons { gap: 8px; }
+#lyraBox .op-tons button {
+  font-family: var(--font-tom); font-weight: 700; font-size: 15px;
+  color: var(--gold-hi);
+  background: rgba(var(--gold-rgb), .10);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 13px 4px;
+}
+#lyraBox .op-tons button.on {
+  background: var(--gold); border-color: var(--gold); color: var(--on-gold);
+}
+
+/* ── rolagem ────────────────────────────────────────────────── */
+#lyraBox .op-rol button { background: var(--gold); color: var(--on-gold); }
+#lyraBox .op-rol input { accent-color: var(--gold); }
+#lyraBox .op-rol-txt { color: var(--gray2); }
+
+/* ── seguir: a linha de estado ──────────────────────────────── */
+#lyraBox .op-seg-estado {
+  margin: -4px 0 16px; font-size: 14px; line-height: 1.45; color: var(--gray);
+}
+
+/* ── fundo claro ────────────────────────────────────────────
+   A classe .claro fica no próprio #lyraBox (e às vezes num pai),
+   por isso cada regra sai nas duas formas. */
+#lyraBox.claro .op-rapido, .claro #lyraBox .op-rapido {
+  background: #F7F3EC; border-top-color: rgba(var(--gold-rgb), .55);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, .18);
+}
+#lyraBox.claro .op-rapido .op-pega, .claro #lyraBox .op-rapido .op-pega { background: rgba(0, 0, 0, .18); }
+#lyraBox.claro .op-tom-acoes button, .claro #lyraBox .op-tom-acoes button,
+#lyraBox.claro .op-escolha button,   .claro #lyraBox .op-escolha button {
+  background: rgba(0, 0, 0, .04); border-color: rgba(0, 0, 0, .16); color: #242424;
+}
+#lyraBox.claro .op-tom-acoes .op-restaurar, .claro #lyraBox .op-tom-acoes .op-restaurar { color: #6b6b6b; }
+#lyraBox.claro .op-tom-acoes [data-grafia].on, .claro #lyraBox .op-tom-acoes [data-grafia].on,
+#lyraBox.claro .op-escolha button.on,          .claro #lyraBox .op-escolha button.on,
+#lyraBox.claro .op-tons button.on,             .claro #lyraBox .op-tons button.on {
+  background: var(--gold); border-color: var(--gold); color: var(--on-gold);
+}
+#lyraBox.claro .op-tons button, .claro #lyraBox .op-tons button {
+  color: #6E4F05; background: rgba(var(--gold-rgb), .16); border-color: rgba(var(--gold-rgb), .55);
+}
+#lyraBox.claro .op-seg-estado, .claro #lyraBox .op-seg-estado,
+#lyraBox.claro .op-rol-txt,    .claro #lyraBox .op-rol-txt { color: #5a5a5a; }
+
+/* ── o título da cifra (celular), no molde do topo das páginas ──
+   "EQUIPE DE LOUVOR / Repertório" vira "FERNANDINHO / Galileu":
+   o cantor em cima, dourado e espaçado; o nome grande embaixo. */
+@media (max-width: 820px), (pointer: coarse) {
+  #lyraCorpo .lyra-cab { display: flex; flex-direction: column; padding: 16px 0 10px; }
+  #lyraCorpo .lyra-cab p {
+    order: -1; margin: 0 0 6px;
+    font-size: 12px; font-weight: 400; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--gold);
+  }
+  #lyraCorpo .lyra-cab h2 {
+    font-size: 24px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15;
+    color: var(--paper);
+  }
+  #lyraBox.claro .lyra-cab h2, .claro #lyraCorpo .lyra-cab h2 { color: #141414; }
+  #lyraBox.claro .lyra-cab p,  .claro #lyraCorpo .lyra-cab p  { color: #8a6a12; }
+}
