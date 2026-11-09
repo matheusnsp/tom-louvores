@@ -384,3 +384,71 @@ html.app-instalado #lyraTelaBtn { display: none !important; }
      isso. No computador o campo segue com a letra de código menor. */
   #cifra, #cifraTextoIntegrado, .ce-page textarea { font-size: 16px !important; }
 }
+
+/* ── o modal da música (abrir uma música do repertório/culto) ───
+   O que a pessoa veio fazer é abrir a cifra ou a letra: esses dois
+   botões ficam grandes e por último, perto do polegar. Os tons
+   (que também abrem a cifra, já no tom) vêm primeiro; YouTube e
+   Spotify viram pílulas discretas; "Marcar para revisão", que é
+   ação rara da equipe, vira um link pequeno no fim. No celular o
+   modal deixa de ocupar a tela inteira e sobe de baixo, do tamanho
+   do conteúdo. */
+#viewModal .view-bd { display: flex; flex-direction: column; gap: 22px; }
+#viewModal .view-bd > * { order: 5; }
+#viewModal .view-bd > .view-section { order: 1; }
+#viewModal .view-bd > #viewTomCulto { order: 2; }
+#viewModal .view-bd > #viewObsWrap { order: 3; }
+#viewModal .view-bd > #viewLinksWrap { order: 8; }
+#viewModal .view-bd > .rv-box { order: 9; margin: -6px 0 0; }
+
+/* cada tom abre a cifra nele: a linha diz isso */
+#viewModal .view-tons .card-ton-row.ton-abre .ton-row-right::after,
+#viewModal .view-tons .card-ton-row.ton-abre > .ton-abre-ico::before {
+  content: none;
+}
+#viewModal .view-tons .card-ton-row.ton-abre .ton-abre-ico { margin-left: 4px; }
+#viewModal .view-tons .card-ton-row.ton-abre::after {
+  content: "abrir"; order: 10; margin-left: auto;
+  font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--gray2);
+}
+#viewModal .view-tons .card-ton-row.ton-abre .ton-row-right { margin-left: 0; }
+#viewModal .view-tons .card-ton-row.ton-abre .ton-abre-ico { order: 11; }
+
+/* YouTube e Spotify: pílulas discretas, lado a lado */
+#viewModal .view-links-row .view-yt-btn.view-mini {
+  padding: 10px 14px; font-size: 13px; font-weight: 600;
+  background: transparent; border-color: var(--fio); color: var(--dim);
+}
+#viewModal .view-links-row .view-yt-btn.view-mini:hover { border-color: var(--gray3); color: var(--paper); background: transparent; }
+
+/* Cifra e Letra: a ação principal, grandes */
+#viewModal .view-lyra { gap: 10px; }
+#viewModal .view-lyra .view-yt-btn { padding: 15px 18px; font-size: 15px; font-weight: 700; }
+
+/* "Marcar para revisão": link pequeno, no fim, só para a equipe */
+#viewModal .rv-box .rv-btn, #viewModal .rv-box > button, #viewModal .rv-box .rv-marcar {
+  background: none; border: none; padding: 4px 0; color: var(--gray2);
+  font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+}
+#viewModal .rv-box .rv-btn:hover, #viewModal .rv-box > button:hover { color: var(--gold); }
+
+/* celular: folha que sobe de baixo, do tamanho do conteúdo */
+@media (max-width: 600px) {
+  #viewOverlay.overlay-bg { align-items: flex-end; justify-content: stretch; padding: 0; }
+  #viewOverlay .modal {
+    height: auto; max-height: 92dvh;
+    border: 1px solid var(--fio); border-bottom: 0;
+    border-radius: 22px 22px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: viewSobe .26s cubic-bezier(.22, 1, .36, 1);
+  }
+  #viewOverlay .modal-hd { padding-top: 26px; position: relative; }
+  /* a pega da folha */
+  #viewOverlay .modal-hd::before {
+    content: ""; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18);
+  }
+  #viewModal .view-bd { padding: 20px 20px 24px; gap: 20px; }
+  @keyframes viewSobe { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+}
