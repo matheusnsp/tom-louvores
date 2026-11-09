@@ -43,7 +43,7 @@
   const botaoUnico = botaoDoToque;
 
   //  Nomes compridos demais para um cartão de meia largura
-  const NOMES = { "Quebrar linhas longas": "Quebrar linhas" };
+  const NOMES = { "Quebrar linhas longas": "Quebrar linha" };
 
   //  O estado por extenso, para os cartões cuja legenda era só
   //  descrição ("Acordes ou graus", "Evita rolar para o lado")

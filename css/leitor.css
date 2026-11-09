@@ -196,16 +196,25 @@
      linha só (com reticências se não couber): assim os cartões
      vizinhos ficam com ícone, nome e estado na mesma altura. */
   #lyraBox .op-painel .op-linha {
-    display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 12px; row-gap: 2px;
+    display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 10px; row-gap: 2px;
     align-items: start; align-content: start;
-    min-height: 66px; padding: 14px 14px 12px;
+    min-height: 66px; padding: 14px 12px 12px;
     background: var(--black2); border: 1px solid var(--fio); border-radius: 16px;
   }
-  #lyraBox .op-painel .op-ico { grid-column: 1; grid-row: 1 / span 2; width: 34px; height: 34px; border-radius: 10px; margin: 0; }
+  #lyraBox .op-painel .op-ico { grid-column: 1; grid-row: 1 / span 2; width: 32px; height: 32px; border-radius: 10px; margin: 0; }
+  /* o nome cabe em uma linha; se não couber, quebra em duas (nunca "…") */
   #lyraBox .op-painel .op-nome {
     grid-column: 2; grid-row: 1; min-width: 0;
     font-size: 14px; font-weight: 700; color: var(--paper); line-height: 17px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    white-space: normal; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 380px) { #lyraBox .op-painel .op-nome { font-size: 13px; } }
+  /* celular muito estreito: as ferramentas, uma por linha, para
+     "Metrônomo" não partir no meio */
+  @media (max-width: 340px) {
+    #lyraBox .op-painel #opLinhaAfinador, #lyraBox .op-painel #opLinhaMetronomo { grid-column: 1 / -1; }
   }
   #lyraBox .op-painel .op-sub  {
     grid-column: 2; grid-row: 2; display: block; min-width: 0;
