@@ -302,6 +302,15 @@ Cole ou digite sua cifra aqui..."></textarea>
     if (window.tlEditorCarregando || window.tlRascunhoPausado) return;
     const STORAGE = window.tlRascunhoChave;
 
+    //  Música nova sem nome não vira rascunho: colar uma cifra só
+    //  para olhar deixava um rascunho sem título, que reaparecia na
+    //  próxima "Nova música". Com o nome preenchido, grava normal.
+    if (STORAGE.endsWith("_nova") && !$("titulo").value.trim()) {
+      try { localStorage.removeItem(STORAGE); } catch (_) {}
+      $("resultado").textContent = "Dê um nome à música para o rascunho ser guardado.";
+      return;
+    }
+
     const dados = {
       titulo: $("titulo").value,
       artista: $("artista").value,
@@ -613,6 +622,11 @@ Cole ou digite sua cifra aqui..."></textarea>
   $("rascunho").addEventListener("click", () => {
     if (window.tlEditorCarregando || window.tlRascunhoPausado) return;
     const DRAFT = window.tlRascunhoChave;
+    //  música nova sem nome: nada de rascunho (ver o outro ouvinte)
+    if (DRAFT.endsWith("_nova") && !$("titulo").value.trim()) {
+      try { localStorage.removeItem(DRAFT); localStorage.removeItem(STORAGE); } catch (_) {}
+      return;
+    }
 
     try {
       const dados = JSON.parse(localStorage.getItem(DRAFT) || "{}");
