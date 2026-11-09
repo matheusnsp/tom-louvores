@@ -1692,9 +1692,15 @@ async function lyraRenderConteudo() {
       return;
     }
 
-    corpo.innerHTML = modo === "letra"
+    //  No celular o nome da música e o cantor abrem a própria cifra
+    //  (rolam com ela) e saem do cabeçalho fixo, que fica só com os
+    //  botões: sobra mais tela para a cifra. No computador o .lyra-cab
+    //  fica escondido (CSS) e o nome segue no cabeçalho.
+    const cab = `<div class="lyra-cab"><h2>${lyraEsc(document.getElementById("lyraTitulo")?.textContent || "")}</h2>` +
+      `<p>${lyraEsc(document.getElementById("lyraArtista")?.textContent || "")}</p></div>`;
+    corpo.innerHTML = cab + (modo === "letra"
       ? `<pre class="lyra-pre letra">${lyraLetraParaHTML(texto)}</pre>`
-      : `<pre class="lyra-pre">${lyraCifraParaHTML(texto)}</pre>`;
+      : `<pre class="lyra-pre">${lyraCifraParaHTML(texto)}</pre>`);
 
     corpo.scrollTop = 0;
     corpo.scrollLeft = 0;

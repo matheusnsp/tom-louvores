@@ -198,23 +198,13 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
       estourar as bordas. */
   .sn-selo{max-width:calc(100vw - 20px)}
 
-  /*  No celular o cabeçalho do leitor já está cheio (Cifra/Letra,
-      setas, chat, tela cheia, fechar) e a pastilha flutuando por
-      cima tampava esses botões. Ali ela vira uma faixa fina, com
-      lugar próprio logo abaixo do cabeçalho: nada fica embaixo
-      dela. No computador o cabeçalho tem folga e ela segue
-      flutuando no meio. */
+  /*  No celular a pastilha não aparece: o estado e as ações moram
+      no botão Seguir da barra flutuante de baixo (opcoes.js, que
+      lê snEstadoBarra()). Flutuando aqui em cima ela tampava os
+      botões do cabeçalho. No computador o cabeçalho tem folga e
+      ela segue flutuando no meio. */
   @media (max-width: 820px), (pointer: coarse) {
-    .sn-selo.on{
-      position:static;transform:none;
-      display:flex;justify-content:center;
-      width:auto;max-width:none;
-      margin:0 16px 8px;
-      padding:4px 6px 4px 12px;
-      border-radius:999px;
-      box-shadow:none;
-    }
-    .sn-selo button{padding:4px 10px}
+    .sn-selo.on{display:none}
   }
 
   /* o selo não briga com a barra flutuante nem com os painéis */
@@ -943,6 +933,57 @@ function snPintarSelo() {
 }
 
 setInterval(() => { if (snLigado && !snEhLider()) snPintarSelo(); }, 4000);
+
+// ── o estado para a barra flutuante do celular (opcoes.js) ──
+//  Rótulo curto para o botão, descrição por extenso e as ações da
+//  folha. A barra repinta quando a pastilha repinta.
+function snEstadoBarra() {
+  const lider = snEhLider();
+  if (!snLigado) {
+    return {
+      ligado: false, vivo: false,
+      rotulo: lider ? "Transmitir" : "Seguir",
+      descricao: lider ? "Sua tela não está sendo transmitida."
+                       : "Você não está acompanhando a tela do ministrante.",
+      acoes: [{ rotulo: lider ? "Transmitir minha tela" : "Acompanhar a tela", principal: true, fazer: () => snAlternar(true) }],
+    };
+  }
+  if (lider) {
+    return {
+      ligado: true, vivo: true, rotulo: "No ar",
+      descricao: "Transmitindo sua tela: quem acompanha vê a mesma cifra, no mesmo ponto.",
+      acoes: [{ rotulo: "Parar de transmitir", principal: false, fazer: () => snAlternar(false) }],
+    };
+  }
+  if (snSolto) {
+    return {
+      ligado: true, vivo: false, rotulo: "Livre",
+      descricao: "Tela livre: você rolou por conta própria e parou de acompanhar.",
+      acoes: [
+        { rotulo: "Voltar a acompanhar", principal: true, fazer: () => snVoltarASeguir() },
+        { rotulo: "Desligar", principal: false, fazer: () => snAlternar(false) },
+      ],
+    };
+  }
+  const vivo = snVisto && Date.now() - snVisto < 12000;
+  return {
+    ligado: true, vivo,
+    rotulo: vivo ? "Seguindo" : "Aguardando",
+    descricao: vivo ? "Acompanhando a tela do ministrante."
+                    : "Aguardando: ninguém está transmitindo agora.",
+    acoes: [{ rotulo: "Parar de acompanhar", principal: false, fazer: () => snAlternar(false) }],
+  };
+}
+
+//  a barra de baixo acompanha cada repintura da pastilha
+const snPintarSeloOriginal = snPintarSelo;
+snPintarSelo = function (...a) {
+  const r = snPintarSeloOriginal.apply(this, a);
+  if (typeof opPintarBarra === "function") opPintarBarra();
+  const folha = document.getElementById("opRapido");
+  if (folha?.classList.contains("on") && folha.querySelector(".op-seg-estado") && typeof opRapidoSeguir === "function") opRapidoSeguir(folha);
+  return r;
+};
 
 function snPedir() {
   if (snPronto && !snEhLider()) {

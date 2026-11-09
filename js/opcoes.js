@@ -446,6 +446,13 @@ const LYRA_ADMIN_URL = "https://database.invbotafogo.com.br/admin";
   /* rolando: o botão acende inteiro, para ver de longe */
   .op-barra button.on[data-ir="opLinhaRolagem"]{background:rgba(238,158,99,.14)}
 
+  /* Seguir ligado: a bolinha verde (ou cinza, parado) antes do rótulo */
+  .op-barra button.on .op-seg-txt::before{
+    content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+    margin-right:5px;vertical-align:1px;background:var(--gray2);
+  }
+  .op-barra button.sn-vivo .op-seg-txt::before{background:#4ADE80}
+
   /* o tom que está valendo, no lugar do ícone */
   .op-barra .op-chave{
     font-family:var(--font-ui);font-size:16px;font-weight:800;line-height:19px;
@@ -497,6 +504,7 @@ const OP_ICO = {
   tom:     `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8.4v7.2"/></svg>`,
   rolagem: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 10.5l4 4 4-4"/></svg>`,
   inst:    `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="1.6"/><path d="M8 6v7M13 6v7M18 6v7"/></svg>`,
+  seguir:  `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg>`,
   opcoes:  `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="7" cy="8" r="2.2"/><path d="M11 8h9"/><circle cx="16" cy="16" r="2.2"/><path d="M3 16h10"/></svg>`,
   texto:   `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M9 6v13M15 10h5M17.5 10v9"/></svg>`,
   quebra:  `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h11a3 3 0 1 1 0 6h-3M4 18h4"/><path d="M9 15l-2.5 3L9 21"/></svg>`,
@@ -806,7 +814,7 @@ function opMontarBarra() {
   b.innerHTML = `
     <button data-ir="opLinhaTom"><b class="op-chave">–</b><span>Tom</span></button>
     <button data-ir="opLinhaRolagem" id="opBarraRolar"><i class="op-bico">${OP_ICO.play}</i><span>Rolar</span></button>
-    <button data-ir="opLinhaInst">${OP_ICO.inst}<span class="op-inst-txt">Violão</span></button>
+    <button data-ir="opLinhaSeguir" id="opBarraSeguir">${OP_ICO.seguir}<span class="op-seg-txt">Seguir</span></button>
     <button>${OP_ICO.opcoes}<span>Opções</span></button>`;
   box.appendChild(b);
   b.querySelectorAll("button").forEach(x =>
@@ -833,8 +841,15 @@ function opPintarBarra() {
     rol.querySelector("span").textContent = rolando ? "Rolando" : "Rolar";
   }
 
-  const inst = barra.querySelector(".op-inst-txt");
-  if (inst) inst.textContent = typeof acAba !== "undefined" && acAba === "teclado" ? "Teclado" : "Violão";
+  //  Seguir (seguir.js): o botão diz o estado. O instrumento saiu
+  //  da barra para dar lugar a ele; continua no menu Opções.
+  const seg = barra.querySelector("#opBarraSeguir");
+  if (seg && typeof snEstadoBarra === "function") {
+    const e = snEstadoBarra();
+    seg.querySelector(".op-seg-txt").textContent = e.rotulo;
+    seg.classList.toggle("on", e.ligado);
+    seg.classList.toggle("sn-vivo", e.vivo);
+  }
 }
 
 //  Em tela larga o menu cabe ao lado da cifra sem atrapalhar,
@@ -983,6 +998,16 @@ let opTomInicial = null;
   .op-escolha button.on{border-color:var(--cifra);color:var(--cifra)}
   .claro .op-escolha button{background:#E9E4DC;border-color:rgba(0,0,0,.14);color:#242424}
 
+  /* seguir */
+  .op-seg-estado{
+    display:flex;align-items:center;gap:8px;margin:-6px 0 14px;
+    font-family:var(--font-ui);font-size:14px;color:var(--gray);
+  }
+  .op-seg-estado::before{
+    content:"";width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--gray2);
+  }
+  .op-seg-estado.vivo::before{background:#4ADE80}
+
   /* rolagem */
   .op-rol{display:flex;align-items:center;gap:14px}
   .op-rol button{
@@ -1021,9 +1046,27 @@ function opRapido(tipo) {
   document.getElementById("opFundo")?.classList.add("on");
   r.classList.add("on");
 
-  if (tipo === "tom")  opRapidoTom(r);
-  if (tipo === "rol")  opRapidoRolagem(r);
-  if (tipo === "inst") opRapidoInstrumento(r);
+  if (tipo === "tom")    opRapidoTom(r);
+  if (tipo === "rol")    opRapidoRolagem(r);
+  if (tipo === "inst")   opRapidoInstrumento(r);
+  if (tipo === "seguir") opRapidoSeguir(r);
+}
+
+// ── Seguir ──────────────────────────────────────────────────
+//  A folha do botão Seguir da barra: o estado por extenso e as
+//  ações que a pastilha do computador tem (ligar, parar, voltar a
+//  seguir, desligar). Quem decide o que cada uma faz é o seguir.js.
+function opRapidoSeguir(r) {
+  if (typeof snEstadoBarra !== "function") { opRapidoFechar(); return; }
+  const e = snEstadoBarra();
+  r.innerHTML = `
+    <div class="op-pega"></div>
+    <h4>Seguir</h4>
+    <p class="op-seg-estado${e.vivo ? " vivo" : ""}">${e.descricao}</p>
+    <div class="op-escolha">${
+      e.acoes.map((a, i) => `<button data-i="${i}"${a.principal ? ' class="on"' : ""}>${a.rotulo}</button>`).join("")}</div>`;
+  r.querySelectorAll(".op-escolha button").forEach(b =>
+    b.onclick = () => { e.acoes[Number(b.dataset.i)].fazer(); opRapidoFechar(); });
 }
 
 // ── Tom ─────────────────────────────────────────────────────
@@ -1128,7 +1171,7 @@ function opLigarAtalhos() {
   barra.dataset.rapido = "1";
 
   const botoes = [...barra.querySelectorAll("button")];
-  const tipos = ["tom", "rol", "inst", null];    // o último é o menu completo
+  const tipos = ["tom", "rol", "seguir", null];  // o último é o menu completo
   botoes.forEach((b, i) => {
     const novo = b.cloneNode(true);              // limpa os eventos antigos
     b.replaceWith(novo);
