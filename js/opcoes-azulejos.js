@@ -42,9 +42,14 @@
   }
   const botaoUnico = botaoDoToque;
 
+  //  Nomes compridos demais para um cartão de meia largura
+  const NOMES = { "Quebrar linhas longas": "Quebrar linhas" };
+
   //  O estado por extenso, para os cartões cuja legenda era só
   //  descrição ("Acordes ou graus", "Evita rolar para o lado")
   function legenda(l) {
+    const nome = l.querySelector(".op-nome");
+    if (nome && NOMES[nome.textContent.trim()]) nome.textContent = NOMES[nome.textContent.trim()];
     const sub = l.querySelector(".op-sub");
     if (!sub) return;
     let texto = null;
@@ -67,10 +72,29 @@
     marcando = true;
     try { marcarMesmo(); } finally { marcando = false; }
   }
+  //  "Editar cifra" no menu: o lápis do cabeçalho (leitor-editar.js)
+  //  fica escondido no celular e este cartão toca nele. Só existe
+  //  enquanto o lápis existe (logado e música do repertório).
+  const ICO_EDITAR = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`;
+  function cartaoEditar() {
+    const painel = document.getElementById("opPainel");
+    const lapis = document.getElementById("lyraEditar");
+    let card = document.getElementById("opLinhaEditar");
+    if (!painel || !lapis || typeof opLinha !== "function") { card?.remove(); return; }
+    if (card) return;
+    card = opLinha(ICO_EDITAR, "Editar cifra", null, "opLinhaEditar", "Abre o editor desta música");
+    card.classList.add("op-azulejo", "op-abre");
+    card.addEventListener("click", () => lapis.click());
+    //  dentro de um grupo qualquer: os grupos são transparentes no celular
+    (painel.querySelector(".op-grupo") || painel).appendChild(card);
+  }
+
   function marcarMesmo() {
+    cartaoEditar();
     document.querySelectorAll("#opPainel .op-linha").forEach(l => {
       const b = botaoUnico(l);
       const abre = l.id === "opLinhaAfinador" || l.id === "opLinhaMetronomo";
+      if (l.id === "opLinhaEditar") return;   // já vem pronto
       l.classList.toggle("op-azulejo", !!b);
       l.classList.toggle("op-abre", !!b && abre);
       //  ligado: botão marcado (aria-pressed/on) ou fundo claro ativo
