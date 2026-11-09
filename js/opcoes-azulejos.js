@@ -18,6 +18,12 @@
 
   const celular = () => window.matchMedia("(max-width: 820px), (pointer: coarse)").matches;
 
+  //  Instalado na tela inicial (app): o css/leitor.css esconde o
+  //  botão de tela cheia, que ali não teria o que fazer
+  if (navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches) {
+    document.documentElement.classList.add("app-instalado");
+  }
+
   //  O botão que um toque no cartão aciona: o único do controle,
   //  ou, num par de opções (Acordes/Graus), a opção que NÃO está
   //  marcada. null = cartão com controle próprio (campo, seletor).
