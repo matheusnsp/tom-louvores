@@ -1,7 +1,9 @@
 // ============================================================
 //  TOM LOUVORES — o cartão inteiro do menu Opções é o botão
 //  Carregue DEPOIS do opcoes.js, do seguir.js, do afinador.js e
-//  do metrônomo.js. Só no celular (ver css/leitor.css).
+//  do metrônomo.js. No celular e no computador (ver css/leitor.css);
+//  só o cartão "Editar cifra" é do celular — no computador o lápis
+//  continua no cabeçalho, que tem espaço.
 //
 //  Nos cartões que têm um único botão (Fundo, Quebrar linhas,
 //  Instrumento, Afinador, Metrônomo) ou um par de opções (Notação:
@@ -68,7 +70,7 @@
 
   let marcando = false;
   function marcar() {
-    if (!celular() || marcando) return;
+    if (marcando) return;
     marcando = true;
     try { marcarMesmo(); } finally { marcando = false; }
   }
@@ -89,8 +91,23 @@
     (painel.querySelector(".op-grupo") || painel).appendChild(card);
   }
 
+  //  No computador com o menu recolhido (janela abaixo de 1100px),
+  //  o botão "Opções" tinha ido parar DENTRO do menu, junto com os
+  //  controles que o opcoes.js leva para lá — e com o menu fechado
+  //  ninguém conseguia abri-lo. Ele vai para o cabeçalho do leitor,
+  //  antes do ×. Com o menu fixo (tela larga) o CSS já o esconde.
+  function botaoOpcoesNoCabecalho() {
+    if (celular()) return;
+    const b = document.getElementById("opBtn");
+    const acoes = document.querySelector("#lyraBox .lyra-hd-acoes");
+    if (!b || !acoes || !b.closest("#opPainel")) return;
+    const x = document.getElementById("lyraFechar");
+    acoes.insertBefore(b, x && x.parentElement === acoes ? x : null);
+  }
+
   function marcarMesmo() {
-    cartaoEditar();
+    botaoOpcoesNoCabecalho();
+    if (celular()) cartaoEditar();
     document.querySelectorAll("#opPainel .op-linha").forEach(l => {
       const b = botaoUnico(l);
       const abre = l.id === "opLinhaAfinador" || l.id === "opLinhaMetronomo";
@@ -107,7 +124,6 @@
   }
 
   document.addEventListener("click", e => {
-    if (!celular()) return;
     const linha = e.target.closest("#opPainel .op-linha.op-azulejo");
     if (!linha) return;
     if (e.target.closest(".op-controle")) return;   // tocou no próprio botão

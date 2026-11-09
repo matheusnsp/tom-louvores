@@ -293,3 +293,75 @@
   #lyraTelaBtn { display: none !important; }
 }
 html.app-instalado #lyraTelaBtn { display: none !important; }
+
+/* ── Opções no computador: os mesmos cartões, numa coluna ────────
+   A coluna lateral (320–380px) ganha o desenho do celular: cada
+   ajuste é um cartão com ícone, nome e estado; nos liga/desliga o
+   cartão inteiro é o botão (js/opcoes-azulejos.js); os de controle
+   largo (Tom, Rolagem, Tamanho, Notação, Capotraste) mostram o
+   controle à direita. Ordem de uso. Tom, Rolagem e Transmitir
+   ficam aqui porque no computador não há a barra de baixo. */
+@media (min-width: 821px) and (pointer: fine) {
+  #lyraBox .op-painel .op-grupo { display: contents; }
+  #lyraBox .op-painel .op-topo { order: 0; }
+  #lyraBox .op-painel .op-rodape { order: 99; }
+
+  #lyraBox .op-painel .op-linha {
+    display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 10px; row-gap: 1px;
+    align-items: center; align-content: center;
+    min-height: 58px; padding: 10px 12px; margin-bottom: 8px;
+    background: var(--black2); border: 1px solid var(--fio); border-radius: 14px;
+  }
+  #lyraBox .op-painel .op-linha + .op-linha { border-top: 1px solid var(--fio); }
+  #lyraBox .op-painel .op-ico {
+    grid-column: 1; grid-row: 1 / span 2; width: 30px; height: 30px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); background: rgba(var(--gold-rgb), .10); border: 1px solid rgba(var(--gold-rgb), .22);
+  }
+  #lyraBox .op-painel .op-nome { grid-column: 2; grid-row: 1; min-width: 0; font-size: 13.5px; font-weight: 700; color: var(--paper); line-height: 16px; }
+  #lyraBox .op-painel .op-sub  { grid-column: 2; grid-row: 2; display: none; min-width: 0; font-size: 11.5px; color: var(--gray2); line-height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #lyraBox .op-painel .op-controle, #lyraBox .op-painel .op-valor { grid-column: 3; grid-row: 1 / span 2; justify-content: flex-end; }
+  /* a rolagem: o controle de velocidade embaixo, na largura toda */
+  #lyraBox .op-painel #opLinhaRolagem .op-controle { grid-column: 1 / -1; grid-row: 3; width: 100%; margin-top: 8px; justify-content: flex-start; }
+  #lyraBox .op-painel #opLinhaRolagem .op-controle input[type="range"] { flex: 1; }
+
+  /* ordem de uso */
+  #lyraBox .op-painel #opLinhaTom { order: 1; }
+  #lyraBox .op-painel #opLinhaRolagem { order: 2; }
+  #lyraBox .op-painel .op-linha:has(#lyraMenos) { order: 3; }
+  #lyraBox .op-painel #opLinhaTema { order: 4; }
+  #lyraBox .op-painel .op-linha:has(#lyraQuebraBtn) { order: 5; }
+  #lyraBox .op-painel #opLinhaInst { order: 6; }
+  #lyraBox .op-painel #opLinhaGraus { order: 7; }
+  #lyraBox .op-painel #opLinhaCapo { order: 8; }
+  #lyraBox .op-painel #snLinha { order: 9; }
+  #lyraBox .op-painel #opLinhaAfinador { order: 10; }
+  #lyraBox .op-painel #opLinhaMetronomo { order: 11; }
+  #lyraBox .op-painel .op-linha { order: 12; }
+
+  /* liga/desliga e ferramentas: o cartão é o botão, o estado fica escrito */
+  #lyraBox .op-painel .op-linha.op-azulejo { cursor: pointer; }
+  #lyraBox .op-painel .op-linha.op-azulejo:hover { border-color: var(--gray3); }
+  #lyraBox .op-painel .op-linha.op-azulejo .op-controle { display: none; }
+  #lyraBox .op-painel .op-linha.op-azulejo .op-sub { display: block; }
+  #lyraBox .op-painel .op-linha.op-azulejo.op-ligado { border-color: var(--line); background: rgba(var(--gold-rgb), .06); }
+  #lyraBox .op-painel .op-linha.op-azulejo.op-ligado .op-sub { color: var(--gold); font-weight: 600; }
+  #lyraBox .op-painel .op-linha.op-abre .op-nome::after { content: " ›"; color: var(--gray2); font-weight: 400; }
+  #lyraBox .op-painel #opLinhaAfinador .op-sub, #lyraBox .op-painel #opLinhaMetronomo .op-sub { display: none; }
+  #lyraBox .op-painel #opLinhaAfinador .op-ico, #lyraBox .op-painel #opLinhaMetronomo .op-ico { grid-row: 1; }
+
+  #lyraBox.claro .op-painel .op-linha, .claro #lyraBox .op-painel .op-linha { background: #FBF8F2; border-color: rgba(0, 0, 0, .12); }
+  #lyraBox.claro .op-painel .op-nome,  .claro #lyraBox .op-painel .op-nome  { color: #1c1c1c; }
+  #lyraBox.claro .op-painel .op-linha.op-azulejo.op-ligado, .claro #lyraBox .op-painel .op-linha.op-azulejo.op-ligado { background: rgba(var(--gold-rgb), .10); }
+}
+
+/* ── computador com o menu recolhido ─────────────────────────────
+   O botão Opções mora no cabeçalho (js/opcoes-azulejos.js), só com
+   o ícone, como os vizinhos. E a barra de controles de baixo do
+   cabeçalho, que ficou vazia depois que tudo foi para o menu, some
+   em vez de deixar uma faixa em branco. */
+@media (min-width: 821px) and (pointer: fine) {
+  #lyraBox .lyra-hd-acoes #opBtn { border-radius: 999px; min-width: 40px; padding: 0 12px; }
+  #lyraBox .lyra-hd-acoes #opBtn .op-abrir-txt { display: none; }
+  #lyraBox .lyra-barra:not(:has(.lyra-grupo > *)) { display: none; }
+}
