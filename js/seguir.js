@@ -198,6 +198,25 @@ try { snLigado = localStorage.getItem(SN_CHAVE) === "1"; } catch (e) {}
       estourar as bordas. */
   .sn-selo{max-width:calc(100vw - 20px)}
 
+  /*  No celular o cabeçalho do leitor já está cheio (Cifra/Letra,
+      setas, chat, tela cheia, fechar) e a pastilha flutuando por
+      cima tampava esses botões. Ali ela vira uma faixa fina, com
+      lugar próprio logo abaixo do cabeçalho: nada fica embaixo
+      dela. No computador o cabeçalho tem folga e ela segue
+      flutuando no meio. */
+  @media (max-width: 820px), (pointer: coarse) {
+    .sn-selo.on{
+      position:static;transform:none;
+      display:flex;justify-content:center;
+      width:auto;max-width:none;
+      margin:0 16px 8px;
+      padding:4px 6px 4px 12px;
+      border-radius:999px;
+      box-shadow:none;
+    }
+    .sn-selo button{padding:4px 10px}
+  }
+
   /* o selo não briga com a barra flutuante nem com os painéis */
   #lyraBox:has(#opPainel.on) .sn-selo,
   #lyraBox:has(#opRapido.on) .sn-selo{display:none}`;
@@ -842,7 +861,10 @@ function snSelo() {
     <span class="sn-txt"></span>
     <button type="button" class="sn-acao"></button>
     <button type="button" class="sn-acao2" hidden></button>`;
-  box.appendChild(s);
+  //  logo depois do cabeçalho: no celular ela ocupa essa posição
+  //  no fluxo; no computador o position:absolute a tira do fluxo
+  const hd = box.querySelector(".lyra-hd");
+  if (hd) hd.after(s); else box.appendChild(s);
 
   //  Cada botão é ligado por DUAS rotas. "click" pode ser engolido
   //  quando algo repinta ou cobre o botão no meio do gesto;
