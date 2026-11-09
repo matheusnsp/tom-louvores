@@ -558,6 +558,7 @@ function acPainel() {
   p.id = "acPainel";
   p.className = "ac-painel";
   p.innerHTML = `
+    <div class="op-pega"></div>
     <div class="ac-hd">
       <span class="ac-nome-ac" id="acNome"></span>
       <span class="ac-sub" id="acSub"></span>

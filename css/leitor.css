@@ -399,7 +399,7 @@ html.app-instalado #lyraTelaBtn { display: none !important; }
 #viewModal .view-bd > #viewTomCulto { order: 2; }
 #viewModal .view-bd > #viewObsWrap { order: 3; }
 #viewModal .view-bd > #viewLinksWrap { order: 8; }
-#viewModal .view-bd > .rv-box { order: 9; margin: -6px 0 0; }
+#viewModal .view-bd > .rv-box { order: 0; margin: 0; }
 
 /* cada tom abre a cifra nele: a linha diz isso */
 #viewModal .view-tons .card-ton-row.ton-abre .ton-row-right::after,
@@ -426,12 +426,18 @@ html.app-instalado #lyraTelaBtn { display: none !important; }
 #viewModal .view-lyra { gap: 10px; }
 #viewModal .view-lyra .view-yt-btn { padding: 15px 18px; font-size: 15px; font-weight: 700; }
 
-/* "Marcar para revisão": link pequeno, no fim, só para a equipe */
-#viewModal .rv-box .rv-btn, #viewModal .rv-box > button, #viewModal .rv-box .rv-marcar {
-  background: none; border: none; padding: 4px 0; color: var(--gray2);
-  font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+/* Revisão: a bandeira no cabeçalho, ao lado do lápis. Acesa quando
+   a música está marcada; a faixa com a nota aparece no alto do
+   modal, só então. */
+#viewModal .rv-hd-btn svg { width: 15px; height: 15px; }
+#viewModal .rv-hd-btn.on {
+  color: var(--gold); border-color: rgba(var(--gold-rgb), .55);
+  background: rgba(var(--gold-rgb), .12);
 }
-#viewModal .rv-box .rv-btn:hover, #viewModal .rv-box > button:hover { color: var(--gold); }
+#viewModal .rv-hd-btn.on svg { fill: currentColor; }
+#viewModal .rv-box .rv-faixa { border-radius: 16px; padding: 14px 16px; }
+#viewModal .rv-box .rv-acoes button { border-radius: var(--pill); padding: 9px 14px; }
+#viewModal .rv-box .rv-inp { border-radius: 12px; }
 
 /* celular: folha que sobe de baixo, do tamanho do conteúdo */
 @media (max-width: 600px) {

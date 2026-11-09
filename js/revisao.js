@@ -137,6 +137,7 @@ function rvDesenhar(id, editando = false) {
   if (!box) return;
   const m = id != null ? musicas.find(x => String(x.id) === String(id)) : null;
   box.dataset.id = m ? m.id : "";
+  rvPintarBotao(m);
   if (!m) { box.innerHTML = ""; box.style.display = "none"; return; }
   box.style.display = "";
 
@@ -175,8 +176,44 @@ function rvDesenhar(id, editando = false) {
     return;
   }
 
-  //  Sem marca: só a equipe vê o botão de marcar.
-  box.innerHTML = `<button type="button" class="rv-marcar rv-so-equipe" data-rv="editar">${RV_ICO} Marcar para revisão</button>`;
+  //  Sem marca: a faixa some. Quem marca é a bandeira no cabeçalho
+  //  do modal (só a equipe a vê).
+  box.innerHTML = "";
+  box.style.display = "none";
+}
+
+// ── a bandeira no cabeçalho do modal ────────────────────────
+//  Fica ao lado do lápis, no mesmo molde. Apagada: "Marcar para
+//  revisão". Acesa (dourada): a música está marcada; tocar abre a
+//  nota para mudar.
+function rvBotaoCabecalho() {
+  let b = document.getElementById("rvHdBtn");
+  if (b) return b;
+  const acoes = document.querySelector("#viewModal .view-hd-actions");
+  if (!acoes) return null;
+  b = document.createElement("button");
+  b.type = "button";
+  b.id = "rvHdBtn";
+  b.className = "view-edit-btn rv-hd-btn rv-so-equipe";
+  b.innerHTML = RV_ICO;
+  b.addEventListener("click", () => {
+    const box = rvBox();
+    if (!box || !box.dataset.id) return;
+    rvDesenhar(box.dataset.id, true);
+    box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+  acoes.insertBefore(b, acoes.firstChild);
+  return b;
+}
+
+function rvPintarBotao(m) {
+  const b = rvBotaoCabecalho();
+  if (!b) return;
+  const marcada = !!(m && rvMarcada(m));
+  b.classList.toggle("on", marcada);
+  b.title = marcada ? "Marcada para revisão — mudar nota" : "Marcar para revisão";
+  b.setAttribute("aria-label", b.title);
+  b.style.display = m ? "" : "none";
 }
 
 async function rvClique(e) {
