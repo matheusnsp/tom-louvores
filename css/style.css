@@ -518,9 +518,11 @@
    
    /* ——— Tom + ministrante ——— */
    .tom-add-row{
-     display:grid;grid-template-columns:1fr 1fr auto;
+     display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
      gap:8px;align-items:center;
    }
+   .tom-add-row-um{grid-template-columns:minmax(0,1fr)}
+   .tom-add-row-dois{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
    .btn-add-tom{
      height:44px;width:44px;
      background:var(--gold);border:none;cursor:pointer;
@@ -567,7 +569,7 @@
    
    /* ——— Cifras (lista dinâmica) ——— */
    .cifra-add-row{
-     display:grid;grid-template-columns:1fr auto;
+     display:grid;grid-template-columns:minmax(0,1fr) auto;
      gap:8px;align-items:center;
    }
    .cifra-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}

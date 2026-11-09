@@ -317,10 +317,14 @@ img, video, canvas {
     padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
 
-  .tom-add-row,
-  .cifra-add-row {
-    grid-template-columns: minmax(0, 1fr) !important;
+  /* Tom, ministrante e o "+" numa linha só (os campos encolhem e
+     cortam o texto com reticências em vez de empilhar) */
+  .tom-add-row .tl-campo.tl-campo,
+  .cifra-add-row .tl-campo.tl-campo {
+    padding: 7px 10px 7px 12px !important;
+    gap: 6px;
   }
+  .tom-add-row .tl-campo-tom { min-width: 34px; padding: 6px 6px; }
 
   /* Página completa do editor de cifras */
   .ce-page .ce-wrap {

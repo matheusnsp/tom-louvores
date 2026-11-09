@@ -452,18 +452,3 @@ html.app-instalado #lyraTelaBtn { display: none !important; }
   #viewModal .view-bd { padding: 20px 20px 24px; gap: 20px; }
   @keyframes viewSobe { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
 }
-
-/* ── celular: o "+" de cadastrar tom vira um botão com nome ──────
-   Abaixo de 600px a linha tom + ministrante + "+" empilha, e a
-   bolinha dourada ficava sozinha embaixo, sem dizer o que fazia.
-   Vira uma pílula da largura toda: "+ Adicionar tom". */
-@media (max-width: 600px) {
-  .tom-add-row .btn-add-tom,
-  .cifra-add-row .btn-add-tom {
-    width: 100%; height: 48px; border-radius: var(--pill);
-    gap: 8px; font-size: 15px; font-weight: 700;
-    font-family: var(--font-ui);
-  }
-  .tom-add-row .btn-add-tom::after { content: "Adicionar tom"; font-size: 14px; font-weight: 700; }
-  .cifra-add-row .btn-add-tom::after { content: "Adicionar link"; font-size: 14px; font-weight: 700; }
-}
