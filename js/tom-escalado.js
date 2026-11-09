@@ -1,6 +1,6 @@
 // ============================================================
 //  TOM LOUVORES — o tom do leitor vira o tom escalado do culto
-//  Carregue DEPOIS do app.js, culto-seletor.js, revisao.js e lyra.js.
+//  Carregue DEPOIS do app.js, culto-seletor.js e lyra.js.
 //
 //  Quem está logado abre a cifra a partir de um culto e troca o
 //  tom (pela folha Tom, pelas setas de meio tom ou pelo menu).
@@ -12,10 +12,9 @@
 //    1. o tom vira o tom escalado daquele louvor, naquele culto
 //       (é o que aparece na coluna do culto e no WhatsApp);
 //    2. se a ministrante ainda não canta a música nesse tom, o
-//       par tom + ministrante entra no repertório dela;
-//    3. nesse caso a música é marcada para revisão, com a nota
-//       dizendo o que mudou — é na aba Repertório → Revisar que
-//       alguém depois confere se o tom novo está certo.
+//       par tom + ministrante entra no repertório dela.
+//  Como foi a própria equipe que confirmou, a música não vai para
+//  a revisão.
 //
 //  Nada é gravado sem esse toque: quem trocou de tom só para ver
 //  como fica fecha a faixa no × (ou simplesmente ignora). Sem
@@ -76,7 +75,7 @@
       <span class="te-txt">${
         min ? `Usar este tom para <b>${esc(min)}</b> neste culto?`
             : `Usar este tom neste culto?`}${
-        min && m && !jaCanta ? `<small>Tom novo para ela: a música vai para a revisão.</small>` : ""}
+        min && m && !jaCanta ? `<small>Tom novo para ela: entra no repertório.</small>` : ""}
       </span>
       <button type="button" class="te-salvar">Usar</button>
       <button type="button" class="te-x" aria-label="Agora não">&#10005;</button>`;
@@ -105,14 +104,6 @@
     let novo = false;
     if (m && min && !jaCanta && typeof cultoAdicionarTomNaMusica === "function") {
       novo = await cultoAdicionarTomNaMusica(m.id, tom, min);
-    }
-
-    // 3. para revisão, com a nota do que mudou
-    if (novo && typeof rvGravar === "function") {
-      const oc = typeof calOcorrenciaPorChave === "function" ? calOcorrenciaPorChave(ctx.chave) : null;
-      const quando = oc && typeof formatarDataCulto === "function" && typeof calData === "function"
-        ? `${oc.dia}, ${formatarDataCulto(calData(oc.data))}` : "";
-      await rvGravar(m.id, true, `Tom ${tom} novo para ${min}${quando ? ` (${quando})` : ""}: conferir a cifra nesse tom.`);
     }
 
     if (b) b.remove();
