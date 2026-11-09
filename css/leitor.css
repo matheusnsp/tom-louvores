@@ -158,7 +158,7 @@
 #lyraBox .op-grupo { background: rgba(255, 255, 255, .02); border-color: var(--fio); border-radius: 14px; }
 #lyraBox .op-linha + .op-linha { border-top-color: var(--fio); }
 #lyraBox .op-painel .op-topo { border-bottom-color: var(--fio); }
-#lyraBox .op-controle select {
+#lyraBox .op-controle select.op-sel {
   background-color: rgba(255, 255, 255, .03); border: 1px solid var(--fio);
   border-radius: var(--pill); color: var(--paper);
 }
