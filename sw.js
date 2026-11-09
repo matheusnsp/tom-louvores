@@ -71,6 +71,7 @@ const APP = [
   "./js/paginas.js",
   "./js/sugestoes.js",
   "./js/escala.js",
+  "./js/tom-escalado.js",
   "./js/cantores.js",
   "./js/atualizar.js",
   "./js/sons.js",

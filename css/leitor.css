@@ -120,3 +120,49 @@
   #lyraBox.claro .lyra-cab h2, .claro #lyraCorpo .lyra-cab h2 { color: #141414; }
   #lyraBox.claro .lyra-cab p,  .claro #lyraCorpo .lyra-cab p  { color: #8a6a12; }
 }
+
+/* ── a faixa "usar este tom neste culto" (js/tom-escalado.js) ── */
+#lyraCorpo .te-banner {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 12px; padding: 9px 10px 9px 12px;
+  background: var(--black2);
+  border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  font-family: var(--font-ui);
+}
+#lyraCorpo .te-tom {
+  flex-shrink: 0; font-family: var(--font-tom); font-weight: 700; font-size: 15px;
+  color: var(--gold-hi); background: rgba(var(--gold-rgb), .10);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-width: 40px; text-align: center;
+}
+#lyraCorpo .te-txt { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; color: var(--paper); }
+#lyraCorpo .te-txt b { font-weight: 700; }
+#lyraCorpo .te-txt small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--gray2); }
+#lyraCorpo .te-salvar {
+  flex-shrink: 0; background: var(--gold); border: none; border-radius: var(--pill);
+  color: var(--on-gold); font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+  padding: 9px 14px; cursor: pointer;
+}
+#lyraCorpo .te-salvar:disabled { opacity: .6; }
+#lyraCorpo .te-x {
+  flex-shrink: 0; width: 32px; height: 32px; background: none; border: none;
+  color: var(--gray); font-size: 13px; cursor: pointer;
+}
+#lyraBox.claro .te-banner, .claro #lyraCorpo .te-banner { background: #F7F3EC; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); }
+#lyraBox.claro .te-txt,    .claro #lyraCorpo .te-txt    { color: #1c1c1c; }
+#lyraBox.claro .te-tom,    .claro #lyraCorpo .te-tom    { color: #6E4F05; background: rgba(var(--gold-rgb), .16); }
+
+/* ── o menu Opções, na mesma linguagem ──────────────────────── */
+#lyraBox .op-hd h4 { color: var(--gold); font-weight: 400; letter-spacing: 3px; font-size: 12px; }
+#lyraBox .op-grupo { background: rgba(255, 255, 255, .02); border-color: var(--fio); border-radius: 14px; }
+#lyraBox .op-linha + .op-linha { border-top-color: var(--fio); }
+#lyraBox .op-painel .op-topo { border-bottom-color: var(--fio); }
+#lyraBox .op-controle select {
+  background-color: rgba(255, 255, 255, .03); border: 1px solid var(--fio);
+  border-radius: var(--pill); color: var(--paper);
+}
+#lyraBox .op-controle input[type="checkbox"] { accent-color: var(--gold); }
+#lyraBox .op-controle .lyra-btn { background: rgba(255, 255, 255, .03); border-color: var(--fio); }
+#lyraBox.claro .op-grupo, .claro #lyraBox .op-grupo { background: rgba(0, 0, 0, .02); border-color: rgba(0, 0, 0, .12); }
+#lyraBox.claro .op-linha + .op-linha, .claro #lyraBox .op-linha + .op-linha { border-top-color: rgba(0, 0, 0, .10); }

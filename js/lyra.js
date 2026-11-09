@@ -1233,7 +1233,9 @@ function lyraMontarNav(m, ctxCulto) {
       .sort((a, b) => (ORDEM[secao(a.l)] ?? 0) - (ORDEM[secao(b.l)] ?? 0) || a.i - b.i);
 
     return {
-      itens: ordenados.map(x => ({ nome: x.l.nome, tom: x.l.tom })),
+      //  culto: de qual culto e de qual louvor cada item veio — é
+      //  por aqui que o tom-escalado.js sabe onde gravar o tom novo
+      itens: ordenados.map(x => ({ nome: x.l.nome, tom: x.l.tom, culto: { chave: ctxCulto.tipo, idx: x.i } })),
       // o índice clicado é o do array; aqui vira a posição na fila
       idx: Math.max(0, ordenados.findIndex(x => x.i === ctxCulto.idx)),
     };
