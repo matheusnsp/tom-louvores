@@ -558,15 +558,17 @@ img, video, canvas {
 .lyra-hd-txt { flex: 1 1 auto; min-width: 0; }
 #lyraBox .lyra-hd #lyraSeg { flex: 0 0 auto; }
 
-/* No celular os botões do cabeçalho (Cifra/Letra, setas, chat,
-   tela cheia, fechar) tomam a linha inteira e o nome da música
+/* No celular os botões do cabeçalho (Cifra/Letra, setas, editar,
+   chat, tela cheia) tomavam a linha inteira e o nome da música
    ficava com largura zero: quem transmitia não via nem o título.
-   Agora os botões ficam na primeira linha, espalhados, e o nome
-   com o cantor ganham a linha de baixo, inteira para eles. */
+   Agora são duas linhas: em cima o nome com o cantor e o × de
+   fechar no canto (como numa janela); embaixo os botões. O × fora
+   da fileira libera uma vaga, e o lápis de editar, que o
+   leitor-editar.js escondia no celular, volta. */
 @media (max-width: 820px), (pointer: coarse) {
-  #lyraBox .lyra-hd { flex-wrap: wrap; row-gap: 6px; padding: 10px 16px 10px; }
-  #lyraBox .lyra-hd-acoes { order: 1; flex: 1 1 100%; justify-content: space-between; gap: 4px; }
-  #lyraBox .lyra-hd-txt { order: 2; flex: 1 1 100%; }
+  #lyraBox .lyra-hd { position: relative; flex-wrap: wrap; row-gap: 8px; padding: 10px 16px 10px; }
+  #lyraBox .lyra-hd-txt { order: 1; flex: 1 1 100%; padding-right: 44px; }
+  #lyraBox .lyra-hd-acoes { order: 2; flex: 1 1 100%; justify-content: flex-start; gap: 6px; }
   /* o título pode ocupar duas linhas: os medleys não cabiam em uma */
   #lyraBox .lyra-hd h3 {
     font-size: 16px; line-height: 1.25; white-space: normal;
@@ -576,25 +578,28 @@ img, video, canvas {
      a linha com os botões) */
   #lyraBox .lyra-hd p { display: block; margin-top: 2px; }
   #lyraBox .lyra-hd p:empty { display: none; }
-  /* a fileira de botões de quem está logado (Cifra/Letra, setas,
-     dois do chat, tela cheia, fechar) passava da borda e o × saía
-     da tela: botões um pouco menores, que cabem até em 320px */
+  /* o × sai da fileira e vai para o canto, na altura do nome */
+  #lyraBox .lyra-hd .lyra-x {
+    position: absolute; top: 6px; right: 8px; margin: 0; padding: 0;
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  }
   #lyraBox .lyra-hd .lyra-btn { min-width: 40px; padding: 0 8px; }
   #lyraBox .lyra-hd #lyraSeg button[data-modo] { padding: 0 11px; }
 }
+/* [data-modo] e .on repetidos só para vencer a regra de 430px
+   mais abaixo, que fixa a largura dos botões Cifra/Letra */
 @media (max-width: 380px) {
-  #lyraBox .lyra-hd .lyra-btn { min-width: 38px; }
-  /* [data-modo] só para vencer a regra de 430px mais abaixo */
+  #lyraBox .lyra-hd-acoes { gap: 4px; }
+  #lyraBox .lyra-hd .lyra-btn { min-width: 36px; padding: 0 6px; }
   #lyraBox .lyra-hd #lyraSeg button[data-modo],
   #lyraBox .lyra-hd #lyraSeg button[data-modo].on { width: 37px; padding: 0; }
 }
 @media (max-width: 340px) {
   #lyraBox .lyra-hd { padding-left: 12px; padding-right: 12px; }
   #lyraBox .lyra-hd-acoes { gap: 3px; }
-  #lyraBox .lyra-hd .lyra-btn { min-width: 36px; height: 38px; padding: 0 6px; }
+  #lyraBox .lyra-hd .lyra-btn { min-width: 34px; height: 38px; padding: 0 4px; }
   #lyraBox .lyra-hd #lyraSeg button[data-modo],
-  #lyraBox .lyra-hd #lyraSeg button[data-modo].on { width: 34px; padding: 0; height: 38px; }
-  #lyraBox .lyra-hd .lyra-x { padding: 4px 4px; margin-left: 0; }
+  #lyraBox .lyra-hd #lyraSeg button[data-modo].on { width: 33px; padding: 0; height: 38px; }
 }
 
 /* No celular tudo o mais da barra já mora no menu de opções:
