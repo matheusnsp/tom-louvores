@@ -19,6 +19,9 @@
 
   //  Cartão simples: um botão só no controle, sem campo nem seletor
   function botaoUnico(linha) {
+    //  Transmitir minha tela fica como linha: o botão dele é o que
+    //  diz "Desligado"/"Transmitindo", não dá para escondê-lo
+    if (linha.id === "snLinha") return null;
     const c = linha.querySelector(".op-controle");
     if (!c || c.querySelector("select, input")) return null;
     const bs = c.querySelectorAll("button");
