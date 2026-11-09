@@ -365,3 +365,22 @@ html.app-instalado #lyraTelaBtn { display: none !important; }
   #lyraBox .lyra-hd-acoes #opBtn .op-abrir-txt { display: none; }
   #lyraBox .lyra-barra:not(:has(.lyra-grupo > *)) { display: none; }
 }
+
+/* ── toque (celular e iPad): seleção de texto só na cifra ────────
+   Segurar o dedo em botões, títulos e rótulos selecionava texto e
+   abria o menu de copiar do sistema no meio do uso. Agora só o
+   texto da cifra aberta (e os campos de digitar) aceita seleção. */
+@media (pointer: coarse) {
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #lyraCorpo .lyra-pre, #lyraCorpo .lyra-cab,
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+  }
+  a { -webkit-touch-callout: default; }
+
+  /* O campo da cifra (editor e modal) com letra de 16px: abaixo
+     disso o iPhone dá zoom na página inteira ao tocar no campo, e
+     ela fica deslocada depois. 16px é o limite em que ele não faz
+     isso. No computador o campo segue com a letra de código menor. */
+  #cifra, #cifraTextoIntegrado, .ce-page textarea { font-size: 16px !important; }
+}
