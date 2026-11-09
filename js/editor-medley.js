@@ -193,17 +193,35 @@
   // ── busca e escolha ─────────────────────────────────────────
   const busca = $("mdBusca"), lista = $("mdLista"), msg = $("mdMsg");
   let escolhidas = [];   // { slug, title, artist, base_key }
-  let espera = null;
+  let espera = null, pedido = 0;
 
   function fecharLista() { lista.hidden = true; lista.innerHTML = ""; }
+  function aviso(texto) {
+    lista.innerHTML = "";
+    const v = document.createElement("div");
+    v.className = "ce-lyra-vazio";
+    v.textContent = texto;
+    lista.appendChild(v);
+    lista.hidden = false;
+  }
 
+  //  Sem acento, cada palavra digitada em qualquer ordem. Enquanto
+  //  a lista de cifras ainda está vindo do banco, a caixa diz isso
+  //  em vez de ficar muda; a busca mais nova sempre vence a antiga.
   async function procurar() {
     const termo = norm(busca.value);
     if (termo.length < 2) { fecharLista(); return; }
-    await carregarIndice();
+    const meu = ++pedido;
+    if (!indice) {
+      aviso("Carregando as cifras do site…");
+      await carregarIndice();
+      if (meu !== pedido) return;
+    }
+    const palavras = termo.split(/\s+/).filter(Boolean);
+    const bate = t => { const n = norm(t); return palavras.every(p => n.includes(p)); };
     const achadas = indice
       .filter(s => !escolhidas.some(e => e.slug === s.slug))
-      .filter(s => norm(s.title).includes(termo) || norm(s.artist).includes(termo))
+      .filter(s => bate(s.title) || bate(s.artist) || bate(`${s.title} ${s.artist}`))
       .slice(0, 12);
     lista.innerHTML = "";
     if (!achadas.length) {

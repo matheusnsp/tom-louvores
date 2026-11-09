@@ -63,14 +63,16 @@
     itens = resultados;
     marcado = -1;
     lista.innerHTML = "";
+    //  Sem resultado, o aviso vai embaixo do campo, no fluxo: a lista
+    //  vazia aberta por cima tampava o que vem abaixo.
     if (!resultados.length) {
-      const v = document.createElement("div");
-      v.className = "ce-lyra-vazio";
-      v.textContent = window.tlLyra && !tlLyra.disponivel
+      fecharLista();
+      msg.textContent = window.tlLyra && !tlLyra.disponivel
         ? "A busca no Lyra ainda não está ligada (função do Supabase não publicada)."
         : `Nada no Lyra com "${termo}". Pode cadastrar à mão.`;
-      lista.appendChild(v);
+      return;
     }
+    msg.textContent = "";
     resultados.forEach((s, i) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -86,12 +88,42 @@
     lista.hidden = false;
   }
 
+  //  Sem acento e em minúsculas: "tu es bom" acha "Tu És Bom".
+  //  Cada palavra digitada tem de aparecer, em qualquer ordem.
+  const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const bate = (texto, palavras) => { const t = norm(texto); return palavras.every(p => t.includes(p)); };
+
+  function carregando(texto) {
+    lista.innerHTML = "";
+    const v = document.createElement("div");
+    v.className = "ce-lyra-vazio";
+    v.textContent = texto;
+    lista.appendChild(v);
+    lista.hidden = false;
+  }
+
+  //  A busca é feita aqui, na lista completa do Lyra (que fica
+  //  guardada no aparelho), e não no servidor: assim ignora acentos
+  //  e maiúsculas e responde na hora. Só se a lista não vier é que
+  //  pergunta ao servidor.
   async function procurar() {
     const termo = busca.value.trim();
     if (termo.length < 2) { fecharLista(); return; }
     const meu = ++pedido;
-    const res = window.tlLyra ? await tlLyra.buscar(termo) : [];
-    if (meu !== pedido) return;          // chegou depois de outra busca
+    if (!window.tlLyra) { desenhar([], termo); return; }
+
+    carregando("Buscando no Lyra…");
+    let res = [];
+    try {
+      const mapa = await tlLyra.letras();
+      if (meu !== pedido) return;          // chegou depois de outra busca
+      const palavras = norm(termo).split(/\s+/).filter(Boolean);
+      res = mapa && mapa.size
+        ? [...mapa.values()].filter(s => bate(s.title, palavras) || bate(s.artist, palavras) || bate(`${s.title} ${s.artist}`, palavras))
+            .sort((a, b) => norm(a.title).localeCompare(norm(b.title), "pt-BR")).slice(0, 12)
+        : await tlLyra.buscar(termo);
+    } catch { res = []; }
+    if (meu !== pedido) return;
     desenhar(res, termo);
   }
 
@@ -135,6 +167,13 @@
       }
     });
     busca.addEventListener("blur", () => setTimeout(fecharLista, 150));
+    //  Toque fora da lista (e fora de um item) fecha a lista no ato,
+    //  sem esperar o campo perder o foco.
+    document.addEventListener("pointerdown", e => {
+      if (lista.hidden || e.target === busca) return;
+      if (e.target.closest && e.target.closest(".ce-lyra-item")) return;   // escolha normal
+      fecharLista();
+    }, true);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", carregarLinkDaMusica);
