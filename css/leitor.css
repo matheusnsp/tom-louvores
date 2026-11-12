@@ -458,3 +458,24 @@ html.app-instalado #lyraTelaBtn { display: none !important; }
   #viewModal .view-bd { padding: 20px 20px 24px; gap: 20px; }
   @keyframes viewSobe { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
 }
+
+/* ── iPad (toque, 821px para cima): cabeçalho de computador ──────
+   As regras de celular valem por "(pointer: coarse)" e pegavam o
+   iPad junto: título escondido, Cifra/Letra esmagado em 36px (as
+   palavras ficavam uma em cima da outra) e os botões espalhados
+   pela largura toda com "space-between". Num tablet há lugar: o
+   nome da música e o cantor voltam ao cabeçalho, os botões ficam
+   juntos à direita e o Cifra/Letra mostra as palavras. O título
+   dentro da cifra (.lyra-cab) só faz sentido no celular. */
+@media (min-width: 821px) and (pointer: coarse) {
+  #lyraBox .lyra-hd { padding: 10px 16px; gap: 14px; }
+  #lyraBox .lyra-hd-txt { display: block; flex: 1 1 auto; min-width: 0; }
+  #lyraBox .lyra-hd-acoes {
+    flex: 0 0 auto; justify-content: flex-end; gap: 6px;
+    overflow: visible;
+  }
+  #lyraBox .lyra-hd #lyraSeg button[data-modo],
+  #lyraBox .lyra-hd #lyraSeg button[data-modo].on { width: auto; padding: 0 14px; }
+  #lyraBox .lyra-hd #lyraSeg button span { display: inline; }
+  #lyraBox .lyra-cab { display: none; }
+}
