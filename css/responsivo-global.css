@@ -232,6 +232,8 @@ img, video, canvas {
     gap: 10px;
     flex-wrap: wrap;
   }
+  .culto-escala-label { flex-basis: 74px; }
+  .culto-equipe { padding: 4px 14px 12px; }
 
   /* Continua compactando conforme o nome escolhido */
   .culto-escala .culto-escala-sel {

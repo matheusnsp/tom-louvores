@@ -104,6 +104,7 @@ Para trocar a cor de destaque do site inteiro, mude só `--gold`, `--gold-hi` e 
 │   ├── lyra.js            → leitor de cifras
 │   ├── sugestoes.js       → aba de sugestões
 │   ├── escala.js          → aba da escala (ministrante e back, do Firebase)
+│   ├── culto-equipe.js    → back e chegada no cartão do culto (aba Cultos)
 │   ├── login-dia.js       → mantém o login o dia todo no aparelho
 │   └── …                  → um arquivo por recurso (afinador, metrônomo, chat…)
 ├── img/                   → logo do topo, ícones do app e imagem de compartilhar
@@ -164,6 +165,7 @@ A aba **Escala** (`escala.html`) é aberta para todo mundo, com ou sem login. No
 - Lugar marcado como "disponível" na escala aparece como **Vaga**.
 - A última escala vista fica guardada no aparelho: sem internet, a aba continua mostrando quem canta.
 - Mudou a escala no Firebase? A aba atualiza sozinha ao voltar para ela (não precisa do `escalaForcar()`, que é só para o ministrante dos cultos).
+- A mesma escala aparece **dentro do cartão de cada culto**, na aba Cultos (`js/culto-equipe.js`): abaixo do ministrante, a linha **Back** com os nomes na ordem BVOCAL 1 a 4 (vaga aberta vira "Vaga" tracejada) e a hora de **chegada** no fim da linha do ministrante. Usa a mesma consulta e a mesma cópia no aparelho da aba Escala; cópia com menos de uma hora dispensa a consulta. Culto passado só mostra o back se ainda estiver na cópia.
 
 ## 💡 Sugestões de louvores
 

@@ -965,6 +965,30 @@
    /* admin vê o seletor; quem só visualiza vê o nome */
    body.read-only .culto-escala-sel{display:none}
    body:not(.read-only) .culto-escala-nome{display:none}
+
+   /* ——— equipe do culto: back e chegada (js/culto-equipe.js) ——— */
+   .culto-escala-label{
+     font-size:12px;font-weight:700;letter-spacing:.08em;
+     text-transform:uppercase;color:var(--gray2);flex:0 0 86px;
+   }
+   .culto-chegada{margin-left:auto;font-size:12px;color:var(--gray2);white-space:nowrap}
+   .culto-chegada b{color:var(--dim);font-weight:600}
+   /* as duas linhas (ministrante e back) formam um bloco só */
+   .culto-escala:has(+ .culto-equipe){border-bottom:0;padding-bottom:4px}
+   .culto-equipe{
+     display:flex;align-items:center;gap:10px;min-height:34px;
+     padding:4px 20px 12px;border-bottom:1px solid var(--fio);
+   }
+   .culto-backs{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+   .culto-back{
+     display:inline-flex;align-items:center;gap:6px;
+     padding:5px 12px;border-radius:var(--pill);
+     font-size:13px;font-weight:600;color:var(--paper);
+     background:rgba(255,255,255,0.04);border:1px solid var(--fio);
+   }
+   .culto-back::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);opacity:.8}
+   .culto-back.vaga{color:var(--gray2);border-style:dashed;font-weight:500}
+   .culto-back.vaga::before{background:transparent;border:1px solid var(--gray2)}
    
    /* abas do modal de culto */
    .culto-tabs{display:flex;gap:6px;margin-bottom:4px}
