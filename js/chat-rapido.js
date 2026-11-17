@@ -18,8 +18,16 @@
 //
 //  O chat guarda as mensagens num Firebase aberto (o mesmo que o
 //  chat-aviso.js lê); daqui a mensagem entra direto lá, pela API
-//  REST, com o nome que a pessoa escreveu uma vez neste aparelho.
-//  A mensagem vai numa linha: parte, depois o trecho.
+//  REST. A mensagem vai numa linha: parte, depois o trecho.
+//
+//  O NOME E O ID SÃO OS DO CHAT. O chat (chat.invbotafogo.com.br)
+//  mora em outro domínio, e o que ele guarda não dá para ler
+//  daqui. Então é ele quem avisa: aberto dentro do site, manda por
+//  postMessage quem está logado (nome, id, avatar) e avisa quando a
+//  pessoa sai. Aqui fica uma cópia no aparelho, para mandar daqui
+//  sem precisar abrir o chat toda vez. Quem nunca entrou no chat
+//  neste aparelho vê um botão para abri-lo e entrar — não há mais
+//  um nome só do chat rápido.
 // ============================================================
 (() => {
   "use strict";
@@ -27,6 +35,8 @@
   const BANCO = "https://church-chat-dd8ea-default-rtdb.firebaseio.com";
   const CHAVE_NOME = "tl_chat_nome";
   const CHAVE_UID = "tl_chat_uid";
+  const CHAVE_PERFIL = "tl_chat_perfil_v1";   // "1" depois que o chat avisou uma vez
+  const CHAT_ORIGEM = (typeof CHAT_URL === "string" ? CHAT_URL : "https://chat.invbotafogo.com.br").replace(/\/$/, "");
 
   const ler = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
   const gravar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sem armazenamento */ } };
@@ -40,6 +50,24 @@
   if (!uid) {
     uid = "tl-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
     gravar(CHAVE_UID, uid);
+  }
+
+  //  O chat, aberto dentro do site, conta quem está logado. Sem
+  //  ninguém logado lá, o nome daqui também some.
+  window.addEventListener("message", e => {
+    if (e.origin !== CHAT_ORIGEM || !e.data || typeof e.data !== "object") return;
+    if (e.data.type !== "invb-chat-sessao") return;
+    const d = e.data;
+    const nome = d.joined ? String(d.name || "").replace(/\s+/g, " ").trim() : "";
+    gravar(CHAVE_NOME, nome);
+    if (nome && d.userId) { uid = String(d.userId); gravar(CHAVE_UID, uid); }
+    gravar(CHAVE_PERFIL, "1");
+    if (painel) pintar();
+  });
+  //  Pede ao chat o perfil (quando ele estiver aberto no painel)
+  function pedirPerfil() {
+    const f = document.querySelector("#peCorpo iframe");
+    try { f && f.contentWindow && f.contentWindow.postMessage({ type: "invb-chat-sessao?" }, CHAT_ORIGEM); } catch { /* sem chat */ }
   }
 
   //  O aviso de mensagem nova não precisa avisar a própria pessoa.
@@ -78,7 +106,9 @@
   .cr-quem{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12.5px;color:var(--gray,#aaa)}
   .cr-quem b{color:var(--white,#fff);font-weight:700}
   .cr-link{background:none;border:0;padding:0;color:var(--gold,#f2c14e);font:600 12.5px var(--font-ui,inherit);cursor:pointer;text-decoration:underline}
-  .cr-nome{display:flex;gap:8px;margin-bottom:10px}
+  .cr-nome{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .cr-nome .cr-dica{flex:1;min-width:0;margin:0;padding:0;text-align:left}
+  .cr-nome button{padding:10px 16px;white-space:nowrap}
   .cr-nome input,.cr-busca{flex:1;min-width:0;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;
     border:1px solid var(--black5,#2a2a2e);background:var(--black,#0a0a0a);color:var(--white,#fff);font:500 16px var(--font-ui,inherit)}
   .cr-nome input:focus,.cr-busca:focus{outline:none;border-color:var(--gold,#f2c14e)}
@@ -307,31 +337,26 @@
     fixo.replaceChildren();
     const nome = ler(CHAVE_NOME).trim();
 
-    if (nome && !editandoNome) {
+    const abrirChat = () => { fechar(); if (typeof chatAbrir === "function") chatAbrir(); };
+    if (nome) {
       const q = novo("div", "cr-quem");
       q.append("Enviando como ", novo("b", "", nome), " ·");
-      const trocar = novo("button", "cr-link", "trocar");
+      const trocar = novo("button", "cr-link", "mudar no chat");
       trocar.type = "button";
-      trocar.addEventListener("click", () => { editandoNome = true; pintar(); });
+      trocar.title = "O nome é o do chat: para trocar, saia e entre de novo lá";
+      trocar.addEventListener("click", abrirChat);
       q.append(trocar);
       fixo.append(q);
     } else {
-      const f = novo("form", "cr-nome");
-      const i = novo("input");
-      i.type = "text"; i.maxLength = 30; i.placeholder = "Seu nome no chat"; i.value = nome;
-      const ok = novo("button", "", "Salvar");
-      ok.type = "submit";
-      f.append(i, ok);
-      f.addEventListener("submit", e => {
-        e.preventDefault();
-        const v = i.value.replace(/\s+/g, " ").trim();
-        if (!v) { i.focus(); return; }
-        gravar(CHAVE_NOME, v);
-        editandoNome = false;
-        pintar();
-      });
+      //  Sem perfil: a pessoa entra no chat com o nome dela e ele
+      //  avisa aqui. Nada de nome separado para o chat rápido.
+      const f = novo("div", "cr-nome");
+      const t = novo("span", "cr-dica", "Entre no chat com o seu nome para mandar daqui.");
+      const ok = novo("button", "", "Abrir o chat");
+      ok.type = "button";
+      ok.addEventListener("click", abrirChat);
+      f.append(t, ok);
       fixo.append(f);
-      setTimeout(() => i.focus(), 60);
     }
 
     if (trocando) {
@@ -339,7 +364,7 @@
       b.type = "search"; b.placeholder = "Buscar música ou cantor…";
       b.addEventListener("input", () => pintarOpcoes(b.value));
       fixo.append(b);
-      if (nome && !editandoNome) setTimeout(() => b.focus(), 60);
+      if (nome) setTimeout(() => b.focus(), 60);
     } else if (escolhida) {
       const c = novo("div", "cr-musica");
       const txt = novo("div", "cr-musica-txt");
@@ -358,7 +383,7 @@
       c.append(txt, acoes);
       fixo.append(c);
     }
-    painel.classList.toggle("cr-bloqueado", !nome || editandoNome);
+    painel.classList.toggle("cr-bloqueado", !nome);
   }
 
   // ── escolher a música ──
@@ -527,7 +552,7 @@
         botao.classList.add("enviada");
         setTimeout(() => botao.classList.remove("enviada"), 6000);
       }
-    } else if (r === "nome") { editandoNome = true; pintar(); status("Escreva seu nome primeiro.", "erro"); }
+    } else if (r === "nome") { pintar(); status("Entre no chat com o seu nome primeiro.", "erro"); }
     else if (r === "negado") status("O chat recusou a mensagem.", "erro");
     else status("Não foi. Confira a internet e tente de novo.", "erro");
     //  um respiro para um toque duplo não mandar duas vezes
@@ -567,6 +592,7 @@
     trocando = !escolhida;
     editandoNome = false;
     maoNoPainel = 0;
+    pedirPerfil();
     painel.classList.add("on");
     document.getElementById("lyraMsgs")?.classList.add("on");
     pintar();
