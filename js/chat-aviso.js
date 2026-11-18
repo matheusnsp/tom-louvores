@@ -111,6 +111,10 @@ const avVisivel = () => document.visibilityState === "visible";
       color:var(--gray);font-size:13px;cursor:pointer;
     }
     .av-x:hover{color:var(--white)}
+    /* o sino no cabeçalho do painel do chat */
+    #pePainel .pe-acoes .av-sino{color:var(--gold);border-color:rgba(var(--gold-rgb),0.45);background:rgba(var(--gold-rgb),0.08)}
+    #pePainel .pe-acoes .av-sino.bloqueado{color:var(--gray);border-color:var(--black5);background:transparent;position:relative}
+    #pePainel .pe-acoes .av-sino.bloqueado::after{content:"";position:absolute;left:7px;right:7px;top:50%;height:2px;background:currentColor;transform:rotate(-40deg)}
     @media (prefers-reduced-motion: reduce){
       .av-balao{transition:opacity .2s,visibility 0s linear .2s}
       .av-balao.on{transition:opacity .2s,visibility 0s}
@@ -354,17 +358,68 @@ async function avNotificar() {
   try { new Notification(titulo, opcoes); } catch (e) { /* sem suporte */ }
 }
 
-// Pergunta uma vez só. Quem fechou o pedido sem responder não é
-// incomodado de novo; dá para ligar depois no cadeado do navegador.
-function avPedirPermissao() {
+// Pergunta ao abrir o chat enquanto a resposta for "ainda não"
+// (fechou o pedido sem responder), no máximo uma vez por dia.
+// Antes era uma vez na vida: quem fechou o primeiro pedido nunca
+// mais era perguntado e ficava sem aviso sem saber por quê. Quem
+// bloqueou de vez não é incomodado: o sino no painel explica.
+const AV_PEDIR_DE_NOVO_MS = 24 * 60 * 60 * 1000;
+function avPedirPermissao(forcar = false) {
   const pode = "Notification" in window && Notification.permission === "default";
-  if (pode === false) return;
-  try {
-    if (localStorage.getItem("av_pediu")) return;
-    localStorage.setItem("av_pediu", "1");
-  } catch (e) { /* modo privado: pergunta mesmo assim */ }
-  const p = Notification.requestPermission();
-  if (p && p.catch) p.catch(() => {});
+  if (pode === false) return Promise.resolve(false);
+  if (forcar === false) {
+    try {
+      const em = Number(localStorage.getItem("av_pediu_em") || 0);
+      if (Date.now() - em < AV_PEDIR_DE_NOVO_MS) return Promise.resolve(false);
+    } catch (e) { /* modo privado: pergunta mesmo assim */ }
+  }
+  try { localStorage.setItem("av_pediu_em", String(Date.now())); } catch (e) { /* sem armazenamento */ }
+  let p;
+  try { p = Notification.requestPermission(); } catch (e) { return Promise.resolve(false); }
+  return Promise.resolve(p).then(r => { avSinoPintar(); return r === "granted"; }).catch(() => false);
+}
+
+// ── o sino no painel do chat ────────────────────────────────
+// Enquanto o aparelho não estiver avisando, um sino apagado fica no
+// cabeçalho do painel: tocar pede a permissão (é um toque da pessoa,
+// como o navegador exige). Bloqueado de vez, explica onde liberar.
+// Sem a API (Safari fora da tela de início) o sino não aparece.
+const AV_ICO_SINO = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`;
+
+function avSinoPintar() {
+  const acoes = document.querySelector("#pePainel .pe-acoes");
+  if (acoes === null) return;
+  let b = document.getElementById("avSino");
+  const tem = "Notification" in window;
+  if (tem === false || Notification.permission === "granted") { if (b) b.remove(); return; }
+  if (b === null) {
+    b = document.createElement("button");
+    b.type = "button";
+    b.id = "avSino";
+    b.className = "av-sino";
+    b.innerHTML = AV_ICO_SINO;
+    b.addEventListener("click", avSinoToque);
+    acoes.insertBefore(b, acoes.firstChild);
+  }
+  const bloqueado = Notification.permission === "denied";
+  b.classList.toggle("bloqueado", bloqueado);
+  b.title = bloqueado ? "Avisos bloqueados neste aparelho" : "Ativar avisos de mensagem nova";
+  b.setAttribute("aria-label", b.title);
+}
+
+async function avSinoToque() {
+  if (Notification.permission === "denied") {
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const como = ios
+      ? "Ajustes do iPhone/iPad → Notificações → Tom Louvores → Permitir."
+      : "Toque no cadeado ao lado do endereço → Notificações → Permitir.";
+    if (typeof toast === "function") toast("Avisos bloqueados. " + como, true);
+    return;
+  }
+  const ok = await avPedirPermissao(true);
+  if (typeof toast === "function") {
+    toast(ok ? "Avisos ligados: mensagem nova chega aqui ✓" : "Sem permissão: os avisos ficam só dentro do app.", ok === false);
+  }
 }
 
 // ── enxerto no chat.js ──────────────────────────────────────
@@ -378,6 +433,7 @@ chatAbrir = function (...a) {
     avReavisar = false;
     avFecharBalao();
     avPintar();
+    avSinoPintar();
     avPedirPermissao();
   }
   return r;
@@ -403,6 +459,7 @@ function avSincronizar() {
 // vista; com ele fechado, o balão mostra o que ficou para ler.
 document.addEventListener("visibilitychange", () => {
   if (avVisivel() === false) return;
+  avSinoPintar();   // pode ter liberado nos ajustes enquanto estava fora
   if (peAberto()) {
     avNaoLidas = 0;
     avPintar();
