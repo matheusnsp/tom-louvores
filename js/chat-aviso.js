@@ -78,30 +78,34 @@ const avVisivel = () => document.visibilityState === "visible";
       transform:translate(-50%, 0);opacity:1;visibility:visible;
       transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .2s,visibility 0s;
     }
+    /* Um <div> com papel de botão, e flex em vez de grade: no Safari
+       do iPad o <button> em grade saía só com o ícone, sem o nome e
+       sem o texto (o WebKit embrulha o conteúdo do botão numa caixa
+       própria e a grade não chega nos filhos). */
     .av-abrir{
       flex:1;min-width:0;
-      display:grid;grid-template-columns:38px 1fr;align-items:center;
-      column-gap:12px;row-gap:2px;
+      display:flex;align-items:center;gap:12px;
       padding:11px 6px 11px 12px;
-      background:none;border:0;cursor:pointer;text-align:left;
-      font-family:var(--font-ui);
+      cursor:pointer;text-align:left;
+      font-family:var(--font-ui,inherit);
+      -webkit-tap-highlight-color:transparent;
     }
     .av-ico{
-      grid-column:1;grid-row:1 / span 2;
-      width:38px;height:38px;
+      flex:0 0 38px;width:38px;height:38px;
       display:flex;align-items:center;justify-content:center;
-      background:rgba(var(--gold-rgb),0.08);border:1px solid rgba(var(--gold-rgb),0.2);
-      border-radius:var(--r);color:var(--gold);
+      background:rgba(var(--gold-rgb,242,193,78),0.08);border:1px solid rgba(var(--gold-rgb,242,193,78),0.2);
+      border-radius:var(--r,12px);color:var(--gold,#f2c14e);
     }
+    .av-texto{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
     .av-nome,.av-txt{
-      grid-column:2;min-width:0;
+      display:block;min-width:0;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     .av-nome{
       font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
-      color:var(--white);line-height:1.2;
+      color:var(--white,#fff);line-height:1.2;
     }
-    .av-txt{font-size:12.5px;color:var(--gray);line-height:1.4}
+    .av-txt{font-size:12.5px;color:var(--gray,#b8b8bc);line-height:1.4}
     .av-x{
       flex:0 0 42px;background:none;border:0;border-left:1px solid var(--black4);
       color:var(--gray);font-size:13px;cursor:pointer;
@@ -290,13 +294,19 @@ function avMostrarBalao() {
     b.className = "av-balao";
     b.setAttribute("role", "status");
     b.innerHTML = `
-      <button type="button" class="av-abrir">
+      <div class="av-abrir" role="button" tabindex="0" aria-label="Abrir o chat">
         <span class="av-ico">${chatIco(18, 2.2)}</span>
-        <span class="av-nome"></span>
-        <span class="av-txt"></span>
-      </button>
+        <span class="av-texto">
+          <span class="av-nome"></span>
+          <span class="av-txt"></span>
+        </span>
+      </div>
       <button type="button" class="av-x" aria-label="Fechar aviso">&#10005;</button>`;
-    b.querySelector(".av-abrir").addEventListener("click", () => chatAbrir());
+    const abrir = b.querySelector(".av-abrir");
+    abrir.addEventListener("click", () => chatAbrir());
+    abrir.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); chatAbrir(); }
+    });
     b.querySelector(".av-x").addEventListener("click", avFecharBalao);
     document.body.appendChild(b);
     void b.offsetWidth; // primeira vez: deixa a entrada animar
