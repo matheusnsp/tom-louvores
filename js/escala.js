@@ -112,6 +112,18 @@ function escNome(bruto) {
     .join(" ");
 }
 
+//  A hora de chegada é fixa por culto, combinada com a equipe:
+//  quarta 18:30, domingo de manhã 8:00, domingo à noite 18:00. O
+//  que vem no "horaInicio" do Firebase só vale para outro culto
+//  (um extra, por exemplo).
+function escChegada(data, turno, doFirebase) {
+  const dia = escDataObj(data).getDay();
+  if (dia === 3) return "18:30";
+  if (dia === 0 && turno === "manhã") return "8:00";
+  if (dia === 0 && turno === "noite") return "18:00";
+  return doFirebase || "";
+}
+
 function escJanela() {
   const hoje = new Date();
   const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 2, 0);
@@ -242,7 +254,7 @@ function escCardHTML(c, hoje) {
   return `
     <article class="esc-card${c.data === hoje ? " hoje" : ""}">
       <div class="esc-hd">
-        <div class="esc-dia">${esc(titulo)}${c.chegada ? `<small>Chegada às ${esc(c.chegada)}</small>` : ""}</div>
+        <div class="esc-dia">${esc(titulo)}${escChegada(c.data, c.turno, c.chegada) ? `<small>Chegada às ${esc(escChegada(c.data, c.turno, c.chegada))}</small>` : ""}</div>
         <div class="esc-data">${dataStr}</div>
       </div>
       <div>

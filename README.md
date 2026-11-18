@@ -165,7 +165,7 @@ A aba **Escala** (`escala.html`) é aberta para todo mundo, com ou sem login. No
 - Lugar marcado como "disponível" na escala aparece como **Vaga**.
 - A última escala vista fica guardada no aparelho: sem internet, a aba continua mostrando quem canta.
 - Mudou a escala no Firebase? A aba atualiza sozinha ao voltar para ela (não precisa do `escalaForcar()`, que é só para o ministrante dos cultos).
-- A mesma escala aparece **dentro do cartão de cada culto**, na aba Cultos (`js/culto-equipe.js`): abaixo do ministrante, a linha **Back** com os nomes na ordem BVOCAL 1 a 4 (vaga aberta vira "Vaga" tracejada) e a hora de **chegada** no fim da linha do ministrante. Usa a mesma consulta e a mesma cópia no aparelho da aba Escala; cópia com menos de uma hora dispensa a consulta. Culto passado só mostra o back se ainda estiver na cópia.
+- A mesma escala aparece **dentro do cartão de cada culto**, na aba Cultos (`js/culto-equipe.js`): abaixo do ministrante, a linha **Back** com os nomes na ordem BVOCAL 1 a 4 (vaga aberta vira "Vaga" tracejada) e a hora de **chegada** no fim da linha do ministrante. A chegada é fixa por culto, combinada com a equipe (quarta 18:30, domingo de manhã 8:00, domingo à noite 18:00, função `escChegada` no `js/escala.js`); o `horaInicio` do Firebase só vale para outros cultos. Usa a mesma consulta e a mesma cópia no aparelho da aba Escala; cópia com menos de uma hora dispensa a consulta. Culto passado só mostra o back se ainda estiver na cópia.
 
 ## 💡 Sugestões de louvores
 

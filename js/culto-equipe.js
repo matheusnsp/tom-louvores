@@ -5,7 +5,9 @@
 //
 //  A página Escala mostra o mês inteiro; aqui a mesma escala entra
 //  no cartão de cada culto, logo abaixo do ministrante:
-//    · "Chegada 18:30" no fim da linha do ministrante;
+//    · "Chegada 18:30" no fim da linha do ministrante — hora fixa
+//      por culto (quarta 18:30, domingo manhã 8:00, noite 18:00,
+//      ver escChegada no escala.js), mesmo sem escala montada;
 //    · uma linha "Back" com quem canta, na ordem BVOCAL 1 a 4, e
 //      "Vaga" tracejada onde ainda não há ninguém.
 //  Todo mundo vê, como na página Escala. Nada é gravado: o
@@ -54,13 +56,17 @@
       col.querySelector(".culto-equipe")?.remove();
       col.querySelector(".culto-chegada")?.remove();
       const e = entradaDe(col.dataset.cultoKey);
-      if (!e) return;
-
       const linhaMin = col.querySelector(".culto-escala");
-      if (linhaMin && e.chegada) {
+
+      //  a chegada não depende da escala: é a hora combinada do culto
+      const [tipo, data] = String(col.dataset.cultoKey || "").split("@");
+      const chegada = data && typeof escChegada === "function"
+        ? escChegada(data, TURNO[tipo] || (e && e.turno) || "", e && e.chegada) : "";
+      if (linhaMin && chegada) {
         linhaMin.insertAdjacentHTML("beforeend",
-          `<span class="culto-chegada">Chegada <b>${esc(e.chegada)}</b></span>`);
+          `<span class="culto-chegada">Chegada <b>${esc(chegada)}</b></span>`);
       }
+      if (!e) return;
 
       const backs = e.backs && e.backs.length
         ? e.backs.map(chip).join("")
