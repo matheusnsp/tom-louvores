@@ -115,6 +115,16 @@ const avVisivel = () => document.visibilityState === "visible";
     #pePainel .pe-acoes .av-sino{color:var(--gold);border-color:rgba(var(--gold-rgb),0.45);background:rgba(var(--gold-rgb),0.08)}
     #pePainel .pe-acoes .av-sino.bloqueado{color:var(--gray);border-color:var(--black5);background:transparent;position:relative}
     #pePainel .pe-acoes .av-sino.bloqueado::after{content:"";position:absolute;left:7px;right:7px;top:50%;height:2px;background:currentColor;transform:rotate(-40deg)}
+    /* iPad e telas de toque largas: balão maior, para ler de longe */
+    @media (min-width: 740px) and (pointer: coarse){
+      .av-balao{width:min(calc(100vw - 32px), 560px);top:calc(16px + env(safe-area-inset-top))}
+      .av-abrir{gap:14px;padding:14px 8px 14px 16px}
+      .av-ico{flex-basis:46px;width:46px;height:46px}
+      .av-ico svg{width:22px;height:22px}
+      .av-nome{font-size:15px !important}
+      .av-txt{font-size:15px !important;line-height:1.4}
+      .av-x{flex-basis:52px;font-size:16px}
+    }
     @media (prefers-reduced-motion: reduce){
       .av-balao{transition:opacity .2s,visibility 0s linear .2s}
       .av-balao.on{transition:opacity .2s,visibility 0s}
@@ -325,8 +335,8 @@ function avMostrarBalao() {
   for (const el of [nomeEl, txtEl]) {
     el.style.display = "block"; el.style.visibility = "visible"; el.style.opacity = "1";
   }
-  nomeEl.style.color = "#fff"; nomeEl.style.fontSize = "13px";
-  txtEl.style.color = "#b8b8bc"; txtEl.style.fontSize = "12.5px";
+  nomeEl.style.color = "#fff";
+  txtEl.style.color = "#b8b8bc";
   b.classList.add("on");
   clearTimeout(avTimer);
   avTimer = setTimeout(avFecharBalao, 6000);
@@ -367,7 +377,7 @@ function avConferirBalao(b) {
     }
   } catch (e) { /* diagnóstico nunca pode quebrar o aviso */ }
 }
-const AV_VERSAO = "160";
+const AV_VERSAO = "162";
 
 function avFecharBalao() {
   clearTimeout(avTimer);
