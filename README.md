@@ -161,6 +161,7 @@ Com login, o repertório mostra dois botões logo abaixo dos filtros:
 
 - O chat (INVB Chat, `chat.invbotafogo.com.br`) abre num painel dentro do site, só para quem está logado. O **chat rápido** (raio, no leitor) manda "de onde vamos cantar" com o **mesmo nome e id do chat**: o chat avisa o site por `postMessage` quem está logado (ponte no repositório `church-chat`, `src/App.jsx`, origens em `PARENT_ORIGINS`).
 - **Deslogar todo mundo do chat**: aumente `CHAT_SESSAO_GERACAO` no `js/chat.js` e publique. Cada aparelho apaga o perfil do chat rápido ao abrir o site e, assim que o chat abrir dentro do site, recebe a ordem de sair (`invb-chat-sair`). Sem a ponte publicada no chat, só o chat rápido é limpo.
+- Enquanto a ponte não falar num aparelho, o chat rápido pede o nome num campo próprio ("o mesmo do chat"); quando o chat passar a avisar, o perfil dele assume e o campo some.
 - Nome "em uso por outra pessoa" que não solta: é uma reserva presa em `nameLocks` no Firebase do chat (`church-chat-dd8ea`), que deveria sumir ao desconectar. Apagar o nó `nameLocks` (e `presence`) resolve; quem está conectado reserva de novo sozinho.
 
 ## 📋 Escala
