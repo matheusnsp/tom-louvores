@@ -202,6 +202,12 @@ const MN_ICO = {
   .mn-linha.mn-baixando .mn-sub{font-variant-numeric:tabular-nums}
   .mn-linha > *{position:relative;z-index:1}
 
+  .mn-versao{
+    background:none;border:1px solid var(--fio);border-radius:999px;
+    padding:2px 9px;margin-left:2px;color:var(--gold);
+    font:700 11px var(--font-ui);letter-spacing:.04em;cursor:pointer;
+  }
+  .mn-versao:active{background:rgba(var(--gold-rgb),0.12)}
   .mn-rodape{
     margin-top:auto;padding-top:16px;
     border-top:1px solid var(--fio);
@@ -304,8 +310,11 @@ function mnMontar() {
 
   const rodape = document.createElement("div");
   rodape.className = "mn-rodape";
-  rodape.textContent = "Tom Louvores · INVB";
+  rodape.innerHTML = `Tom Louvores · INVB · <button type="button" class="mn-versao" id="mnVersao"
+    title="Versão do app neste aparelho. Toque para procurar atualização.">v…</button>`;
+  rodape.querySelector("#mnVersao").addEventListener("click", mnProcurarAtualizacao);
   g.appendChild(rodape);
+  mnVersao();
 
   mnObservar();
   mnSincronizar();
@@ -323,6 +332,49 @@ function mnVisivel(id) {
 function mnMostrar(idLinha, mostrar) {
   const l = document.getElementById(idLinha);
   if (l) l.style.display = mostrar ? "" : "none";
+}
+
+// ── versão instalada ────────────────────────────────────────
+//  O número é o CACHE do sw.js que está controlando a página: é ele
+//  quem entrega os arquivos, então é a versão que está rodando de
+//  fato neste aparelho (o número da rede pode ser mais novo). Sem
+//  service worker controlando, lê o sw.js da rede e avisa.
+function mnVersao() {
+  const el = () => document.getElementById("mnVersao");
+  const pintar = v => { const e = el(); if (e && v) e.textContent = "v" + String(v).replace(/^.*-v/, ""); };
+  const sw = navigator.serviceWorker;
+  if (sw && sw.controller) {
+    const ouvir = e => {
+      if (e.data && e.data.versao) { pintar(e.data.versao); sw.removeEventListener("message", ouvir); }
+    };
+    sw.addEventListener("message", ouvir);
+    sw.controller.postMessage({ acao: "versao" });
+    //  service worker antigo, que ainda não responde: lê da rede
+    setTimeout(() => { if (el() && el().textContent === "v…") mnVersaoDaRede(pintar); }, 1500);
+  } else {
+    mnVersaoDaRede(pintar);
+  }
+}
+function mnVersaoDaRede(pintar) {
+  fetch("sw.js", { cache: "no-store" })
+    .then(r => r.text())
+    .then(t => { const m = t.match(/tom-louvores-v(\d+)/); if (m) pintar(m[1] + " (rede)"); })
+    .catch(() => {});
+}
+//  Toque no número: procura versão nova agora. Se houver, a página
+//  recarrega sozinha (ver o registro do sw.js nas páginas).
+async function mnProcurarAtualizacao() {
+  if (typeof toast === "function") toast("Procurando atualização…");
+  try {
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    if (reg) await reg.update();
+    setTimeout(() => {
+      if (reg && (reg.installing || reg.waiting)) return;   // a nova já está chegando
+      if (typeof toast === "function") toast("Você já está na versão mais nova ✓");
+    }, 2500);
+  } catch (e) {
+    if (typeof toast === "function") toast("Não deu para procurar agora.", true);
+  }
 }
 
 function mnSincronizar() {

@@ -18,7 +18,7 @@
 //  a nova e o código, o velho.
 // ============================================================
 
-const CACHE = "tom-louvores-v160";
+const CACHE = "tom-louvores-v161";
 
 const APP = [
   "./js/tons-mobile.js",
@@ -123,7 +123,10 @@ self.addEventListener("install", e => {
 //  A página pede para a versão nova assumir sem esperar o próximo
 //  lançamento. Só então ela recarrega, já com o código novo.
 self.addEventListener("message", e => {
-  if (e.data && e.data.acao === "assumir") self.skipWaiting();
+  if (!e.data) return;
+  if (e.data.acao === "assumir") self.skipWaiting();
+  //  o menu mostra a versão que está rodando de fato neste aparelho
+  if (e.data.acao === "versao" && e.source) e.source.postMessage({ versao: CACHE });
 });
 
 self.addEventListener("activate", e => {

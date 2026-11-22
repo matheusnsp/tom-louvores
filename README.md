@@ -13,7 +13,7 @@ No ar em **https://louvores.invbotafogo.com.br**
 - **Dados**: Supabase (tabelas `musicas`, `cultos` e `sugestoes`). O site fala com ele pela chave pública (anon), que fica no `js/config.js` — essa chave pode ficar no código. **A chave secreta (service_role) nunca entra aqui.**
 - **Escala mensal dos ministrantes**: lida do Firebase (projeto `escala-lideres`), também configurado no `js/config.js`.
 - **Login**: Supabase Auth. Só entra quem tem senha **e** está na tabela `cifras_admins`; o login vale o dia inteiro no aparelho (`js/login-dia.js`).
-- **Funciona offline**: o `sw.js` guarda os arquivos no celular. Toda vez que mudar algum arquivo do site, aumente o número em `const CACHE = "tom-louvores-vNN"` no `sw.js`, senão quem já abriu o site continua vendo a versão antiga.
+- **Funciona offline**: o `sw.js` guarda os arquivos no celular. Toda vez que mudar algum arquivo do site, aumente o número em `const CACHE = "tom-louvores-vNN"` no `sw.js`, senão quem já abriu o site continua vendo a versão antiga. O número que está rodando de fato em cada aparelho aparece no pé do **menu** (☰), como `v161`; tocar nele procura atualização.
 
 ---
 
