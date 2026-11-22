@@ -208,6 +208,11 @@ const MN_ICO = {
     font:700 11px var(--font-ui);letter-spacing:.04em;cursor:pointer;
   }
   .mn-versao:active{background:rgba(var(--gold-rgb),0.12)}
+  /* iPad: selo e rodapé maiores, para ler de longe */
+  @media (min-width: 740px) and (pointer: coarse){
+    .mn-rodape{font-size:13px;padding-top:20px}
+    .mn-versao{font-size:14px;padding:5px 14px;margin-left:6px}
+  }
   .mn-rodape{
     margin-top:auto;padding-top:16px;
     border-top:1px solid var(--fio);
