@@ -316,12 +316,58 @@ function avMostrarBalao() {
     void b.offsetWidth; // primeira vez: deixa a entrada animar
   }
   const mais = avNaoLidas > 1 ? ` \u00b7 ${avNaoLidas} novas` : "";
-  b.querySelector(".av-nome").textContent = avUltima.nome + mais;
-  b.querySelector(".av-txt").textContent = avUltima.texto || "mandou uma mensagem";
+  const nomeEl = b.querySelector(".av-nome");
+  const txtEl = b.querySelector(".av-txt");
+  nomeEl.textContent = avUltima.nome + mais;
+  txtEl.textContent = avUltima.texto || "mandou uma mensagem";
+  //  O essencial também em linha, para não depender da folha de
+  //  estilo: num iPad o balão vinha só com o ícone e o X.
+  for (const el of [nomeEl, txtEl]) {
+    el.style.display = "block"; el.style.visibility = "visible"; el.style.opacity = "1";
+  }
+  nomeEl.style.color = "#fff"; nomeEl.style.fontSize = "13px";
+  txtEl.style.color = "#b8b8bc"; txtEl.style.fontSize = "12.5px";
   b.classList.add("on");
   clearTimeout(avTimer);
   avTimer = setTimeout(avFecharBalao, 6000);
+  requestAnimationFrame(() => avConferirBalao(b));
 }
+
+//  Confere se o nome e o texto saíram mesmo na tela. Se não, grava
+//  o motivo (av_diag), mostra a mensagem no banner comum do site e,
+//  uma vez por versão, o diagnóstico, para mandar para quem cuida
+//  do site. (Num iPad o balão vinha vazio e daqui não dá para ver.)
+function avConferirBalao(b) {
+  try {
+    const n = b.querySelector(".av-nome");
+    const r = n.getBoundingClientRect();
+    const cs = getComputedStyle(n);
+    const caixa = b.querySelector(".av-abrir").getBoundingClientRect();
+    const prob = [];
+    if (!n.textContent) prob.push("texto vazio");
+    if (r.width < 2 || r.height < 2) prob.push(`caixa ${Math.round(r.width)}x${Math.round(r.height)}`);
+    if (cs.display === "none") prob.push("display none");
+    if (cs.visibility !== "visible") prob.push("visibility " + cs.visibility);
+    if (parseFloat(cs.opacity) < 0.5) prob.push("opacity " + cs.opacity);
+    if (parseFloat(cs.fontSize) < 6) prob.push("fonte " + cs.fontSize);
+    if (r.left >= caixa.right - 1 || r.top >= caixa.bottom - 1) prob.push("fora da caixa");
+    if (cs.color === getComputedStyle(b).backgroundColor) prob.push("cor do fundo");
+    if (prob.length === 0) return;
+    const diag = prob.join(", ") + " | " + [cs.display, cs.visibility, cs.opacity, cs.fontSize, cs.color,
+      String(cs.fontFamily).slice(0, 24), Math.round(caixa.width) + "x" + Math.round(caixa.height),
+      innerWidth + "x" + innerHeight].join(" ");
+    try { localStorage.setItem("av_diag", diag); } catch (e) { /* sem armazenamento */ }
+    if (typeof toast !== "function") return;
+    toast(`${avUltima.nome}: ${avUltima.texto || "mandou uma mensagem"}`);
+    let mostrou = "";
+    try { mostrou = localStorage.getItem("av_diag_mostrado") || ""; } catch (e) { /* ok */ }
+    if (mostrou !== AV_VERSAO) {
+      try { localStorage.setItem("av_diag_mostrado", AV_VERSAO); } catch (e) { /* ok */ }
+      setTimeout(() => toast("Aviso do chat, diagnóstico: " + diag, true), 3500);
+    }
+  } catch (e) { /* diagnóstico nunca pode quebrar o aviso */ }
+}
+const AV_VERSAO = "160";
 
 function avFecharBalao() {
   clearTimeout(avTimer);
