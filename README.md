@@ -157,6 +157,12 @@ Com login, o repertório mostra dois botões logo abaixo dos filtros:
 - **Agrupar → Uso**: separa o repertório em mais tocadas, tocadas uma vez, sem tocar há 3 meses e ainda não tocadas, contando os cultos montados no site.
 - **Busca**: a partir de 3 letras, procura também dentro das letras das músicas que têm cifra, e mostra o verso que bateu.
 
+## 💬 Chat
+
+- O chat (INVB Chat, `chat.invbotafogo.com.br`) abre num painel dentro do site, só para quem está logado. O **chat rápido** (raio, no leitor) manda "de onde vamos cantar" com o **mesmo nome e id do chat**: o chat avisa o site por `postMessage` quem está logado (ponte no repositório `church-chat`, `src/App.jsx`, origens em `PARENT_ORIGINS`).
+- **Deslogar todo mundo do chat**: aumente `CHAT_SESSAO_GERACAO` no `js/chat.js` e publique. Cada aparelho apaga o perfil do chat rápido ao abrir o site e, assim que o chat abrir dentro do site, recebe a ordem de sair (`invb-chat-sair`). Sem a ponte publicada no chat, só o chat rápido é limpo.
+- Nome "em uso por outra pessoa" que não solta: é uma reserva presa em `nameLocks` no Firebase do chat (`church-chat-dd8ea`), que deveria sumir ao desconectar. Apagar o nó `nameLocks` (e `presence`) resolve; quem está conectado reserva de novo sozinho.
+
 ## 📋 Escala
 
 A aba **Escala** (`escala.html`) é aberta para todo mundo, com ou sem login. No computador ela fica no topo, junto das outras; no celular, fica no **menu** (☰), porque quatro abas não cabem ao lado da logo. Ela mostra, de hoje até o fim do mês seguinte, quem **ministra** e quem faz o **back** em cada culto, com o horário de chegada.

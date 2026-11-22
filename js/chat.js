@@ -22,6 +22,14 @@
 
 const CHAT_URL = "https://chat.invbotafogo.com.br";
 
+//  GERAÇÃO DA SESSÃO DO CHAT — para deslogar todo mundo de uma vez.
+//  Aumente este número e publique: cada aparelho, ao abrir o site,
+//  apaga o perfil do chat rápido e, assim que o chat abrir dentro do
+//  site, manda ele sair da conta (ver js/chat-rapido.js). Depende da
+//  ponte do lado do chat (INVB Chat): sem ela, só o chat rápido é
+//  limpo. Quem quiser continua entrando de novo com o nome.
+const CHAT_SESSAO_GERACAO = 1;
+
 //  O mesmo balão em todo lugar. Muda só o tamanho e o traço,
 //  para acompanhar os ícones vizinhos de cada um.
 function chatIco(tam, traco) {

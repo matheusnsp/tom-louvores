@@ -36,6 +36,8 @@
   const CHAVE_NOME = "tl_chat_nome";
   const CHAVE_UID = "tl_chat_uid";
   const CHAVE_PERFIL = "tl_chat_perfil_v1";   // "1" depois que o chat avisou uma vez
+  const CHAVE_GERACAO = "tl_chat_geracao";     // última CHAT_SESSAO_GERACAO vista aqui
+  const CHAVE_SAIR = "tl_chat_sair_pendente";  // "1": o chat ainda tem que sair neste aparelho
   const CHAT_ORIGEM = (typeof CHAT_URL === "string" ? CHAT_URL : "https://chat.invbotafogo.com.br").replace(/\/$/, "");
 
   const ler = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
@@ -52,12 +54,31 @@
     gravar(CHAVE_UID, uid);
   }
 
+  //  Geração nova (ver CHAT_SESSAO_GERACAO no chat.js): deslogar.
+  //  O perfil daqui some já; o chat sai quando abrir dentro do site.
+  const geracao = typeof CHAT_SESSAO_GERACAO !== "undefined" ? String(CHAT_SESSAO_GERACAO) : "";
+  if (geracao && ler(CHAVE_GERACAO) !== geracao) {
+    if (ler(CHAVE_GERACAO) || ler(CHAVE_NOME)) {   // não é a primeira visita: tem o que limpar
+      gravar(CHAVE_NOME, "");
+      gravar(CHAVE_SAIR, "1");
+    }
+    gravar(CHAVE_GERACAO, geracao);
+  }
+
   //  O chat, aberto dentro do site, conta quem está logado. Sem
   //  ninguém logado lá, o nome daqui também some.
   window.addEventListener("message", e => {
     if (e.origin !== CHAT_ORIGEM || !e.data || typeof e.data !== "object") return;
     if (e.data.type !== "invb-chat-sessao") return;
     const d = e.data;
+    //  saída pendente: manda o chat sair e ignora esta sessão
+    if (d.joined && ler(CHAVE_SAIR) === "1") {
+      try { e.source && e.source.postMessage({ type: "invb-chat-sair" }, CHAT_ORIGEM); } catch { /* sem chat */ }
+      gravar(CHAVE_SAIR, "");
+      gravar(CHAVE_NOME, "");
+      if (painel) pintar();
+      return;
+    }
     const nome = d.joined ? String(d.name || "").replace(/\s+/g, " ").trim() : "";
     gravar(CHAVE_NOME, nome);
     if (nome && d.userId) { uid = String(d.userId); gravar(CHAVE_UID, uid); }
